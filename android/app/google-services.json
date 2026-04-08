@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "584421254148",
+    "project_id": "myrekod-finhealth",
+    "storage_bucket": "myrekod-finhealth.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:584421254148:android:3923ecd3e5274aab0b4151",
+        "android_client_info": {
+          "package_name": "com.myrekod.myrekod"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMJQRDXM2re2xBdH7uPGhic_WzdR-hEEQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
