@@ -12,7 +12,20 @@
           "package_name": "com.myrekod.myrekod"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "584421254148-s0v69m8oqdj00rac1gijjrbql7lge5uu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.myrekod.myrekod",
+            "certificate_hash": "12897acb41d610e6bc437f960d53f5919d69f79b"
+          }
+        },
+        {
+          "client_id": "584421254148-asokmpvddj3l9gsja4i6mff505skikb8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBMJQRDXM2re2xBdH7uPGhic_WzdR-hEEQ"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "584421254148-asokmpvddj3l9gsja4i6mff505skikb8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "584421254148-1mhoq3a4qobeon9oqp42facst8a5esee.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.myrekod.myrekod"
+              }
+            }
+          ]
         }
       }
     }
