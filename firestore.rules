@@ -1,0 +1,30 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper: only authenticated user can manage their own data
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Business Profile document
+    match /business_profiles/{userId} {
+      allow read, write: if isOwner(userId);
+
+      // Sale Items subcollection
+      match /sale_items/{itemId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Settings subcollection (e.g., tax_config)
+      match /settings/{settingId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Default: Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

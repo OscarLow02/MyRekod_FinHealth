@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../providers/onboarding_provider.dart';
+import '../../widgets/custom_dropdown.dart';
 
 /// Step 3 of 3: Registered Address — Address lines, City, State, Postcode.
 /// Uses a dropdown for Malaysian state codes.
@@ -141,35 +142,19 @@ class _StepAddressState extends State<StepAddress> {
           ),
           const SizedBox(height: 24),
 
-          // ── State Dropdown ──
-          _buildFieldLabel(theme, stateLabel, Icons.map_outlined),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: provider.stateCode.isEmpty ? null : provider.stateCode,
-            hint: Text(
-              stateHint,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            decoration: const InputDecoration(),
-            dropdownColor: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-            isExpanded: true,
-            items: _malaysianStates.map((state) {
-              return DropdownMenuItem(
-                value: state['code'],
-                child: Text(
-                  '${state['name']} (${state['code']})',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              );
-            }).toList(),
+          CustomPremiumDropdown<String>(
+            label: stateLabel,
+            hint: stateHint,
+            items: _malaysianStates.map((state) => CustomDropdownItem<String>(
+              label: '${state['name']} (${state['code']})',
+              value: state['code']!,
+              icon: Icons.map_outlined,
+            )).toList(),
+            value: provider.stateCode.isEmpty ? null : provider.stateCode,
             onChanged: (value) {
               if (value != null) provider.setStateCode(value);
             },
+            isSearchable: true,
           ),
           const SizedBox(height: 24),
 

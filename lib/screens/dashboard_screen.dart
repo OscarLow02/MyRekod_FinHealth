@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../core/app_theme.dart';
-import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/business_profile.dart';
-import 'auth/auth_wrapper.dart';
+import 'profile/profile_menu_screen.dart';
 
 /// Dashboard screen with bottom navigation skeleton.
 /// Sprint 1 placeholder — full implementation in Sprint 2.
@@ -40,15 +39,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } else {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  Future<void> _handleLogout() async {
-    await AuthService().signOut();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const AuthWrapper()),
-      (route) => false,
-    );
   }
 
   @override
@@ -89,7 +79,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 2:
         return _buildPlaceholderPage(theme, 'Customers', Icons.people_outline_rounded);
       case 3:
-        return _buildProfilePage(theme, displayName);
+        return const ProfileMenuScreen();
       default:
         return _buildHomePage(theme, displayName);
     }
@@ -212,92 +202,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'Coming in Sprint 2',
             style: theme.textTheme.bodyLarge,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfilePage(ThemeData theme, String displayName) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
-          Text(
-            // TODO: Implement i18n
-            'Profile',
-            style: theme.textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 24),
-
-          // ── Profile Info Card ──
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius:
-                  BorderRadius.circular(AppTheme.radiusMedium),
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor:
-                      AppTheme.primary.withValues(alpha: 0.15),
-                  child: Text(
-                    displayName.isNotEmpty
-                        ? displayName[0].toUpperCase()
-                        : '?',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _profile?.entityType == 'sole_trader'
-                            ? 'Sole Proprietorship'
-                            : 'Registered SME',
-                        style: theme.textTheme.bodyLarge,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-
-          // ── Logout Button ──
-          SizedBox(
-            width: double.infinity,
-            height: AppTheme.minTouchTarget + 8,
-            child: OutlinedButton.icon(
-              onPressed: _handleLogout,
-              icon: const Icon(Icons.logout_rounded),
-              label: const Text(
-                // TODO: Implement i18n
-                'Log Out',
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.redAccent,
-                side: const BorderSide(color: Colors.redAccent),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
         ],
       ),
     );

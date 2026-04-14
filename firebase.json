@@ -1,1 +1,36 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"myrekod-finhealth","appId":"1:584421254148:android:3923ecd3e5274aab0b4151","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"myrekod-finhealth","appId":"1:584421254148:ios:469436f88ea448f20b4151","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"myrekod-finhealth","configurations":{"android":"1:584421254148:android:3923ecd3e5274aab0b4151","ios":"1:584421254148:ios:469436f88ea448f20b4151"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "myrekod-finhealth",
+          "appId": "1:584421254148:android:3923ecd3e5274aab0b4151",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "myrekod-finhealth",
+          "appId": "1:584421254148:ios:469436f88ea448f20b4151",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "myrekod-finhealth",
+          "configurations": {
+            "android": "1:584421254148:android:3923ecd3e5274aab0b4151",
+            "ios": "1:584421254148:ios:469436f88ea448f20b4151"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "nam5",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

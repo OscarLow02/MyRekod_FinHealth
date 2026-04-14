@@ -98,3 +98,20 @@ Every generated screen must adhere to these core principles:
 - [ ] **Hick’s Law**: Brutal minimalism. Hide complex accounting data; prioritize 3-field forms for sales.
 - [ ] **Recognition Over Recall**: Universal iconography paired with all primary actions.
 - [ ] **System Status Visibility**: High-contrast status badges (Pending vs. Paid) must be immediately visible on all transaction cards.
+
+---
+
+## 6. Premium Interactive Components
+
+To maintain the "Luminescent Vault" premium feel while ensuring radical accessibility, we use specialized custom components for core interactions.
+
+### Custom Premium Dropdown (`CustomPremiumDropdown`)
+*   **Surface**: Uses `surface_container` with semi-transparent primary border (10% opacity).
+*   **Menus**: All dropdown menus must have `AppTheme.radiusLarge` corners and high-elevation shadows (12dp).
+*   **Searchability**: For lists exceeding 10 items (e.g., MSIC, State), a search bar must be integrated into the menu.
+*   **Interactivity**: Selected items use a subtle 8% `primary` background highlight to guide the eye.
+
+### Phone Input Field (`PhoneInputField`)
+*   **Country Selector**: Integrated prefix showing the flag (Emoji) and dial code.
+*   **Searchable Picker**: Tapping the country prefix opens a searchable bottom sheet with `radiusXLarge` corners.
+*   **Feedback**: Proper focused states using the `primary` token with a 1.5px border.
