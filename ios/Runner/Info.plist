@@ -47,6 +47,10 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>MyRekod needs access to your photo library to set a profile picture.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>MyRekod needs camera access to take a profile picture.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

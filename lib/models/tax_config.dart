@@ -5,11 +5,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class TaxConfig {
   final String defaultTaxType; // LHDN tax type code, e.g., '06' = Not Applicable
   final double? taxRate;
+  final double? numUnits;
+  final double? ratePerUnit;
   final String? taxExemptionDetails;
 
   const TaxConfig({
     this.defaultTaxType = '06',
     this.taxRate,
+    this.numUnits,
+    this.ratePerUnit,
     this.taxExemptionDetails,
   });
 
@@ -17,6 +21,8 @@ class TaxConfig {
     return {
       'defaultTaxType': defaultTaxType,
       'taxRate': taxRate,
+      'numUnits': numUnits,
+      'ratePerUnit': ratePerUnit,
       'taxExemptionDetails': taxExemptionDetails ?? '',
       'updatedAt': FieldValue.serverTimestamp(),
     };
@@ -27,6 +33,8 @@ class TaxConfig {
     return TaxConfig(
       defaultTaxType: data['defaultTaxType'] as String? ?? '06',
       taxRate: (data['taxRate'] as num?)?.toDouble(),
+      numUnits: (data['numUnits'] as num?)?.toDouble(),
+      ratePerUnit: (data['ratePerUnit'] as num?)?.toDouble(),
       taxExemptionDetails: data['taxExemptionDetails'] as String?,
     );
   }

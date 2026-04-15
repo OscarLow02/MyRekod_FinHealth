@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/business_profile.dart';
 import '../services/firestore_service.dart';
@@ -21,11 +21,29 @@ class OnboardingProvider extends ChangeNotifier {
   bool _isSubmitting = false;
   bool get isSubmitting => _isSubmitting;
 
-  void nextStep() {
+  // ──────────────────────────────────────────────
+  // Form Keys for Validation
+  // ──────────────────────────────────────────────
+  final stepBusinessKey = GlobalKey<FormState>();
+  final stepContactKey = GlobalKey<FormState>();
+  final stepAddressKey = GlobalKey<FormState>();
+
+  bool nextStep() {
+    // Validate current step before proceeding
+    if (_currentStep == 1) {
+      if (!(stepBusinessKey.currentState?.validate() ?? true)) return false;
+    } else if (_currentStep == 2) {
+      if (!(stepContactKey.currentState?.validate() ?? true)) return false;
+    } else if (_currentStep == 3) {
+      if (!(stepAddressKey.currentState?.validate() ?? true)) return false;
+    }
+
     if (_currentStep < totalPages - 1) {
       _currentStep++;
       notifyListeners();
+      return true;
     }
+    return false;
   }
 
   void prevStep() {

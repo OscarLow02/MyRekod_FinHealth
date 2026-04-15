@@ -25,6 +25,17 @@ class LhdnConstants {
     '17': 'Not Applicable',
   };
 
+  /// Reverse lookup to get the 2-digit code from the state name selected in UI.
+  static String getStateCode(String stateName) {
+    final search = stateName.toLowerCase().trim();
+    for (var entry in stateCodes.entries) {
+      if (entry.value.toLowerCase() == search) {
+        return entry.key;
+      }
+    }
+    return '17'; // Fallback to Not Applicable
+  }
+
   /// LHDN Payment Modes [7]
   static const Map<String, String> paymentModes = {
     '01': 'Cash',

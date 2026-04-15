@@ -30,7 +30,13 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
   // ── Tax Configuration State ──
   String _defaultTaxType = '06'; // '06' = Not Applicable
   final TextEditingController _taxRateCtrl = TextEditingController();
+  final TextEditingController _numUnitsCtrl = TextEditingController();
+  final TextEditingController _ratePerUnitCtrl = TextEditingController();
   final TextEditingController _taxExemptionCtrl = TextEditingController();
+
+  void _onFieldChange() {
+    setState(() {}); // trigger rebuild to update enabled states
+  }
 
   // ── Item Catalog State (real-time via stream) ──
   List<SaleItem> _items = [];
@@ -39,6 +45,9 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
   void initState() {
     super.initState();
     _userId = FirebaseAuth.instance.currentUser?.uid;
+    _taxRateCtrl.addListener(_onFieldChange);
+    _numUnitsCtrl.addListener(_onFieldChange);
+    _ratePerUnitCtrl.addListener(_onFieldChange);
     _loadData();
   }
 
@@ -59,6 +68,8 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
         setState(() {
           _defaultTaxType = taxConfig.defaultTaxType;
           _taxRateCtrl.text = taxConfig.taxRate?.toString() ?? '';
+          _numUnitsCtrl.text = taxConfig.numUnits?.toString() ?? '';
+          _ratePerUnitCtrl.text = taxConfig.ratePerUnit?.toString() ?? '';
           _taxExemptionCtrl.text = taxConfig.taxExemptionDetails ?? '';
           _items = items;
           _isLoading = false;
@@ -71,12 +82,25 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
 
   @override
   void dispose() {
+    _taxRateCtrl.removeListener(_onFieldChange);
+    _numUnitsCtrl.removeListener(_onFieldChange);
+    _ratePerUnitCtrl.removeListener(_onFieldChange);
     _taxRateCtrl.dispose();
+    _numUnitsCtrl.dispose();
+    _ratePerUnitCtrl.dispose();
     _taxExemptionCtrl.dispose();
     super.dispose();
   }
 
   bool get _isTaxEnabled => _defaultTaxType != '06';
+  
+  bool get _isTaxRateEnabled =>
+      _isTaxEnabled &&
+      _numUnitsCtrl.text.isEmpty &&
+      _ratePerUnitCtrl.text.isEmpty;
+
+  bool get _isSpecificEnabled =>
+      _isTaxEnabled && _taxRateCtrl.text.isEmpty;
 
   // ── Save tax config to Firestore ──
   Future<void> _saveTaxConfig() async {
@@ -85,8 +109,14 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
     try {
       final config = TaxConfig(
         defaultTaxType: _defaultTaxType,
-        taxRate: _isTaxEnabled && _taxRateCtrl.text.isNotEmpty
+        taxRate: _isTaxRateEnabled && _taxRateCtrl.text.isNotEmpty
             ? double.tryParse(_taxRateCtrl.text)
+            : null,
+        numUnits: _isSpecificEnabled && _numUnitsCtrl.text.isNotEmpty
+            ? double.tryParse(_numUnitsCtrl.text)
+            : null,
+        ratePerUnit: _isSpecificEnabled && _ratePerUnitCtrl.text.isNotEmpty
+            ? double.tryParse(_ratePerUnitCtrl.text)
             : null,
         taxExemptionDetails: _taxExemptionCtrl.text.trim().isEmpty
             ? null
@@ -268,6 +298,54 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
                   ),
                   const SizedBox(height: 20),
 
+                  // Specific Tax (Units & Rate)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Number of Units',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildTaxTextField(
+                              controller: _numUnitsCtrl,
+                              enabled: _isSpecificEnabled,
+                              hintText: 'Units',
+                              theme: theme,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Rate per Unit',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildTaxTextField(
+                              controller: _ratePerUnitCtrl,
+                              enabled: _isSpecificEnabled,
+                              hintText: 'Rate',
+                              theme: theme,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
                   // Tax Rate
                   Text(
                     'Tax Rate',
@@ -278,42 +356,12 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      // Units/Rate chip
                       Expanded(
-                        child: Container(
-                          height: AppTheme.minTouchTarget,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: _isTaxEnabled
-                                ? theme.scaffoldBackgroundColor
-                                : theme.scaffoldBackgroundColor
-                                    .withValues(alpha: 0.5),
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusMedium),
-                          ),
-                          child: TextField(
-                            controller: _taxRateCtrl,
-                            enabled: _isTaxEnabled,
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: _isTaxEnabled
-                                  ? null
-                                  : theme.colorScheme.onSurfaceVariant
-                                      .withValues(alpha: 0.4),
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Units / Rate',
-                              hintStyle: TextStyle(
-                                color: theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.4),
-                                fontSize: 14,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                            ),
-                          ),
+                        child: _buildTaxTextField(
+                          controller: _taxRateCtrl,
+                          enabled: _isTaxRateEnabled,
+                          hintText: 'Rate',
+                          theme: theme,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -323,7 +371,7 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: _isTaxEnabled
+                          color: _isTaxRateEnabled
                               ? theme.scaffoldBackgroundColor
                               : theme.scaffoldBackgroundColor
                                   .withValues(alpha: 0.5),
@@ -334,7 +382,7 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
                           '% Percentage',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontSize: 14,
-                            color: _isTaxEnabled
+                            color: _isTaxRateEnabled
                                 ? theme.colorScheme.onSurfaceVariant
                                 : theme.colorScheme.onSurfaceVariant
                                     .withValues(alpha: 0.4),
@@ -634,6 +682,44 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTaxTextField({
+    required TextEditingController controller,
+    required bool enabled,
+    required String hintText,
+    required ThemeData theme,
+  }) {
+    return Container(
+      height: AppTheme.minTouchTarget,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: enabled
+            ? theme.scaffoldBackgroundColor
+            : theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      ),
+      child: TextField(
+        controller: controller,
+        enabled: enabled,
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: enabled
+              ? null
+              : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+        ),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+            fontSize: 14,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        ),
       ),
     );
   }

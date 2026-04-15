@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/app_theme.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../widgets/custom_dropdown.dart';
+import '../../core/validators.dart';
 
 /// Step 3 of 3: Registered Address — Address lines, City, State, Postcode.
 /// Uses a dropdown for Malaysian state codes.
@@ -83,8 +83,10 @@ class _StepAddressState extends State<StepAddress> {
     const postcodeLabel = 'Postcode*';
     const postcodeHint = 'e.g. 47600';
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+    return Form(
+      key: provider.stepAddressKey,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -102,6 +104,7 @@ class _StepAddressState extends State<StepAddress> {
           TextFormField(
             controller: _address1Controller,
             textCapitalization: TextCapitalization.words,
+            validator: (v) => AppValidators.requiredField(v, address1Label.replaceAll('*', '')),
             decoration: const InputDecoration(hintText: address1Hint),
             onChanged: provider.setAddressLine1,
           ),
@@ -137,6 +140,7 @@ class _StepAddressState extends State<StepAddress> {
           TextFormField(
             controller: _cityController,
             textCapitalization: TextCapitalization.words,
+            validator: (v) => AppValidators.requiredField(v, cityLabel.replaceAll('*', '')),
             decoration: const InputDecoration(hintText: cityHint),
             onChanged: provider.setCity,
           ),
@@ -145,6 +149,7 @@ class _StepAddressState extends State<StepAddress> {
           CustomPremiumDropdown<String>(
             label: stateLabel,
             hint: stateHint,
+            validator: (v) => AppValidators.requiredField(v, stateLabel.replaceAll('*', '')),
             items: _malaysianStates.map((state) => CustomDropdownItem<String>(
               label: '${state['name']} (${state['code']})',
               value: state['code']!,
@@ -165,6 +170,7 @@ class _StepAddressState extends State<StepAddress> {
             controller: _postcodeController,
             keyboardType: TextInputType.number,
             maxLength: 5,
+            validator: AppValidators.postalCode,
             decoration: const InputDecoration(
               hintText: postcodeHint,
               counterText: '', // Hide character counter
@@ -173,6 +179,7 @@ class _StepAddressState extends State<StepAddress> {
           ),
           const SizedBox(height: 24),
         ],
+      ),
       ),
     );
   }

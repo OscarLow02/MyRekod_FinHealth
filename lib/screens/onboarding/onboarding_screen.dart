@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/app_theme.dart';
 import '../../providers/onboarding_provider.dart';
 import '../auth/auth_wrapper.dart';
@@ -35,12 +36,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _onNextPressed(OnboardingProvider provider) {
-    provider.nextStep();
-    _pageController.animateToPage(
-      provider.currentStep,
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOut,
-    );
+    if (provider.nextStep()) {
+      _pageController.animateToPage(
+        provider.currentStep,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   void _onBackPressed(OnboardingProvider provider) {
@@ -148,7 +150,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           letterSpacing: 1.5,
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      IconButton(
+                        onPressed: () async {
+                          // Allow user to cancel sign up and return to Login
+                          await FirebaseAuth.instance.signOut();
+                        },
+                        icon: const Icon(Icons.logout_rounded),
+                        color: theme.colorScheme.onSurfaceVariant,
+                        tooltip: 'Cancel Registration / Log Out',
+                      ),
                     ],
                   ),
                 ),

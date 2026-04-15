@@ -19,6 +19,7 @@ class BusinessProfile {
   // Contact Info
   final String phoneNumber;
   final String email;
+  final String? imageUrl;
   
   // Address Info
   final String addressLine1;
@@ -43,6 +44,7 @@ class BusinessProfile {
     required this.businessActivityDescription,
     required this.phoneNumber,
     required this.email,
+    this.imageUrl,
     required this.addressLine1,
     this.addressLine2 = "",
     this.addressLine3 = "",
@@ -66,6 +68,7 @@ class BusinessProfile {
       'businessActivityDescription': businessActivityDescription,
       'phoneNumber': phoneNumber,
       'email': email,
+      'imageUrl': imageUrl,
       'addressLine1': addressLine1,
       'addressLine2': addressLine2,
       'addressLine3': addressLine3,
@@ -95,6 +98,7 @@ class BusinessProfile {
       businessActivityDescription: data['businessActivityDescription'] as String? ?? '',
       phoneNumber: data['phoneNumber'] as String? ?? '',
       email: data['email'] as String? ?? '',
+      imageUrl: data['imageUrl'] as String?,
       addressLine1: data['addressLine1'] as String? ?? '',
       addressLine2: data['addressLine2'] as String? ?? '',
       addressLine3: data['addressLine3'] as String? ?? '',

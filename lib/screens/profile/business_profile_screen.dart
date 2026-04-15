@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/app_theme.dart';
 import '../../services/firestore_service.dart';
 import '../../models/business_profile.dart';
 import '../../core/lhdn_constants.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/phone_input_field.dart';
+import '../../core/validators.dart';
 
 /// Business Profile settings screen.
 /// Toggles between read-only and editable modes.
@@ -18,6 +22,7 @@ class BusinessProfileScreen extends StatefulWidget {
 }
 
 class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
   bool _isEditMode = false;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -95,12 +100,9 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
           _isLoading = false;
         });
       } else if (mounted) {
-        // Populate with mock data if no profile exists yet
-        _populateWithMockData();
         setState(() => _isLoading = false);
       }
     } else {
-      _populateWithMockData();
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -124,32 +126,15 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     _bankAccountCtrl.text = profile.bankAccountNumber ?? '';
   }
 
-  void _populateWithMockData() {
-    _businessNameCtrl.text = 'Golden Stall Gourmet';
-    _tinCtrl.text = 'C2018274090';
-    _brnCtrl.text = '20180102934X';
-    _sstCtrl.text = 'W10-1808-32000123';
-    _tourismTaxCtrl.text = '-';
-    _emailCtrl.text = 'admin@goldenstall.com';
-    _phoneCtrl.text = '+60 12-345 6789';
-    _msicCtrl.text = '56101';
-    _activityDescCtrl.text =
-        'Premium artisanal street food serving the central district since 2018. Specialized in fusion hawker cuisine.';
-    _addressLine1Ctrl.text =
-        'No 4, Central Market Hawker Centre, Jalan Hang Kasturi,';
-    _addressLine2Ctrl.text = '50050 Kuala Lumpur, Malaysia';
-    _addressLine3Ctrl.text = '';
-    _postcodeCtrl.text = '50050';
-    _cityCtrl.text = 'Kuala Lumpur';
-    _stateCtrl.text = '14';
-    _bankAccountCtrl.text = '702-91823-1';
-  }
-
   void _toggleEditMode() {
     setState(() => _isEditMode = !_isEditMode);
   }
 
   Future<void> _handleSave() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -219,6 +204,99 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     }
   }
 
+  Future<void> _uploadProfilePhoto() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512);
+    
+    if (image == null) return;
+    
+    setState(() => _isLoading = true);
+    try {
+      final ref = FirebaseStorage.instance.ref().child('business_profiles/${user.uid}/profile.jpg');
+      await ref.putData(await image.readAsBytes());
+      final url = await ref.getDownloadURL();
+      
+      if (_profile != null) {
+        final updated = BusinessProfile(
+          userId: _profile!.userId,
+          entityType: _profile!.entityType,
+          businessName: _profile!.businessName,
+          tinNumber: _profile!.tinNumber,
+          brnNumber: _profile!.brnNumber,
+          sstNumber: _profile!.sstNumber,
+          tourismTaxNumber: _profile!.tourismTaxNumber,
+          msicCode: _profile!.msicCode,
+          businessActivityDescription: _profile!.businessActivityDescription,
+          phoneNumber: _profile!.phoneNumber,
+          email: _profile!.email,
+          imageUrl: url,
+          addressLine1: _profile!.addressLine1,
+          addressLine2: _profile!.addressLine2,
+          addressLine3: _profile!.addressLine3,
+          city: _profile!.city,
+          stateCode: _profile!.stateCode,
+          postalCode: _profile!.postalCode,
+          bankAccountNumber: _profile!.bankAccountNumber,
+        );
+        await FirestoreService().saveBusinessProfile(updated);
+        if (mounted) setState(() => _profile = updated);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload photo: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deactivateAccount() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Deactivate Account'),
+        content: const Text('Are you sure you want to deactivate your business account? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('DEACTIVATE', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          await user.delete();
+        }
+        if (mounted) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to deactivate: $e')),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -260,10 +338,12 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
-                SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    24, 16, 24, _isEditMode ? 100 : 32,
-                  ),
+                Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      24, 16, 24, _isEditMode ? 100 : 32,
+                    ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -279,6 +359,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         icon: Icons.store_rounded,
                         label: 'Legal Business Name',
                         controller: _businessNameCtrl,
+                        validator: (v) => AppValidators.requiredField(v, 'Legal Business Name'),
                       ),
                       const SizedBox(height: 16),
                       _buildMsicDropdown(theme),
@@ -289,6 +370,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         label: 'Business Description (Activity Description)',
                         controller: _activityDescCtrl,
                         maxLines: 3,
+                        validator: (v) => AppValidators.requiredField(v, 'Business Description'),
                       ),
                       const SizedBox(height: 16),
                       _buildLabeledField(
@@ -307,6 +389,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         icon: Icons.badge_outlined,
                         label: 'TIN',
                         controller: _tinCtrl,
+                        validator: AppValidators.tin,
                       ),
                       const SizedBox(height: 16),
                       _buildLabeledField(
@@ -314,6 +397,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         icon: Icons.credit_card_rounded,
                         label: 'Business Registration / IC',
                         controller: _brnCtrl,
+                        validator: (v) => AppValidators.brn(v, _profile?.entityType ?? 'Business'),
                       ),
                       const SizedBox(height: 16),
                       _buildLabeledField(
@@ -340,6 +424,9 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         label: 'Business Email',
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
+                        validator: AppValidators.requiredEmail,
+                        readOnly: true,
+                        hintText: 'Email matched to your authentication account',
                       ),
                       const SizedBox(height: 16),
                       PhoneInputField(
@@ -352,23 +439,69 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                       // ── Location ──
                       _buildSectionTitle(theme, 'Location'),
                       const SizedBox(height: 16),
-                      _buildLabeledField(
-                        theme,
-                        icon: Icons.location_on_outlined,
-                        label: 'Address',
-                        controller: _addressLine1Ctrl,
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildStateDropdown(theme),
+                      if (!_isEditMode)
+                        _buildLabeledField(
+                          theme,
+                          icon: Icons.location_on_outlined,
+                          label: 'Address',
+                          controller: TextEditingController(
+                            text: [
+                              _addressLine1Ctrl.text,
+                              _addressLine2Ctrl.text,
+                              _addressLine3Ctrl.text,
+                              '${_postcodeCtrl.text} ${_cityCtrl.text}'.trim(),
+                              LhdnConstants.stateCodes[_stateCtrl.text] ?? _stateCtrl.text
+                            ].where((s) => s.isNotEmpty).join('\n'),
+                          ),
+                          maxLines: 4,
+                        )
+                      else ...[
+                        _buildLabeledField(
+                          theme,
+                          icon: Icons.location_on_outlined,
+                          label: 'Address Line 1*',
+                          controller: _addressLine1Ctrl,
+                          validator: (v) => AppValidators.requiredField(v, 'Address Line 1'),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildLabeledField(
+                          theme,
+                          icon: Icons.location_city_outlined,
+                          label: 'Address Line 2 (Optional)',
+                          controller: _addressLine2Ctrl,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildLabeledField(
+                          theme,
+                          icon: Icons.add_business_outlined,
+                          label: 'Address Line 3 (Optional)',
+                          controller: _addressLine3Ctrl,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildLabeledField(
+                          theme,
+                          icon: Icons.apartment_outlined,
+                          label: 'City*',
+                          controller: _cityCtrl,
+                          validator: (v) => AppValidators.requiredField(v, 'City'),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildLabeledField(
+                          theme,
+                          icon: Icons.mark_as_unread_outlined,
+                          label: 'Postcode*',
+                          controller: _postcodeCtrl,
+                          validator: AppValidators.postalCode,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildStateDropdown(theme),
+                      ],
                       const SizedBox(height: 32),
 
                       // ── Deactivate Button ──
                       Center(
                         child: TextButton.icon(
-                          onPressed: () {
-                            // TODO: Implement deactivation flow
-                          },
+                          onPressed: _deactivateAccount,
                           icon: const Icon(Icons.warning_amber_rounded,
                               size: 18),
                           label: const Text(
@@ -387,6 +520,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                       const SizedBox(height: 32),
                     ],
                   ),
+                ),
                 ),
 
                 // ── Floating Save Button (edit mode only) ──
@@ -436,49 +570,60 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     return Center(
       child: Column(
         children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 48,
-                backgroundColor: AppTheme.primary.withValues(alpha: 0.2),
-                child: Icon(
-                  Icons.person_rounded,
-                  size: 48,
-                  color: AppTheme.primary.withValues(alpha: 0.8),
+          GestureDetector(
+            onTap: _isEditMode ? _uploadProfilePhoto : null,
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 48,
+                  backgroundColor: AppTheme.primary.withValues(alpha: 0.2),
+                  backgroundImage: _profile?.imageUrl != null 
+                      ? NetworkImage(_profile!.imageUrl!) 
+                      : null,
+                  child: _profile?.imageUrl == null
+                      ? Icon(
+                          Icons.person_rounded,
+                          size: 48,
+                          color: AppTheme.primary.withValues(alpha: 0.8),
+                        )
+                      : null,
                 ),
-              ),
-              if (_isEditMode)
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: theme.scaffoldBackgroundColor,
-                        width: 2,
+                if (_isEditMode)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: theme.scaffoldBackgroundColor,
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt_rounded,
+                        color: Colors.white,
+                        size: 16,
                       ),
                     ),
-                    child: const Icon(
-                      Icons.camera_alt_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
           if (_isEditMode) ...[
             const SizedBox(height: 8),
-            Text(
-              'UPDATE PHOTO',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: AppTheme.primary,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
+            GestureDetector(
+              onTap: _uploadProfilePhoto,
+              child: Text(
+                'UPDATE PHOTO',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ],
@@ -505,6 +650,9 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     required TextEditingController controller,
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+    bool? readOnly,
+    String? hintText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -526,16 +674,22 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          readOnly: !_isEditMode,
+          readOnly: readOnly ?? !_isEditMode,
           maxLines: maxLines,
           keyboardType: keyboardType,
-          style: theme.textTheme.bodyLarge,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: (readOnly == true)
+                ? theme.colorScheme.onSurface.withValues(alpha: 0.6)
+                : theme.colorScheme.onSurface,
+          ),
+          validator: validator,
           decoration: InputDecoration(
+            hintText: hintText,
             filled: true,
-            fillColor: _isEditMode
+            fillColor: (readOnly == true || !_isEditMode)
                 ? theme.colorScheme.surfaceContainerHighest
-                : theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.6),
+                    .withValues(alpha: 0.6)
+                : theme.colorScheme.surfaceContainerHighest,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(
@@ -581,6 +735,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
       isEditMode: _isEditMode,
       isSearchable: true,
       hint: 'Select Industry Sector',
+      validator: (v) => AppValidators.requiredField(v, 'Industry Sector'),
     );
   }
 
@@ -596,6 +751,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
       isEditMode: _isEditMode,
       isSearchable: true,
       hint: 'Select State',
+      validator: (v) => AppValidators.requiredField(v, 'State / Region'),
     );
   }
 

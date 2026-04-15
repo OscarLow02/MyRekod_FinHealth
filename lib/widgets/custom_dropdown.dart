@@ -17,8 +17,8 @@ class CustomDropdownItem<T> {
 }
 
 /// A premium dropdown component designed for "The Luminescent Vault" aesthetic.
-/// Supports search functionality, icons, and premium styling.
-class CustomPremiumDropdown<T> extends StatefulWidget {
+/// Opens a full-page bottom sheet for item selection to avoid overflow issues.
+class CustomPremiumDropdown<T> extends StatelessWidget {
   final String label;
   final List<CustomDropdownItem<T>> items;
   final T? value;
@@ -38,34 +38,45 @@ class CustomPremiumDropdown<T> extends StatefulWidget {
     this.isEditMode = true,
     this.isSearchable = false,
     this.fillColor,
+    this.validator,
   });
 
-  @override
-  State<CustomPremiumDropdown<T>> createState() => _CustomPremiumDropdownState<T>();
-}
+  final String? Function(T?)? validator;
 
-class _CustomPremiumDropdownState<T> extends State<CustomPremiumDropdown<T>> {
-  final MenuController _menuController = MenuController();
-  final FocusNode _buttonFocusNode = FocusNode();
-  String _searchQuery = '';
-
-  @override
-  void dispose() {
-    _buttonFocusNode.dispose();
-    super.dispose();
+  Future<void> _openSelectionSheet(BuildContext context, FormFieldState<T> state) {
+    return showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _DropdownSelectionSheet<T>(
+        title: label,
+        items: items,
+        selectedValue: value,
+        isSearchable: isSearchable,
+      ),
+    ).then((selected) {
+      if (selected != null) {
+        onChanged(selected);
+        state.didChange(selected);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final selectedItem = widget.items.any((i) => i.value == widget.value)
-        ? widget.items.firstWhere((i) => i.value == widget.value)
+    final selectedItem = items.any((i) => i.value == value)
+        ? items.firstWhere((i) => i.value == value)
         : null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Label with Icon (if selected item has one)
+    return FormField<T>(
+      validator: validator,
+      initialValue: value,
+      builder: (FormFieldState<T> state) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+        // Label
         Row(
           children: [
             if (selectedItem?.icon != null) ...[
@@ -73,7 +84,7 @@ class _CustomPremiumDropdownState<T> extends State<CustomPremiumDropdown<T>> {
               const SizedBox(width: 8),
             ],
             Text(
-              widget.label,
+              label,
               style: theme.textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -81,179 +92,262 @@ class _CustomPremiumDropdownState<T> extends State<CustomPremiumDropdown<T>> {
           ],
         ),
         const SizedBox(height: 8),
-        
-        MenuAnchor(
-          controller: _menuController,
-          childFocusNode: _buttonFocusNode,
-          style: MenuStyle(
-            backgroundColor: WidgetStateProperty.all(theme.colorScheme.surface),
-            elevation: WidgetStateProperty.all(12),
-            padding: WidgetStateProperty.all(EdgeInsets.zero),
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+
+        // Trigger button
+        InkWell(
+          onTap: isEditMode ? () => _openSelectionSheet(context, state) : null,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: fillColor ??
+                  (isEditMode
+                      ? theme.colorScheme.surfaceContainerHighest
+                      : theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.6)),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              border: Border.all(
+                color: state.hasError
+                    ? theme.colorScheme.error
+                    : (isEditMode ? theme.colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent),
               ),
             ),
-            maximumSize: WidgetStateProperty.all(const Size.fromHeight(400)),
-          ),
-          builder: (context, controller, child) {
-            return InkWell(
-              onTap: widget.isEditMode 
-                ? () {
-                    if (controller.isOpen) {
-                      controller.close();
-                    } else {
-                      _searchQuery = ''; // Reset search when opening
-                      controller.open();
-                    }
-                  } 
-                : null,
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: widget.fillColor ?? (widget.isEditMode
-                      ? theme.colorScheme.surfaceContainerHighest
-                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  border: widget.isEditMode 
-                    ? Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.1))
-                    : null,
-                ),
-                child: Row(
-                  children: [
-                    if (selectedItem?.emoji != null) ...[
-                      Text(selectedItem!.emoji!, style: const TextStyle(fontSize: 20)),
-                      const SizedBox(width: 12),
-                    ],
-                    Expanded(
-                      child: Text(
-                        selectedItem?.label ?? (widget.hint ?? 'Select'),
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: selectedItem != null ? null : theme.colorScheme.onSurfaceVariant,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+            child: Row(
+              children: [
+                if (selectedItem?.emoji != null) ...[
+                  Text(selectedItem!.emoji!,
+                      style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(
+                    selectedItem?.label ?? (hint ?? 'Select'),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: selectedItem != null
+                          ? null
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
-                    if (widget.isEditMode)
-                      Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                  ],
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-            );
-          },
-          menuChildren: [
-            if (widget.isSearchable)
-              _DropdownSearchHeader(
-                onChanged: (val) => setState(() => _searchQuery = val),
-              ),
-            ..._buildMenuItems(context),
-          ],
+                if (isEditMode)
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+              ],
+            ),
+          ),
         ),
+        if (state.hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0, left: 16.0),
+            child: Text(
+              state.errorText!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ),
       ],
     );
-  }
-
-  List<Widget> _buildMenuItems(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    final filteredItems = widget.items.where((item) {
-      if (_searchQuery.isEmpty) return true;
-      return item.label.toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
-
-    if (filteredItems.isEmpty) {
-      return [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-          child: Center(child: Text('No results found')),
-        )
-      ];
-    }
-
-    return filteredItems.map((item) {
-      final isSelected = item.value == widget.value;
-      return MenuItemButton(
-        onPressed: () => widget.onChanged(item.value),
-        style: MenuItemButton.styleFrom(
-          backgroundColor: isSelected 
-            ? theme.colorScheme.primary.withValues(alpha: 0.08)
-            : null,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        ),
-        child: Row(
-          children: [
-            if (item.emoji != null) ...[
-              Text(item.emoji!, style: const TextStyle(fontSize: 20)),
-              const SizedBox(width: 12),
-            ] else if (item.icon != null) ...[
-              Icon(
-                item.icon, 
-                size: 20, 
-                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant
-              ),
-              const SizedBox(width: 12),
-            ],
-            Expanded(
-              child: Text(
-                item.label,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: isSelected ? theme.colorScheme.primary : null,
-                  fontWeight: isSelected ? FontWeight.w600 : null,
-                ),
-              ),
-            ),
-            if (isSelected)
-              Icon(Icons.check_rounded, size: 18, color: theme.colorScheme.primary),
-          ],
-        ),
-      );
-    }).toList();
+      },
+    );
   }
 }
 
-class _DropdownSearchHeader extends StatefulWidget {
-  final ValueChanged<String> onChanged;
+/// Full-page bottom sheet for dropdown selection.
+class _DropdownSelectionSheet<T> extends StatefulWidget {
+  final String title;
+  final List<CustomDropdownItem<T>> items;
+  final T? selectedValue;
+  final bool isSearchable;
 
-  const _DropdownSearchHeader({required this.onChanged});
+  const _DropdownSelectionSheet({
+    required this.title,
+    required this.items,
+    this.selectedValue,
+    this.isSearchable = false,
+  });
 
   @override
-  State<_DropdownSearchHeader> createState() => _DropdownSearchHeaderState();
+  State<_DropdownSelectionSheet<T>> createState() =>
+      _DropdownSelectionSheetState<T>();
 }
 
-class _DropdownSearchHeaderState extends State<_DropdownSearchHeader> {
-  final TextEditingController _ctrl = TextEditingController();
+class _DropdownSelectionSheetState<T>
+    extends State<_DropdownSelectionSheet<T>> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _query = '';
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: TextField(
-        controller: _ctrl,
-        onChanged: widget.onChanged,
-        autofocus: true,
-        decoration: InputDecoration(
-          hintText: 'Search...',
-          prefixIcon: const Icon(Icons.search_rounded, size: 20),
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-          filled: true,
-          fillColor: theme.colorScheme.surfaceContainerHighest,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-            borderSide: BorderSide.none,
+
+    final filtered = widget.items.where((item) {
+      if (_query.isEmpty) return true;
+      return item.label.toLowerCase().contains(_query.toLowerCase());
+    }).toList();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radiusXLarge)),
+      ),
+      child: Column(
+        children: [
+          // Drag handle
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onSurfaceVariant
+                  .withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-        ),
+          const SizedBox(height: 16),
+
+          // Title row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(
+                      AppTheme.minTouchTarget,
+                      AppTheme.minTouchTarget,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Search field
+          if (widget.isSearchable)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                onChanged: (val) => setState(() => _query = val),
+                decoration: InputDecoration(
+                  hintText: 'Search...',
+                  prefixIcon:
+                      const Icon(Icons.search_rounded, size: 20),
+                  filled: true,
+                  fillColor:
+                      theme.colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusMedium),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      vertical: 0, horizontal: 12),
+                ),
+              ),
+            ),
+
+          if (widget.isSearchable) const SizedBox(height: 12),
+
+          // Items list
+          Expanded(
+            child: filtered.isEmpty
+                ? Center(
+                    child: Text(
+                      'No results found',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 32),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final item = filtered[index];
+                      final isSelected =
+                          item.value == widget.selectedValue;
+
+                      return ListTile(
+                        contentPadding:
+                            const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 4),
+                        leading: item.emoji != null
+                            ? Text(item.emoji!,
+                                style:
+                                    const TextStyle(fontSize: 24))
+                            : item.icon != null
+                                ? CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: isSelected
+                                        ? AppTheme.primary
+                                            .withValues(alpha: 0.15)
+                                        : AppTheme.primary
+                                            .withValues(alpha: 0.08),
+                                    child: Icon(
+                                      item.icon,
+                                      size: 18,
+                                      color: isSelected
+                                          ? AppTheme.primary
+                                          : theme.colorScheme
+                                              .onSurfaceVariant,
+                                    ),
+                                  )
+                                : null,
+                        title: Text(
+                          item.label,
+                          style:
+                              theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: isSelected
+                                ? AppTheme.primary
+                                : null,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? Icon(Icons.check_rounded,
+                                size: 20, color: AppTheme.primary)
+                            : null,
+                        selected: isSelected,
+                        selectedTileColor:
+                            AppTheme.primary.withValues(alpha: 0.06),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                              AppTheme.radiusMedium),
+                        ),
+                        onTap: () =>
+                            Navigator.pop(context, item.value),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -261,19 +355,26 @@ class _DropdownSearchHeaderState extends State<_DropdownSearchHeader> {
 
 /// Helper to build dropdown items from common types
 class CustomDropdownBuilder {
-  static List<CustomDropdownItem<String>> fromMap(Map<String, String> map, {IconData? icon}) {
-    return map.entries.map((e) => CustomDropdownItem<String>(
-      label: e.value,
-      value: e.key,
-      icon: icon,
-    )).toList();
+  static List<CustomDropdownItem<String>> fromMap(
+      Map<String, String> map,
+      {IconData? icon}) {
+    return map.entries
+        .map((e) => CustomDropdownItem<String>(
+              label: e.value,
+              value: e.key,
+              icon: icon,
+            ))
+        .toList();
   }
 
-  static List<CustomDropdownItem<String>> fromList(List<String> list, {IconData? icon}) {
-    return list.map((e) => CustomDropdownItem<String>(
-      label: e,
-      value: e,
-      icon: icon,
-    )).toList();
+  static List<CustomDropdownItem<String>> fromList(List<String> list,
+      {IconData? icon}) {
+    return list
+        .map((e) => CustomDropdownItem<String>(
+              label: e,
+              value: e,
+              icon: icon,
+            ))
+        .toList();
   }
 }

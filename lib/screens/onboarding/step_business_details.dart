@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../widgets/tin_guide_bottom_sheet.dart';
+import '../../core/validators.dart';
 
 /// Step 1 of 3: Business Details — Name, TIN, BRN, MSIC Code.
 /// Includes the TIN Registration Guide link from Figma.
@@ -85,8 +86,10 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
       '96091 - Other Personal Services',
     ];
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+    return Form(
+      key: provider.stepBusinessKey,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -105,6 +108,7 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
           TextFormField(
             controller: _nameController,
             textCapitalization: TextCapitalization.words,
+            validator: (v) => AppValidators.requiredField(v, businessNameLabel.replaceAll('*', '')),
             decoration: const InputDecoration(hintText: businessNameHint),
             onChanged: provider.setBusinessName,
           ),
@@ -147,6 +151,7 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
           const SizedBox(height: 8),
           TextFormField(
             controller: _tinController,
+            validator: AppValidators.tin,
             decoration: InputDecoration(
               hintText: tinHint,
               suffixIcon: IconButton(
@@ -173,6 +178,7 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
           const SizedBox(height: 8),
           TextFormField(
             controller: _brnController,
+            validator: (v) => AppValidators.brn(v, provider.entityType),
             decoration: InputDecoration(hintText: brnHint),
             onChanged: provider.setBrnNumber,
           ),
@@ -203,6 +209,7 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
                 ),
               );
             }).toList(),
+            validator: (v) => AppValidators.requiredField(v, 'Industry (MSIC Code)'),
             onChanged: (value) {
               if (value != null) provider.setMsicCode(value);
             },
@@ -215,6 +222,7 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
           TextFormField(
             controller: _activityDescController,
             textCapitalization: TextCapitalization.sentences,
+            validator: (v) => AppValidators.requiredField(v, activityDescLabel.replaceAll('*', '')),
             decoration: const InputDecoration(hintText: activityDescHint),
             onChanged: provider.setBusinessActivityDescription,
           ),
@@ -271,6 +279,7 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
 
           const SizedBox(height: 48), // Bottom padding
         ],
+      ),
       ),
     );
   }
