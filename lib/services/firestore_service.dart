@@ -102,4 +102,21 @@ class FirestoreService {
     if (!doc.exists || doc.data() == null) return TaxConfig.empty;
     return TaxConfig.fromFirestore(doc);
   }
+
+  // ── Deactivate User Account ──────────────────────────────────────────────────────────
+  /// Fully deletes a user's existence from the database.
+  /// This deletes the main profile document. Note: Subcollections might persist
+  Future<void> deleteFullProfile(String userId) async {
+    // Delete items subcollection first (optional but cleaner)
+    final items = await _itemsCol(userId).get();
+    for (var doc in items.docs) {
+      await doc.reference.delete();
+    }
+    
+    // Delete settings
+    await _taxConfigDoc(userId).delete();
+
+    // Delete main profile
+    await _profileDoc(userId).delete();
+  }
 }

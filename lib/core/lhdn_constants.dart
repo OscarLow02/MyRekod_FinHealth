@@ -99,6 +99,7 @@ class LhdnConstants {
   /// PM Note: Keeps the UI clean. '00000' is the official LHDN fallback.
   static const Map<String, String> msicCodes = {
     '00000': 'NOT APPLICABLE', // Default/Fallback [13]
+    '47111': 'Retail sale in non-specialised stores (General Retail)',
     '56101': 'Restaurants',
     '56107': 'Food/Beverage in market stalls/hawkers (Pasar Malam)',
     '56106': 'Food stalls/hawkers',
@@ -107,8 +108,10 @@ class LhdnConstants {
     '49224': 'E-hailing / Taxi operation (Grab, AirAsia Ride)',
     '49230': 'Freight transport by road (Lalamove, Delivery Runners)',
     '47912': 'Retail sale over the Internet (E-commerce)',
+    '62010': 'Computer programming (IT Services)',
     '96020': 'Hairdressing and beauty treatment (Barbers/Salons)',
     '95292': 'Repair and alteration of clothing (Tailors)',
     '74200': 'Photographic activities (Freelance Photographers)',
+    '96091': 'Other personal service activities n.e.c.',
   };
 }

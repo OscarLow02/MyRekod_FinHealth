@@ -9,6 +9,7 @@ import 'step_business_details.dart';
 import 'step_contact_details.dart';
 import 'step_address.dart';
 import 'step_review.dart';
+import '../../services/auth_service.dart';
 
 /// Main onboarding wizard shell.
 /// Uses a PageView with controlled navigation (no accidental swipes).
@@ -153,7 +154,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       IconButton(
                         onPressed: () async {
                           // Allow user to cancel sign up and return to Login
-                          await FirebaseAuth.instance.signOut();
+                          await AuthService().signOut();
                         },
                         icon: const Icon(Icons.logout_rounded),
                         color: theme.colorScheme.onSurfaceVariant,

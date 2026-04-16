@@ -109,4 +109,47 @@ class BusinessProfile {
       bankAccountNumber: data['bankAccountNumber'] as String?,
     );
   }
+  BusinessProfile copyWith({
+    String? userId,
+    String? entityType,
+    String? businessName,
+    String? tinNumber,
+    String? brnNumber,
+    String? sstNumber,
+    String? tourismTaxNumber,
+    String? msicCode,
+    String? businessActivityDescription,
+    String? phoneNumber,
+    String? email,
+    String? imageUrl,
+    String? addressLine1,
+    String? addressLine2,
+    String? addressLine3,
+    String? city,
+    String? stateCode,
+    String? postalCode,
+    String? bankAccountNumber,
+  }) {
+    return BusinessProfile(
+      userId: userId ?? this.userId,
+      entityType: entityType ?? this.entityType,
+      businessName: businessName ?? this.businessName,
+      tinNumber: tinNumber ?? this.tinNumber,
+      brnNumber: brnNumber ?? this.brnNumber,
+      sstNumber: sstNumber ?? this.sstNumber,
+      tourismTaxNumber: tourismTaxNumber ?? this.tourismTaxNumber,
+      msicCode: msicCode ?? this.msicCode,
+      businessActivityDescription: businessActivityDescription ?? this.businessActivityDescription,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      email: email ?? this.email,
+      imageUrl: imageUrl ?? this.imageUrl,
+      addressLine1: addressLine1 ?? this.addressLine1,
+      addressLine2: addressLine2 ?? this.addressLine2,
+      addressLine3: addressLine3 ?? this.addressLine3,
+      city: city ?? this.city,
+      stateCode: stateCode ?? this.stateCode,
+      postalCode: postalCode ?? this.postalCode,
+      bankAccountNumber: bankAccountNumber ?? this.bankAccountNumber,
+    );
+  }
 }

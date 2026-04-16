@@ -65,4 +65,50 @@ class AuthService {
     await GoogleSignIn.instance.signOut();
     await _auth.signOut();
   }
+
+  /// Returns a list of provider IDs linked to the current user.
+  /// Standard IDs: 'password', 'google.com', 'apple.com', 'phone'
+  List<String> getProviderIds() {
+    final user = _auth.currentUser;
+    if (user == null) return [];
+    return user.providerData.map((info) => info.providerId).toList();
+  }
+
+  /// Re-authenticates the current user using their password.
+  /// Required for sensitive actions like account deactivation.
+  Future<void> reauthenticateWithPassword(String password) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) {
+      throw Exception('No authenticated user found for re-authentication.');
+    }
+
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: password,
+    );
+
+    await user.reauthenticateWithCredential(credential);
+  }
+
+  /// Re-authenticates the current user using Google Sign-In.
+  /// Triggers an interactive popup to get fresh credentials.
+  Future<void> reauthenticateWithGoogle() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('No authenticated user found for re-authentication.');
+    }
+
+    final gsi = GoogleSignIn.instance;
+    await gsi.initialize();
+    
+    // Trigger identity verification
+    final account = await gsi.authenticate();
+    
+    final idToken = account.authentication.idToken;
+    final oauthCredential = GoogleAuthProvider.credential(
+      idToken: idToken,
+    );
+
+    await user.reauthenticateWithCredential(oauthCredential);
+  }
 }

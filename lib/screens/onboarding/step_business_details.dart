@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../core/app_theme.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../widgets/tin_guide_bottom_sheet.dart';
+import '../../widgets/custom_dropdown.dart';
+import '../../core/lhdn_constants.dart';
 import '../../core/validators.dart';
 
 /// Step 1 of 3: Business Details — Name, TIN, BRN, MSIC Code.
@@ -77,14 +79,7 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
     const tourismTaxLabel = 'Tourism Tax Registration Number*';
     const tourismTaxHint = 'Enter your Tourism Tax number';
 
-    // Placeholder dropdown items — PM will add full list later
-    final msicItems = <String>[
-      '47111 - Retail (General)',
-      '56101 - Food & Beverage',
-      '49100 - Transport Services',
-      '62010 - IT Services',
-      '96091 - Other Personal Services',
-    ];
+
 
     return Form(
       key: provider.stepBusinessKey,
@@ -184,35 +179,18 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
           ),
           const SizedBox(height: 24),
 
-          // ── MSIC Code Dropdown ──
-          _buildFieldLabel(theme, msicLabel, Icons.category_outlined),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: provider.msicCode.isEmpty ? null : provider.msicCode,
-            hint: Text(
-              msicHint,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            decoration: const InputDecoration(),
-            dropdownColor: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-            items: msicItems.map((item) {
-              return DropdownMenuItem(
-                value: item,
-                child: Text(
-                  item,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              );
-            }).toList(),
-            validator: (v) => AppValidators.requiredField(v, 'Industry (MSIC Code)'),
+          CustomPremiumDropdown<String>(
+            label: msicLabel,
+            items: CustomDropdownBuilder.fromMap(LhdnConstants.msicCodes,
+                icon: Icons.category_outlined),
+            value: provider.msicCode.isEmpty ? null : provider.msicCode,
             onChanged: (value) {
               if (value != null) provider.setMsicCode(value);
             },
+            isSearchable: true,
+            hint: msicHint,
+            validator: (v) =>
+                AppValidators.requiredField(v, 'Industry Sector'),
           ),
           const SizedBox(height: 24),
 

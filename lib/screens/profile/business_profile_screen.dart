@@ -11,6 +11,7 @@ import '../../widgets/custom_dropdown.dart';
 import '../../widgets/phone_input_field.dart';
 import '../../core/validators.dart';
 import '../../widgets/app_dialogs.dart';
+import '../../services/auth_service.dart';
 
 /// Business Profile settings screen.
 /// Toggles between read-only and editable modes.
@@ -24,6 +25,7 @@ class BusinessProfileScreen extends StatefulWidget {
 
 class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
   bool _isEditMode = false;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -116,7 +118,12 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     _tourismTaxCtrl.text = profile.tourismTaxNumber;
     _emailCtrl.text = profile.email;
     _phoneCtrl.text = profile.phoneNumber;
-    _msicCtrl.text = profile.msicCode;
+    // Normalize MSIC code (if stored in legacy "Code - Name" format)
+    String msic = profile.msicCode;
+    if (msic.contains(' - ')) {
+      msic = msic.split(' - ').first;
+    }
+    _msicCtrl.text = msic;
     _activityDescCtrl.text = profile.businessActivityDescription;
     _addressLine1Ctrl.text = profile.addressLine1;
     _addressLine2Ctrl.text = profile.addressLine2;
@@ -155,6 +162,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
         businessActivityDescription: _activityDescCtrl.text.trim(),
         phoneNumber: _phoneCtrl.text.trim(),
         email: _emailCtrl.text.trim(),
+        imageUrl: _profile?.imageUrl, // CRITICAL: Preserve image URL
         addressLine1: _addressLine1Ctrl.text.trim(),
         addressLine2: _addressLine2Ctrl.text.trim(),
         addressLine3: _addressLine3Ctrl.text.trim(),
@@ -210,45 +218,69 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     if (user == null) return;
     
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512);
+    final XFile? pickedFile = await picker.pickImage(
+      source: ImageSource.gallery, 
+      maxWidth: 512, 
+      maxHeight: 512,
+      imageQuality: 85,
+    );
     
-    if (image == null) return;
+    if (pickedFile == null) return;
     
     setState(() => _isLoading = true);
     try {
-      final ref = FirebaseStorage.instance.ref().child('business_profiles/${user.uid}/profile.jpg');
-      await ref.putData(await image.readAsBytes());
-      final url = await ref.getDownloadURL();
+      final file = File(pickedFile.path);
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('business_profiles')
+          .child(user.uid)
+          .child('profile.jpg');
+
+      // 1. Upload with metadata
+      final uploadTask = ref.putFile(
+        file,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
       
-      if (_profile != null) {
-        final updated = BusinessProfile(
-          userId: _profile!.userId,
-          entityType: _profile!.entityType,
-          businessName: _profile!.businessName,
-          tinNumber: _profile!.tinNumber,
-          brnNumber: _profile!.brnNumber,
-          sstNumber: _profile!.sstNumber,
-          tourismTaxNumber: _profile!.tourismTaxNumber,
-          msicCode: _profile!.msicCode,
-          businessActivityDescription: _profile!.businessActivityDescription,
-          phoneNumber: _profile!.phoneNumber,
-          email: _profile!.email,
-          imageUrl: url,
-          addressLine1: _profile!.addressLine1,
-          addressLine2: _profile!.addressLine2,
-          addressLine3: _profile!.addressLine3,
-          city: _profile!.city,
-          stateCode: _profile!.stateCode,
-          postalCode: _profile!.postalCode,
-          bankAccountNumber: _profile!.bankAccountNumber,
-        );
+      final snapshot = await uploadTask;
+      
+      // 2. Resilience: Retry getDownloadURL with a small delay
+      String? url;
+      int retries = 3;
+      while (retries > 0) {
+        try {
+          url = await snapshot.ref.getDownloadURL();
+          break; 
+        } catch (err) {
+          retries--;
+          if (retries == 0) rethrow;
+          await Future.delayed(const Duration(milliseconds: 1000));
+        }
+      }
+      
+      if (url != null && _profile != null) {
+        final updated = _profile!.copyWith(imageUrl: url);
         await FirestoreService().saveBusinessProfile(updated);
-        if (mounted) setState(() => _profile = updated);
+        if (mounted) {
+          setState(() {
+            _profile = updated;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Photo updated successfully'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload photo: $e')),
+          SnackBar(
+            content: Text('Failed to upload photo: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -256,37 +288,206 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     }
   }
 
-  Future<void> _deactivateAccount() async {
-    AppDialogs.showActionModal(
-      context,
-      title: 'Deactivate Account',
-      body: 'Are you sure you want to deactivate your business account? This action cannot be undone.',
-      primaryButtonText: 'Deactivate',
-      primaryButtonColor: Colors.redAccent,
-      icon: Icons.warning_amber_rounded,
-      onPrimaryPressed: () async {
-        setState(() => _isLoading = true);
-        try {
-          final user = FirebaseAuth.instance.currentUser;
-          if (user != null) {
-            await user.delete();
-          }
-          if (mounted) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to deactivate: $e')),
-            );
-          }
-        } finally {
-          if (mounted) setState(() => _isLoading = false);
-        }
-      },
-      secondaryButtonText: 'Cancel',
-      onSecondaryPressed: () {},
+  /// Shows a premium password confirmation dialog (Luminescent Vault style).
+  Future<String?> _showPasswordReAuthDialog() async {
+    final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool obscure = true;
+
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+            side: BorderSide(
+              color: AppTheme.primary.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.lock_person_rounded, color: AppTheme.primary),
+              const SizedBox(width: 12),
+              Text(
+                'Verify Identity',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5,
+                    ),
+              ),
+            ],
+          ),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Please enter your password to confirm account deactivation.',
+                  style: TextStyle(fontSize: 14, height: 1.4),
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: controller,
+                  obscureText: obscure,
+                  autofocus: true,
+                  validator: (v) => AppValidators.requiredField(v, 'Password'),
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.password_rounded, size: 20),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                        size: 20,
+                      ),
+                      onPressed: () => setDialogState(() => obscure = !obscure),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('CANCEL'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(ctx, controller.text);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('CONFIRM'),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  Future<void> _deactivateAccount() async {
+    // 1. Initial Confirmation Warning
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: Theme.of(ctx).colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.warning_amber_rounded, size: 32, color: Colors.redAccent),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Deactivate Account',
+                textAlign: TextAlign.center,
+                style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Are you sure you want to deactivate your business account? This action is permanent and cannot be undone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(height: 1.5),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                child: const Text('PROCEED TO VERIFY'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('CANCEL'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      // 2. Identity Verification (The Gatekeeper)
+      final providers = _authService.getProviderIds();
+      bool reAuthSuccess = false;
+
+      if (providers.contains('google.com')) {
+        await _authService.reauthenticateWithGoogle();
+        reAuthSuccess = true;
+      } else if (providers.contains('password')) {
+        final password = await _showPasswordReAuthDialog();
+        if (password != null) {
+          await _authService.reauthenticateWithPassword(password);
+          reAuthSuccess = true;
+        }
+      } else {
+        // Unknown provider? Fallback to user.delete() which might fail with re-auth needed
+        await user.delete();
+        reAuthSuccess = true;
+      }
+
+      // 3. Destructive Actions (Only if verified)
+      if (reAuthSuccess) {
+        // STEP 1: Delete Firestore Data first (Atomic sequence start)
+        await FirestoreService().deleteFullProfile(user.uid);
+        
+        // STEP 2: Delete Auth Account second (Identity wipe)
+        await user.delete();
+
+        if (mounted) {
+          // Success: Route to external splash/login
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        String msg = 'Authentication failed.';
+        if (e.code == 'wrong-password') msg = 'Incorrect password. Deactivation aborted.';
+        if (e.code == 'user-mismatch') msg = 'Account security mismatch.';
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Verification interrupted: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
 

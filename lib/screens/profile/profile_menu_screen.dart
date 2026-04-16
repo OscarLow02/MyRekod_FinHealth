@@ -98,11 +98,14 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
             theme,
             icon: Icons.business_center_outlined,
             title: 'Business Profile',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const BusinessProfileScreen(),
-              ),
-            ),
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const BusinessProfileScreen(),
+                ),
+              );
+              _loadProfile();
+            },
           ),
           const SizedBox(height: 12),
           _buildMenuTile(
@@ -192,11 +195,16 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
           CircleAvatar(
             radius: 36,
             backgroundColor: AppTheme.primary.withValues(alpha: 0.2),
-            child: Icon(
-              Icons.person_rounded,
-              size: 36,
-              color: AppTheme.primary.withValues(alpha: 0.8),
-            ),
+            backgroundImage: _profile?.imageUrl != null 
+                ? NetworkImage(_profile!.imageUrl!) 
+                : null,
+            child: _profile?.imageUrl == null
+                ? Icon(
+                    Icons.person_rounded,
+                    size: 36,
+                    color: AppTheme.primary.withValues(alpha: 0.8),
+                  )
+                : null,
           ),
           const SizedBox(height: 16),
           // Business Name

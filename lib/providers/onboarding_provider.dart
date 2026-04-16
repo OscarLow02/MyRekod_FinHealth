@@ -120,37 +120,82 @@ class OnboardingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setBusinessName(String value) => _businessName = value;
-  void setTinNumber(String value) => _tinNumber = value;
-  void setBrnNumber(String value) => _brnNumber = value;
+  void setBusinessName(String value) {
+    _businessName = value;
+    notifyListeners();
+  }
+  void setTinNumber(String value) {
+    _tinNumber = value;
+    notifyListeners();
+  }
+  void setBrnNumber(String value) {
+    _brnNumber = value;
+    notifyListeners();
+  }
   void setHasSst(bool value) {
     _hasSst = value;
     if (!value) _sstNumber = '';
     notifyListeners();
   }
-  void setSstNumber(String value) => _sstNumber = value;
+  void setSstNumber(String value) {
+    _sstNumber = value;
+    notifyListeners();
+  }
   void setHasTourismTax(bool value) {
     _hasTourismTax = value;
     if (!value) _tourismTaxNumber = '';
     notifyListeners();
   }
-  void setTourismTaxNumber(String value) => _tourismTaxNumber = value;
-  void setMsicCode(String value) => _msicCode = value;
-  void setBusinessActivityDescription(String value) => _businessActivityDescription = value;
+  void setTourismTaxNumber(String value) {
+    _tourismTaxNumber = value;
+    notifyListeners();
+  }
+  void setMsicCode(String value) {
+    _msicCode = value;
+    notifyListeners();
+  }
+  void setBusinessActivityDescription(String value) {
+    _businessActivityDescription = value;
+    notifyListeners();
+  }
   
-  void setPhoneNumber(String value) => _phoneNumber = value;
-  void setEmail(String value) => _email = value;
-  void setBankAccountNumber(String value) => _bankAccountNumber = value;
+  void setPhoneNumber(String value) {
+    _phoneNumber = value;
+    notifyListeners();
+  }
+  void setEmail(String value) {
+    _email = value;
+    notifyListeners();
+  }
+  void setBankAccountNumber(String value) {
+    _bankAccountNumber = value;
+    notifyListeners();
+  }
 
-  void setAddressLine1(String value) => _addressLine1 = value;
-  void setAddressLine2(String value) => _addressLine2 = value;
-  void setAddressLine3(String value) => _addressLine3 = value;
-  void setCity(String value) => _city = value;
+  void setAddressLine1(String value) {
+    _addressLine1 = value;
+    notifyListeners();
+  }
+  void setAddressLine2(String value) {
+    _addressLine2 = value;
+    notifyListeners();
+  }
+  void setAddressLine3(String value) {
+    _addressLine3 = value;
+    notifyListeners();
+  }
+  void setCity(String value) {
+    _city = value;
+    notifyListeners();
+  }
   void setStateCode(String value) {
     _stateCode = value;
     notifyListeners();
   }
-  void setPostalCode(String value) => _postalCode = value;
+  void setPostalCode(String value) {
+    _postalCode = value;
+    notifyListeners();
+  }
 
   // ──────────────────────────────────────────────
   // Progress Helpers
