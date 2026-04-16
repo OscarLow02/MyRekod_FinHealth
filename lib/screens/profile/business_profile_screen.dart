@@ -288,142 +288,80 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     }
   }
 
-  /// Shows a premium password confirmation dialog (Luminescent Vault style).
+  /// Shows a premium password confirmation dialog using AppDialogs infrastructure.
   Future<String?> _showPasswordReAuthDialog() async {
     final controller = TextEditingController();
     final formKey = GlobalKey<FormState>();
     bool obscure = true;
 
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-            side: BorderSide(
-              color: AppTheme.primary.withValues(alpha: 0.2),
-              width: 1,
-            ),
-          ),
-          title: Row(
+    return await AppDialogs.showFormModal<String>(
+      context,
+      title: 'Verify Identity',
+      icon: Icons.lock_person_rounded,
+      primaryButtonText: 'CONFIRM',
+      secondaryButtonText: 'CANCEL',
+      formBody: StatefulBuilder(
+        builder: (context, setDialogState) => Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.lock_person_rounded, color: AppTheme.primary),
-              const SizedBox(width: 12),
               Text(
-                'Verify Identity',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5,
+                'Please enter your password to confirm account deactivation.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      height: 1.5,
                     ),
+              ),
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: controller,
+                obscureText: obscure,
+                autofocus: true,
+                validator: (v) => AppValidators.requiredField(v, 'Password'),
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.password_rounded, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscure
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                      size: 20,
+                    ),
+                    onPressed: () => setDialogState(() => obscure = !obscure),
+                  ),
+                ),
               ),
             ],
           ),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Please enter your password to confirm account deactivation.',
-                  style: TextStyle(fontSize: 14, height: 1.4),
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: controller,
-                  obscureText: obscure,
-                  autofocus: true,
-                  validator: (v) => AppValidators.requiredField(v, 'Password'),
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.password_rounded, size: 20),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                        size: 20,
-                      ),
-                      onPressed: () => setDialogState(() => obscure = !obscure),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('CANCEL'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.pop(ctx, controller.text);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('CONFIRM'),
-            ),
-          ],
         ),
       ),
+      onPrimaryPressed: () {
+        if (formKey.currentState!.validate()) {
+          Navigator.pop(context, controller.text);
+        }
+      },
     );
   }
 
   Future<void> _deactivateAccount() async {
     // 1. Initial Confirmation Warning
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Dialog(
-        backgroundColor: Theme.of(ctx).colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.warning_amber_rounded, size: 32, color: Colors.redAccent),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Deactivate Account',
-                textAlign: TextAlign.center,
-                style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Are you sure you want to deactivate your business account? This action is permanent and cannot be undone.',
-                textAlign: TextAlign.center,
-                style: TextStyle(height: 1.5),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                child: const Text('PROCEED TO VERIFY'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('CANCEL'),
-              ),
-            ],
-          ),
-        ),
-      ),
+    bool confirmed = false;
+    await AppDialogs.showActionModal(
+      context,
+      title: 'Deactivate Account',
+      body:
+          'Are you sure you want to deactivate your business account? This action is permanent and cannot be undone.',
+      primaryButtonText: 'PROCEED TO VERIFY',
+      onPrimaryPressed: () => confirmed = true,
+      secondaryButtonText: 'CANCEL',
+      onSecondaryPressed: () => confirmed = false,
+      icon: Icons.warning_amber_rounded,
+      iconColor: Colors.redAccent,
+      primaryButtonColor: Colors.redAccent,
     );
 
     if (confirmed != true) return;

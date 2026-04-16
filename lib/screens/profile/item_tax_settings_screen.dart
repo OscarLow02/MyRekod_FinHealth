@@ -6,6 +6,7 @@ import '../../models/tax_config.dart';
 import '../../core/lhdn_constants.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/custom_dropdown.dart';
+import '../../widgets/app_dialogs.dart';
 import 'widgets/add_item_bottom_sheet.dart';
 
 /// Item & Tax Settings screen.
@@ -197,24 +198,20 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
   // ── Delete item from Firestore ──
   Future<void> _deleteItem(SaleItem item) async {
     if (_userId == null) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Item'),
-        content: Text('Remove "${item.name}" from your catalog?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    bool confirmed = false;
+    await AppDialogs.showActionModal(
+      context,
+      title: 'Delete Item',
+      body: 'Remove "${item.name}" from your catalog?',
+      primaryButtonText: 'Delete',
+      onPrimaryPressed: () => confirmed = true,
+      secondaryButtonText: 'Cancel',
+      onSecondaryPressed: () => confirmed = false,
+      icon: Icons.delete_outline_rounded,
+      iconColor: Colors.redAccent,
+      primaryButtonColor: Colors.redAccent,
     );
+    
     if (confirmed == true) {
       await _fs.deleteSaleItem(_userId!, item.id);
       if (mounted) setState(() => _items.removeWhere((e) => e.id == item.id));

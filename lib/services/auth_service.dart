@@ -38,6 +38,13 @@ class AuthService {
     );
   }
 
+  /// Sends a password reset email to the given address.
+  /// Firebase will silently succeed even if the email doesn't exist
+  /// (to prevent user enumeration attacks).
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
   /// Initiates the Google Sign-In flow using google_sign_in v7 API.
   /// v7 uses GoogleSignIn.instance singleton + .authenticate().
   /// accessToken is removed in v7; only idToken is used.

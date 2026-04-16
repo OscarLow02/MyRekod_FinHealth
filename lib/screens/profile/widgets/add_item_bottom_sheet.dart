@@ -76,162 +76,202 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
+        color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppTheme.radiusXLarge),
         ),
       ),
       padding: EdgeInsets.fromLTRB(24, 12, 24, 24 + bottomInset),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Drag Handle ──
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Drag Handle ──
+          Center(
+            child: Container(
+              width: 48,
+              height: 5,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2.5),
+              ),
+            ),
+          ),
+
+          // ── Header ──
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurfaceVariant
-                      .withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+                  color: AppTheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                ),
+                child: Icon(
+                  _isEditing ? Icons.edit_note_rounded : Icons.add_business_rounded,
+                  color: AppTheme.primary,
+                  size: 28,
                 ),
               ),
-            ),
-
-            // ── Title ──
-            Text(
-              _isEditing ? 'Edit Item' : 'Add New Item',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Fill in the mandatory details for e-Invoice compliance.',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 28),
-
-            // ── Item Name ──
-            _buildFieldLabel(theme, 'ITEM NAME'),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _nameCtrl,
-              style: theme.textTheme.bodyLarge,
-              decoration: InputDecoration(
-                prefixIcon: Icon(
-                  Icons.shopping_bag_outlined,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                hintText: 'e.g., Burger Ayam',
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest,
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 16),
-                border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusMedium),
-                  borderSide: BorderSide.none,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isEditing ? 'Edit Item' : 'Add New Item',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Text(
+                      'Provide item details for compliance',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── Default Unit Price ──
-            _buildFieldLabel(theme, 'DEFAULT UNIT PRICE (RM)'),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _priceCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              style: theme.textTheme.bodyLarge,
-              decoration: InputDecoration(
-                prefixIcon: Icon(
-                  Icons.payments_outlined,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                hintText: '0.00',
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest,
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 16),
-                border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusMedium),
-                  borderSide: BorderSide.none,
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close_rounded),
+                style: IconButton.styleFrom(
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  minimumSize: const Size(AppTheme.minTouchTarget, AppTheme.minTouchTarget),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+            ],
+          ),
+          const SizedBox(height: 32),
 
-            CustomPremiumDropdown<String>(
-              label: 'MEASUREMENT UNIT',
-              items: CustomDropdownBuilder.fromMap(LhdnConstants.unitOfMeasurement, icon: Icons.straighten_rounded),
-              value: _measurementUnit,
-              onChanged: (val) {
-                if (val != null) setState(() => _measurementUnit = val);
-              },
-              isSearchable: true,
-              hint: 'Select Unit',
-            ),
-            const SizedBox(height: 20),
-
-            CustomPremiumDropdown<String>(
-              label: 'LHDN CODE',
-              items: CustomDropdownBuilder.fromMap(LhdnConstants.classificationCodes, icon: Icons.policy_outlined),
-              value: _classificationCode,
-              onChanged: (val) {
-                if (val != null) setState(() => _classificationCode = val);
-              },
-              isSearchable: true,
-              hint: 'Select LHDN Code',
-            ),
-            const SizedBox(height: 32),
-
-            // ── Save Button ──
-            SizedBox(
-              width: double.infinity,
-              height: AppTheme.minTouchTarget + 8,
-              child: ElevatedButton.icon(
-                onPressed: _handleSave,
-                icon: const Icon(Icons.save_rounded, size: 20),
-                label: Text(_isEditing ? 'Update Item' : 'Save Item'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.radiusMedium),
+          // ── Content ──
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Item Name ──
+                  _buildFieldLabel(theme, 'ITEM NAME'),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _nameCtrl,
+                    style: theme.textTheme.bodyLarge,
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      hintText: 'e.g., Burger Ayam',
+                      filled: true,
+                      fillColor: theme.colorScheme.surfaceContainerHighest,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                      border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusMedium),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
-                  elevation: 0,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+                  const SizedBox(height: 20),
 
-            // ── Cancel Button ──
-            SizedBox(
-              width: double.infinity,
-              height: AppTheme.minTouchTarget,
-              child: TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  'Cancel',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  // ── Default Unit Price ──
+                  _buildFieldLabel(theme, 'DEFAULT UNIT PRICE (RM)'),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _priceCtrl,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    style: theme.textTheme.bodyLarge,
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(
+                        Icons.payments_outlined,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      hintText: '0.00',
+                      filled: true,
+                      fillColor: theme.colorScheme.surfaceContainerHighest,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                      border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusMedium),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
+                  const SizedBox(height: 20),
+
+                  CustomPremiumDropdown<String>(
+                    label: 'MEASUREMENT UNIT',
+                    items: CustomDropdownBuilder.fromMap(LhdnConstants.unitOfMeasurement, icon: Icons.straighten_rounded),
+                    value: _measurementUnit,
+                    onChanged: (val) {
+                      if (val != null) setState(() => _measurementUnit = val);
+                    },
+                    isSearchable: true,
+                    hint: 'Select Unit',
+                  ),
+                  const SizedBox(height: 20),
+
+                  CustomPremiumDropdown<String>(
+                    label: 'LHDN CODE',
+                    items: CustomDropdownBuilder.fromMap(LhdnConstants.classificationCodes, icon: Icons.policy_outlined),
+                    value: _classificationCode,
+                    onChanged: (val) {
+                      if (val != null) setState(() => _classificationCode = val);
+                    },
+                    isSearchable: true,
+                    hint: 'Select LHDN Code',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Save Button ──
+          SizedBox(
+            width: double.infinity,
+            height: AppTheme.minTouchTarget + 8,
+            child: ElevatedButton.icon(
+              onPressed: _handleSave,
+              icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+              label: Text(_isEditing ? 'UPDATE ITEM' : 'SAVE ITEM'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // ── Cancel Button ──
+          SizedBox(
+            width: double.infinity,
+            height: AppTheme.minTouchTarget,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'CANCEL',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.1,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

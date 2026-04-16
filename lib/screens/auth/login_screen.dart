@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/custom_widgets.dart';
+import '../../widgets/app_dialogs.dart';
 import 'signup_screen.dart';
 
 /// Login screen matching the Figma "Welcome Back" design.
 /// Supports Email/Password and Google Sign-In.
+/// Features: Forgot Password (reset email), Remember Me (persists email).
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -22,6 +25,43 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _rememberMe = false;
+
+  // SharedPreferences keys
+  static const _kRememberMe = 'login_remember_me';
+  static const _kSavedEmail = 'login_saved_email';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberMe();
+  }
+
+  /// Load persisted "Remember Me" preference and pre-fill email.
+  Future<void> _loadRememberMe() async {
+    final prefs = await SharedPreferences.getInstance();
+    final remembered = prefs.getBool(_kRememberMe) ?? false;
+    final savedEmail = prefs.getString(_kSavedEmail) ?? '';
+
+    if (remembered && savedEmail.isNotEmpty) {
+      setState(() {
+        _rememberMe = true;
+        _emailController.text = savedEmail;
+      });
+    }
+  }
+
+  /// Persist or clear the "Remember Me" state.
+  Future<void> _saveRememberMe() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      await prefs.setBool(_kRememberMe, true);
+      await prefs.setString(_kSavedEmail, _emailController.text.trim());
+    } else {
+      await prefs.setBool(_kRememberMe, false);
+      await prefs.remove(_kSavedEmail);
+    }
+  }
 
   @override
   void dispose() {
@@ -35,6 +75,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     try {
+      // Save remember-me preference before login attempt
+      await _saveRememberMe();
+
       await _authService.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -42,7 +85,6 @@ class _LoginScreenState extends State<LoginScreen> {
       // AuthWrapper will handle navigation
     } catch (e) {
       if (!mounted) return;
-      // TODO: Implement i18n — localize error messages
       final errorMessage = _parseFirebaseError(e);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
@@ -67,6 +109,101 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Shows a dialog to enter an email for password reset.
+  Future<void> _handleForgotPassword() async {
+    final resetEmailController = TextEditingController(
+      text: _emailController.text.trim(),
+    );
+    final resetFormKey = GlobalKey<FormState>();
+
+    final confirmed = await AppDialogs.showFormModal<bool>(
+      context,
+      title: 'Reset Password',
+      icon: Icons.lock_reset_rounded,
+      primaryButtonText: 'Send Reset Link',
+      secondaryButtonText: 'Cancel',
+      formBody: Form(
+        key: resetFormKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter the email address associated with your account. '
+              "We'll send a link to reset your password.",
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            AppTextField(
+              controller: resetEmailController,
+              hintText: 'name@business.com',
+              keyboardType: TextInputType.emailAddress,
+              prefixIcon: Icon(
+                Icons.mail_outline_rounded,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Email is required';
+                }
+                final emailRegex =
+                    RegExp(r'^[\w\.\-]+@[\w\.\-]+\.\w+$');
+                if (!emailRegex.hasMatch(value.trim())) {
+                  return 'Enter a valid email address';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      onPrimaryPressed: () {
+        if (resetFormKey.currentState!.validate()) {
+          Navigator.of(context).pop(true);
+        }
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await _authService
+          .sendPasswordResetEmail(resetEmailController.text.trim());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded,
+                  color: AppTheme.neonGreenDark, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Password reset link sent to ${resetEmailController.text.trim()}',
+                ),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_parseFirebaseError(e))),
+      );
+    } finally {
+      resetEmailController.dispose();
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   String _parseFirebaseError(Object e) {
     if (e is Exception) {
       final message = e.toString();
@@ -81,6 +218,8 @@ class _LoginScreenState extends State<LoginScreen> {
         return 'Google Sign-In was cancelled.';
       } else if (message.contains('operation-not-allowed')) {
         return 'Email/Password accounts are not enabled in Firebase Console.';
+      } else if (message.contains('invalid-email')) {
+        return 'The email address is not valid.';
       }
     }
     return e.toString();
@@ -98,6 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
     const passwordLabel = 'PASSWORD';
     const passwordHint = '••••••••';
     const forgotPasswordText = 'Forgot Password?';
+    const rememberMeText = 'Remember Me';
     const loginButtonText = 'Log In  →';
     const orContinueText = 'OR CONTINUE WITH';
     const googleText = 'Google';
@@ -216,22 +356,59 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
 
-                        // ── Forgot Password ──
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              // TODO: Implement forgot password flow
-                            },
-                            child: Text(
-                              forgotPasswordText,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: AppTheme.primary,
+                        // ── Remember Me + Forgot Password Row ──
+                        Row(
+                          children: [
+                            // Remember Me checkbox
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() => _rememberMe = value ?? false);
+                                },
+                                activeColor: AppTheme.primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                side: BorderSide(
+                                  color: AppTheme.secondaryDark,
+                                  width: 1.5,
+                                ),
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() => _rememberMe = !_rememberMe);
+                              },
+                              child: Text(
+                                rememberMeText,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            // Forgot Password link
+                            TextButton(
+                              onPressed: _isLoading ? null : _handleForgotPassword,
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 36),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                forgotPasswordText,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: AppTheme.primary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 24),
 
