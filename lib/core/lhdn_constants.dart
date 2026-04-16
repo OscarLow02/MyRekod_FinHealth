@@ -36,6 +36,17 @@ class LhdnConstants {
     return '17'; // Fallback to Not Applicable
   }
 
+  /// Maps legacy 3-letter codes (used in early onboarding) to official LHDN 2-digit codes.
+  static String mapLegacyCode(String code) {
+    final legacyMap = {
+      'JHR': '01', 'KDH': '02', 'KTN': '03', 'MLK': '04',
+      'NSN': '05', 'PHG': '06', 'PNG': '07', 'PRK': '08',
+      'PLS': '09', 'SGR': '10', 'TRG': '11', 'SBH': '12',
+      'SWK': '13', 'KUL': '14', 'LBN': '15', 'PJY': '16',
+    };
+    return legacyMap[code.toUpperCase()] ?? code;
+  }
+
   /// LHDN Payment Modes [7]
   static const Map<String, String> paymentModes = {
     '01': 'Cash',

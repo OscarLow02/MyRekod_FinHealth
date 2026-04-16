@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/lhdn_constants.dart';
 
 /// Flattened DTO model for the Firestore `business_profiles` collection.
 /// Follows the strict schema requirement from the Sprint Brief,
@@ -103,7 +104,7 @@ class BusinessProfile {
       addressLine2: data['addressLine2'] as String? ?? '',
       addressLine3: data['addressLine3'] as String? ?? '',
       city: data['city'] as String? ?? '',
-      stateCode: data['stateCode'] as String? ?? '',
+      stateCode: LhdnConstants.mapLegacyCode(data['stateCode'] as String? ?? ''),
       postalCode: data['postalCode'] as String? ?? '',
       bankAccountNumber: data['bankAccountNumber'] as String?,
     );

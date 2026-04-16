@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../core/validators.dart';
+import '../../core/lhdn_constants.dart';
 
 /// Step 3 of 3: Registered Address — Address lines, City, State, Postcode.
 /// Uses a dropdown for Malaysian state codes.
@@ -22,24 +23,7 @@ class _StepAddressState extends State<StepAddress> {
 
   // Standard Malaysian state codes
   // TODO: Implement i18n — state names may require translation
-  static const List<Map<String, String>> _malaysianStates = [
-    {'code': 'JHR', 'name': 'Johor'},
-    {'code': 'KDH', 'name': 'Kedah'},
-    {'code': 'KTN', 'name': 'Kelantan'},
-    {'code': 'MLK', 'name': 'Melaka'},
-    {'code': 'NSN', 'name': 'Negeri Sembilan'},
-    {'code': 'PHG', 'name': 'Pahang'},
-    {'code': 'PRK', 'name': 'Perak'},
-    {'code': 'PLS', 'name': 'Perlis'},
-    {'code': 'PNG', 'name': 'Pulau Pinang'},
-    {'code': 'SBH', 'name': 'Sabah'},
-    {'code': 'SWK', 'name': 'Sarawak'},
-    {'code': 'SGR', 'name': 'Selangor'},
-    {'code': 'TRG', 'name': 'Terengganu'},
-    {'code': 'KUL', 'name': 'W.P. Kuala Lumpur'},
-    {'code': 'PJY', 'name': 'W.P. Putrajaya'},
-    {'code': 'LBN', 'name': 'W.P. Labuan'},
-  ];
+
 
   @override
   void initState() {
@@ -150,11 +134,7 @@ class _StepAddressState extends State<StepAddress> {
             label: stateLabel,
             hint: stateHint,
             validator: (v) => AppValidators.requiredField(v, stateLabel.replaceAll('*', '')),
-            items: _malaysianStates.map((state) => CustomDropdownItem<String>(
-              label: '${state['name']} (${state['code']})',
-              value: state['code']!,
-              icon: Icons.map_outlined,
-            )).toList(),
+            items: CustomDropdownBuilder.fromMap(LhdnConstants.stateCodes, icon: Icons.map_outlined),
             value: provider.stateCode.isEmpty ? null : provider.stateCode,
             onChanged: (value) {
               if (value != null) provider.setStateCode(value);

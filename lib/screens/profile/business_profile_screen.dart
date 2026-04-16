@@ -257,45 +257,36 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
   }
 
   Future<void> _deactivateAccount() async {
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Deactivate Account'),
-        content: const Text('Are you sure you want to deactivate your business account? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('DEACTIVATE', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+    AppDialogs.showActionModal(
+      context,
+      title: 'Deactivate Account',
+      body: 'Are you sure you want to deactivate your business account? This action cannot be undone.',
+      primaryButtonText: 'Deactivate',
+      primaryButtonColor: Colors.redAccent,
+      icon: Icons.warning_amber_rounded,
+      onPrimaryPressed: () async {
+        setState(() => _isLoading = true);
+        try {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null) {
+            await user.delete();
+          }
+          if (mounted) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to deactivate: $e')),
+            );
+          }
+        } finally {
+          if (mounted) setState(() => _isLoading = false);
+        }
+      },
+      secondaryButtonText: 'Cancel',
+      onSecondaryPressed: () {},
     );
-    
-    if (confirm == true) {
-      setState(() => _isLoading = true);
-      try {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user != null) {
-          await user.delete();
-        }
-        if (mounted) {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to deactivate: $e')),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
-      }
-    }
   }
 
 
@@ -499,7 +490,8 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                       ],
                       const SizedBox(height: 32),
 
-                      // ── Test Interruption UI ──
+                      // ── Future Sprint Use Cases (Commented for now) ──
+                      /*
                       if (_isEditMode)
                         Center(
                           child: ElevatedButton(
@@ -539,6 +531,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                           ),
                         ),
                       const SizedBox(height: 32),
+                      */
 
                       // ── Deactivate Button ──
                       Center(

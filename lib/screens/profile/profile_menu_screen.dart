@@ -7,6 +7,7 @@ import '../../models/business_profile.dart';
 import '../auth/auth_wrapper.dart';
 import 'business_profile_screen.dart';
 import 'item_tax_settings_screen.dart';
+import '../../widgets/app_dialogs.dart';
 
 /// Main Profile menu screen — matches the "Luminescent Vault" design.
 /// Shows user header card, navigation tiles, and logout button.
@@ -43,33 +44,26 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
   }
 
   Future<void> _handleLogout() async {
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Log Out'),
-          ),
-        ],
-      ),
+    AppDialogs.showActionModal(
+      context,
+      title: 'Log Out',
+      body: 'Are you sure you want to log out?',
+      primaryButtonText: 'Log Out',
+      primaryButtonColor: Colors.redAccent,
+      icon: Icons.logout_rounded,
+      onPrimaryPressed: () async {
+        if (!mounted) return;
+        await AuthService().signOut();
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const AuthWrapper()),
+          (route) => false,
+        );
+      },
+      secondaryButtonText: 'Cancel',
+      onSecondaryPressed: () {},
     );
 
-    if (shouldLogout != true || !mounted) return;
-
-    await AuthService().signOut();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const AuthWrapper()),
-      (route) => false,
-    );
   }
 
   @override
