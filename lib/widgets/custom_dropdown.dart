@@ -43,7 +43,8 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
 
   final String? Function(T?)? validator;
 
-  Future<void> _openSelectionSheet(BuildContext context, FormFieldState<T> state) {
+  Future<void> _openSelectionSheet(
+      BuildContext context, FormFieldState<T> state) {
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
@@ -65,6 +66,7 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final borderColor = AppTheme.secondaryDark; // #B6A4F3
     final selectedItem = items.any((i) => i.value == value)
         ? items.firstWhere((i) => i.value == value)
         : null;
@@ -76,81 +78,82 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-        // Label
-        Row(
-          children: [
-            if (selectedItem?.icon != null) ...[
-              Icon(selectedItem!.icon, size: 16, color: AppTheme.primary),
-              const SizedBox(width: 8),
-            ],
-            Text(
-              label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-
-        // Trigger button
-        InkWell(
-          onTap: isEditMode ? () => _openSelectionSheet(context, state) : null,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: fillColor ??
-                  (isEditMode
-                      ? theme.colorScheme.surfaceContainerHighest
-                      : theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.6)),
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              border: Border.all(
-                color: state.hasError
-                    ? theme.colorScheme.error
-                    : (isEditMode ? theme.colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent),
-              ),
-            ),
-            child: Row(
+            // Label
+            Row(
               children: [
-                if (selectedItem?.emoji != null) ...[
-                  Text(selectedItem!.emoji!,
-                      style: const TextStyle(fontSize: 20)),
-                  const SizedBox(width: 12),
+                if (selectedItem?.icon != null) ...[
+                  Icon(selectedItem!.icon, size: 16, color: AppTheme.primary),
+                  const SizedBox(width: 8),
                 ],
-                Expanded(
-                  child: Text(
-                    selectedItem?.label ?? (hint ?? 'Select'),
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: selectedItem != null
-                          ? null
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  label,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                if (isEditMode)
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
               ],
             ),
-          ),
-        ),
-        if (state.hasError)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0, left: 16.0),
-            child: Text(
-              state.errorText!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.error,
+            const SizedBox(height: 8),
+
+            // Trigger button
+            InkWell(
+              onTap:
+                  isEditMode ? () => _openSelectionSheet(context, state) : null,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: fillColor,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  border: Border.all(
+                    color: state.hasError
+                        ? theme.colorScheme.error
+                        : (isEditMode
+                            ? borderColor.withValues(alpha: 0.5)
+                            : Colors.transparent),
+                    width: 1.2,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    if (selectedItem?.emoji != null) ...[
+                      Text(selectedItem!.emoji!,
+                          style: const TextStyle(fontSize: 20)),
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(
+                      child: Text(
+                        selectedItem?.label ?? (hint ?? 'Select'),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: selectedItem != null
+                              ? null
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isEditMode)
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-      ],
-    );
+            if (state.hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0, left: 16.0),
+                child: Text(
+                  state.errorText!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ),
+          ],
+        );
       },
     );
   }
@@ -189,6 +192,7 @@ class _DropdownSelectionSheetState<T>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final borderColor = AppTheme.secondaryDark; // #B6A4F3
 
     final filtered = widget.items.where((item) {
       if (_query.isEmpty) return true;
@@ -210,8 +214,7 @@ class _DropdownSelectionSheetState<T>
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: theme.colorScheme.onSurfaceVariant
-                  .withValues(alpha: 0.2),
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -255,18 +258,19 @@ class _DropdownSelectionSheetState<T>
                 onChanged: (val) => setState(() => _query = val),
                 decoration: InputDecoration(
                   hintText: 'Search...',
-                  prefixIcon:
-                      const Icon(Icons.search_rounded, size: 20),
-                  filled: true,
-                  fillColor:
-                      theme.colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.radiusMedium),
-                    borderSide: BorderSide.none,
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                  filled: false,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    borderSide: BorderSide(
+                        color: borderColor.withValues(alpha: 0.5), width: 1),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: 0, horizontal: 12),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    borderSide: BorderSide(color: borderColor, width: 1.5),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                 ),
               ),
             ),
@@ -289,17 +293,14 @@ class _DropdownSelectionSheetState<T>
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
                       final item = filtered[index];
-                      final isSelected =
-                          item.value == widget.selectedValue;
+                      final isSelected = item.value == widget.selectedValue;
 
                       return ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 4),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 4),
                         leading: item.emoji != null
                             ? Text(item.emoji!,
-                                style:
-                                    const TextStyle(fontSize: 24))
+                                style: const TextStyle(fontSize: 24))
                             : item.icon != null
                                 ? CircleAvatar(
                                     radius: 18,
@@ -313,21 +314,16 @@ class _DropdownSelectionSheetState<T>
                                       size: 18,
                                       color: isSelected
                                           ? AppTheme.primary
-                                          : theme.colorScheme
-                                              .onSurfaceVariant,
+                                          : theme.colorScheme.onSurfaceVariant,
                                     ),
                                   )
                                 : null,
                         title: Text(
                           item.label,
-                          style:
-                              theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: isSelected
-                                ? AppTheme.primary
-                                : null,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected ? AppTheme.primary : null,
                           ),
                         ),
                         trailing: isSelected
@@ -338,11 +334,10 @@ class _DropdownSelectionSheetState<T>
                         selectedTileColor:
                             AppTheme.primary.withValues(alpha: 0.06),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                              AppTheme.radiusMedium),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMedium),
                         ),
-                        onTap: () =>
-                            Navigator.pop(context, item.value),
+                        onTap: () => Navigator.pop(context, item.value),
                       );
                     },
                   ),
@@ -355,8 +350,7 @@ class _DropdownSelectionSheetState<T>
 
 /// Helper to build dropdown items from common types
 class CustomDropdownBuilder {
-  static List<CustomDropdownItem<String>> fromMap(
-      Map<String, String> map,
+  static List<CustomDropdownItem<String>> fromMap(Map<String, String> map,
       {IconData? icon}) {
     return map.entries
         .map((e) => CustomDropdownItem<String>(

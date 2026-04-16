@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../core/validators.dart';
 import '../../widgets/phone_input_field.dart';
+import '../../widgets/custom_widgets.dart';
 
 /// Step 2 of 3: Contact Details — Phone Number and Email.
 /// Email is pre-filled from the authenticated user if available.
@@ -24,12 +25,12 @@ class _StepContactDetailsState extends State<StepContactDetails> {
     super.initState();
     final provider = context.read<OnboardingProvider>();
     _phoneController = TextEditingController(text: provider.phoneNumber);
-    _bankAccountController = TextEditingController(text: provider.bankAccountNumber);
+    _bankAccountController =
+        TextEditingController(text: provider.bankAccountNumber);
 
     // Pre-fill email from Firebase Auth if the provider email is empty
     final authEmail = FirebaseAuth.instance.currentUser?.email ?? '';
-    final initialEmail =
-        provider.email.isNotEmpty ? provider.email : authEmail;
+    final initialEmail = provider.email.isNotEmpty ? provider.email : authEmail;
     _emailController = TextEditingController(text: initialEmail);
 
     // Sync the pre-filled email back to the provider
@@ -92,24 +93,24 @@ class _StepContactDetailsState extends State<StepContactDetails> {
             // ── Email ──
             _buildFieldLabel(theme, emailLabel, Icons.mail_outline_rounded),
             const SizedBox(height: 8),
-            TextFormField(
+            AppTextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              autocorrect: false,
               validator: AppValidators.email,
-              decoration: const InputDecoration(hintText: emailHint),
+              hintText: emailHint,
               onChanged: provider.setEmail,
             ),
             const SizedBox(height: 24),
-            
+
             // ── Bank Account (Optional) ──
-            _buildFieldLabel(theme, bankAccountLabel, Icons.account_balance_outlined),
+            _buildFieldLabel(
+                theme, bankAccountLabel, Icons.account_balance_outlined),
             const SizedBox(height: 8),
-            TextFormField(
+            AppTextField(
               controller: _bankAccountController,
               keyboardType: TextInputType.number,
               validator: (v) => AppValidators.numeric(v, bankAccountLabel),
-              decoration: const InputDecoration(hintText: bankAccountHint),
+              hintText: bankAccountHint,
               onChanged: provider.setBankAccountNumber,
             ),
             const SizedBox(height: 24),

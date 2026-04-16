@@ -34,9 +34,12 @@ class StepReview extends StatelessWidget {
     ].join('\n');
 
     final contactDetails = [
-      if (provider.phoneNumber.isNotEmpty) '+60 ${provider.phoneNumber}',
+      if (provider.phoneNumber.isNotEmpty) provider.phoneNumber,
       if (provider.email.isNotEmpty) provider.email,
-      if (provider.bankAccountNumber.isNotEmpty) 'Bank: ${provider.bankAccountNumber}' else 'Bank: —',
+      if (provider.bankAccountNumber.isNotEmpty)
+        'Bank: ${provider.bankAccountNumber}'
+      else
+        'Bank: —',
     ].join('\n');
 
     return SingleChildScrollView(
@@ -64,9 +67,7 @@ class StepReview extends StatelessWidget {
           _ReviewCard(
             icon: Icons.storefront_outlined,
             label: 'BUSINESS NAME',
-            value: provider.businessName.isEmpty
-                ? '—'
-                : provider.businessName,
+            value: provider.businessName.isEmpty ? '—' : provider.businessName,
           ),
           const SizedBox(height: 12),
 
@@ -74,9 +75,10 @@ class StepReview extends StatelessWidget {
           _ReviewCard(
             icon: Icons.badge_outlined,
             label: 'TAX & REGISTRATION',
-            value: 'TIN: ${provider.tinNumber.isEmpty ? '—' : provider.tinNumber}\n'
-                   'BRN: ${provider.brnNumber.isEmpty ? '—' : provider.brnNumber}\n'
-                   '$taxDetails',
+            value:
+                'TIN: ${provider.tinNumber.isEmpty ? '—' : provider.tinNumber}\n'
+                'BRN: ${provider.brnNumber.isEmpty ? '—' : provider.brnNumber}\n'
+                '$taxDetails',
           ),
           const SizedBox(height: 12),
 
@@ -101,7 +103,7 @@ class StepReview extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.verified_user_rounded,
                   size: 16,
                   color: AppTheme.neonGreenDark,
@@ -166,13 +168,18 @@ class _ReviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final borderColor = AppTheme.secondaryDark; // #B6A4F3
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        border: Border.all(
+          color: borderColor.withValues(alpha: 0.5),
+          width: 1,
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,6 +211,7 @@ class _ReviewCard extends StatelessWidget {
                   value,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
+                    height: 1.4,
                   ),
                 ),
               ],

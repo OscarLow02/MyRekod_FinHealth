@@ -37,7 +37,8 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
     _selectedCountry = _parseCountry(widget.controller.text) ??
         Country.allCountries.firstWhere((c) => c.code == 'MY');
     _localCtrl = TextEditingController(
-      text: _extractLocalNumber(widget.controller.text, _selectedCountry.dialCode),
+      text:
+          _extractLocalNumber(widget.controller.text, _selectedCountry.dialCode),
     );
     // Keep external controller up to date whenever local digits change
     _localCtrl.addListener(_syncExternalController);
@@ -98,6 +99,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final borderColor = AppTheme.secondaryDark; // #B6A4F3
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,7 +139,8 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
                     // Country code letters (flag emojis fail on iOS Simulator so use code)
                     Text(
                       _selectedCountry.code,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(width: 4),
                     if (!widget.readOnly)
@@ -158,25 +161,25 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
                     Container(
                       width: 1,
                       height: 24,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.15),
+                      color: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.15),
                     ),
                     const SizedBox(width: 12),
                   ],
                 ),
               ),
             ),
-            filled: true,
-            fillColor: widget.readOnly
-                ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
-                : theme.colorScheme.surfaceContainerHighest,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            border: OutlineInputBorder(
+            filled: false,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: BorderSide.none,
+              borderSide: BorderSide(
+                  color: borderColor.withValues(alpha: 0.5), width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+              borderSide: BorderSide(color: borderColor, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -203,8 +206,7 @@ class _CountryPickerBottomSheet extends StatefulWidget {
       _CountryPickerBottomSheetState();
 }
 
-class _CountryPickerBottomSheetState
-    extends State<_CountryPickerBottomSheet> {
+class _CountryPickerBottomSheetState extends State<_CountryPickerBottomSheet> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _query = '';
 
@@ -217,6 +219,7 @@ class _CountryPickerBottomSheetState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final borderColor = AppTheme.secondaryDark; // #B6A4F3
     final countries = Country.allCountries
         .where((c) =>
             c.name.toLowerCase().contains(_query.toLowerCase()) ||
@@ -267,53 +270,68 @@ class _CountryPickerBottomSheetState
                 hintText: 'Search by name or dial code',
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
+                enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(
+                      color: borderColor.withValues(alpha: 0.5), width: 1),
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  borderSide: BorderSide(color: borderColor, width: 1.5),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
               ),
             ),
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 32),
-              itemCount: countries.length,
-              itemBuilder: (context, index) {
-                final country = countries[index];
-                return ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 2),
-                  leading: CircleAvatar(
-                    radius: 18,
-                    backgroundColor:
-                        AppTheme.primary.withValues(alpha: 0.1),
+            child: countries.isEmpty
+                ? Center(
                     child: Text(
-                      country.code,
-                      style: const TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w700),
+                      'No countries found',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 32),
+                    itemCount: countries.length,
+                    itemBuilder: (context, index) {
+                      final country = countries[index];
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 2),
+                        leading: CircleAvatar(
+                          radius: 18,
+                          backgroundColor:
+                              AppTheme.primary.withValues(alpha: 0.1),
+                          child: Text(
+                            country.code,
+                            style: const TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        title: Text(
+                          country.name,
+                          style: theme.textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.w500),
+                        ),
+                        trailing: Text(
+                          country.dialCode,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                        onTap: () {
+                          widget.onSelect(country);
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
                   ),
-                  title: Text(
-                    country.name,
-                    style: theme.textTheme.bodyLarge
-                        ?.copyWith(fontWeight: FontWeight.w500),
-                  ),
-                  trailing: Text(
-                    country.dialCode,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.primary,
-                    ),
-                  ),
-                  onTap: () {
-                    widget.onSelect(country);
-                    Navigator.pop(context);
-                  },
-                );
-              },
-            ),
           ),
         ],
       ),

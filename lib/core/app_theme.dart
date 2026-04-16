@@ -25,6 +25,7 @@ class AppTheme {
   static const Color darkSurface = Color(0xFF131319);
   static const Color darkSurfaceContainer = Color(0xFF1F1F25);
   static const Color darkSurfaceContainerHigh = Color(0xFF2A2A32);
+  static const Color surface = darkSurface; // Compatibility
 
   // Light Theme Surfaces
   static const Color lightSurface = Color(0xFFFCFBFF);

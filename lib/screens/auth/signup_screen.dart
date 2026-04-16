@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/app_theme.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/custom_widgets.dart';
 
 /// Sign-up screen matching the Figma "Join The Vault" design.
 /// Creates a new Firebase Auth user with email, password, and display name.
@@ -111,8 +112,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       onPressed: () => Navigator.of(context).pop(),
                       icon: const Icon(Icons.arrow_back_rounded),
                       style: IconButton.styleFrom(
-                        minimumSize:
-                            const Size(AppTheme.minTouchTarget, AppTheme.minTouchTarget),
+                        minimumSize: const Size(
+                            AppTheme.minTouchTarget, AppTheme.minTouchTarget),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -134,12 +135,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(height: 32),
 
                 // ── Full Name Field ──
-                _buildFieldLabel(theme, nameLabel, Icons.person_outline_rounded),
+                _buildFieldLabel(
+                    theme, nameLabel, Icons.person_outline_rounded),
                 const SizedBox(height: 8),
-                TextFormField(
+                AppTextField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(hintText: nameHint),
+                  hintText: nameHint,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Name is required';
@@ -152,11 +154,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 // ── Email Field ──
                 _buildFieldLabel(theme, emailLabel, Icons.mail_outline_rounded),
                 const SizedBox(height: 8),
-                TextFormField(
+                AppTextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  autocorrect: false,
-                  decoration: const InputDecoration(hintText: emailHint),
+                  hintText: emailHint,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Email is required';
@@ -174,22 +175,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 _buildFieldLabel(
                     theme, passwordLabel, Icons.lock_outline_rounded),
                 const SizedBox(height: 8),
-                TextFormField(
+                AppTextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    hintText: passwordHint,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
-                      },
+                  hintText: passwordHint,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -207,23 +206,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 _buildFieldLabel(theme, confirmPasswordLabel,
                     Icons.check_circle_outline_rounded),
                 const SizedBox(height: 8),
-                TextFormField(
+                AppTextField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
-                  decoration: InputDecoration(
-                    hintText: confirmPasswordHint,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      onPressed: () {
-                        setState(() =>
-                            _obscureConfirmPassword = !_obscureConfirmPassword);
-                      },
+                  hintText: confirmPasswordHint,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
+                    onPressed: () {
+                      setState(() =>
+                          _obscureConfirmPassword = !_obscureConfirmPassword);
+                    },
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -238,22 +235,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(height: 40),
 
                 // ── Create Account Button ──
-                SizedBox(
-                  width: double.infinity,
-                  height: AppTheme.minTouchTarget + 8,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleSignUp,
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : const Text(createAccountButtonText),
-                  ),
+                AppButton(
+                  text: createAccountButtonText,
+                  onPressed: _handleSignUp,
+                  isLoading: _isLoading,
                 ),
                 const SizedBox(height: 24),
 

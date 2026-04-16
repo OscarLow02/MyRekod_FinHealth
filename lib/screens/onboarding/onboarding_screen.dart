@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/app_theme.dart';
 import '../../providers/onboarding_provider.dart';
 import '../auth/auth_wrapper.dart';
@@ -10,6 +9,7 @@ import 'step_contact_details.dart';
 import 'step_address.dart';
 import 'step_review.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/custom_widgets.dart';
 
 /// Main onboarding wizard shell.
 /// Uses a PageView with controlled navigation (no accidental swipes).
@@ -85,7 +85,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
         // TODO: Implement i18n
         const brandName = 'MyRekod';
-        const brandAccent = 'REKOD';
 
         return Scaffold(
           body: SafeArea(
@@ -97,8 +96,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: Row(
                     children: [
-                      // Back button (hidden on first step)
-                      if (provider.currentStep > 0)
+                      // Back button (shown only if current step > 0)
+                      if (provider.currentStep > 0) ...[
                         IconButton(
                           onPressed: () => _onBackPressed(provider),
                           icon: const Icon(Icons.arrow_back_rounded),
@@ -108,17 +107,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               AppTheme.minTouchTarget,
                             ),
                           ),
-                        )
-                      else
-                        const SizedBox(width: AppTheme.minTouchTarget),
-                      const SizedBox(width: 8),
+                        ),
+                        const SizedBox(width: 8),
+                      ] else
+                        const SizedBox(
+                            width: 16), // Small edge padding when no back button
+
                       // ── App Logo Icon ──
                       Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: [
                             BoxShadow(
-                              color: theme.colorScheme.shadow.withValues(alpha: 0.1),
+                              color: theme.colorScheme.shadow
+                                  .withValues(alpha: 0.1),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -143,14 +145,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ),
                       const Spacer(),
-                      Text(
-                        brandAccent,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: AppTheme.primary,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
+                      // Removed brandAccent 'REKOD' per user request
                       IconButton(
                         onPressed: () async {
                           // Allow user to cancel sign up and return to Login
@@ -192,8 +187,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: provider.progress,
-                          backgroundColor: theme
-                              .colorScheme.onSurfaceVariant
+                          backgroundColor: theme.colorScheme.onSurfaceVariant
                               .withValues(alpha: 0.15),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             AppTheme.primary,
@@ -224,31 +218,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 // ── Bottom Button ──
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: AppTheme.minTouchTarget + 8,
-                    child: ElevatedButton(
-                      onPressed: provider.isSubmitting
-                          ? null
-                          : isLastStep
-                              ? () => _onSubmit(provider)
-                              : () => _onNextPressed(provider),
-                      child: provider.isSubmitting
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : Text(
-                              // TODO: Implement i18n
-                              isLastStep
-                                  ? 'Confirm & Go to Dashboard  →'
-                                  : 'CONTINUE',
-                            ),
-                    ),
+                  child: AppButton(
+                    onPressed: isLastStep
+                        ? () => _onSubmit(provider)
+                        : () => _onNextPressed(provider),
+                    text: isLastStep
+                        ? 'Confirm & Go to Dashboard  →'
+                        : 'CONTINUE',
+                    isLoading: provider.isSubmitting,
                   ),
                 ),
               ],

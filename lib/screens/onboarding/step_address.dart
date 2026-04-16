@@ -4,6 +4,7 @@ import '../../providers/onboarding_provider.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../core/validators.dart';
 import '../../core/lhdn_constants.dart';
+import '../../widgets/custom_widgets.dart';
 
 /// Step 3 of 3: Registered Address — Address lines, City, State, Postcode.
 /// Uses a dropdown for Malaysian state codes.
@@ -23,7 +24,6 @@ class _StepAddressState extends State<StepAddress> {
 
   // Standard Malaysian state codes
   // TODO: Implement i18n — state names may require translation
-
 
   @override
   void initState() {
@@ -71,95 +71,93 @@ class _StepAddressState extends State<StepAddress> {
       key: provider.stepAddressKey,
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
 
-          // ── Title ──
-          Text(title, style: theme.textTheme.headlineLarge),
-          const SizedBox(height: 8),
-          Text(subtitle, style: theme.textTheme.bodyLarge),
-          const SizedBox(height: 32),
+            // ── Title ──
+            Text(title, style: theme.textTheme.headlineLarge),
+            const SizedBox(height: 8),
+            Text(subtitle, style: theme.textTheme.bodyLarge),
+            const SizedBox(height: 32),
 
-          // ── Address Line 1 ──
-          _buildFieldLabel(theme, address1Label, Icons.location_on_outlined),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _address1Controller,
-            textCapitalization: TextCapitalization.words,
-            validator: (v) => AppValidators.requiredField(v, address1Label.replaceAll('*', '')),
-            decoration: const InputDecoration(hintText: address1Hint),
-            onChanged: provider.setAddressLine1,
-          ),
-          const SizedBox(height: 24),
-
-          // ── Address Line 2 ──
-          _buildFieldLabel(
-              theme, address2Label, Icons.location_city_outlined),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _address2Controller,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(hintText: address2Hint),
-            onChanged: provider.setAddressLine2,
-          ),
-          const SizedBox(height: 24),
-
-          // ── Address Line 3 ──
-          _buildFieldLabel(
-              theme, address3Label, Icons.add_business_outlined),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _address3Controller,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(hintText: address3Hint),
-            onChanged: provider.setAddressLine3,
-          ),
-          const SizedBox(height: 24),
-
-          // ── City ──
-          _buildFieldLabel(theme, cityLabel, Icons.apartment_outlined),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _cityController,
-            textCapitalization: TextCapitalization.words,
-            validator: (v) => AppValidators.requiredField(v, cityLabel.replaceAll('*', '')),
-            decoration: const InputDecoration(hintText: cityHint),
-            onChanged: provider.setCity,
-          ),
-          const SizedBox(height: 24),
-
-          CustomPremiumDropdown<String>(
-            label: stateLabel,
-            hint: stateHint,
-            validator: (v) => AppValidators.requiredField(v, stateLabel.replaceAll('*', '')),
-            items: CustomDropdownBuilder.fromMap(LhdnConstants.stateCodes, icon: Icons.map_outlined),
-            value: provider.stateCode.isEmpty ? null : provider.stateCode,
-            onChanged: (value) {
-              if (value != null) provider.setStateCode(value);
-            },
-            isSearchable: true,
-          ),
-          const SizedBox(height: 24),
-
-          // ── Postcode ──
-          _buildFieldLabel(theme, postcodeLabel, Icons.pin_outlined),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _postcodeController,
-            keyboardType: TextInputType.number,
-            maxLength: 5,
-            validator: AppValidators.postalCode,
-            decoration: const InputDecoration(
-              hintText: postcodeHint,
-              counterText: '', // Hide character counter
+            // ── Address Line 1 ──
+            _buildFieldLabel(theme, address1Label, Icons.location_on_outlined),
+            const SizedBox(height: 8),
+            AppTextField(
+              controller: _address1Controller,
+              textCapitalization: TextCapitalization.words,
+              validator: (v) => AppValidators.requiredField(
+                  v, address1Label.replaceAll('*', '')),
+              hintText: address1Hint,
+              onChanged: provider.setAddressLine1,
             ),
-            onChanged: provider.setPostalCode,
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
+            const SizedBox(height: 24),
+
+            // ── Address Line 2 ──
+            _buildFieldLabel(theme, address2Label, Icons.location_city_outlined),
+            const SizedBox(height: 8),
+            AppTextField(
+              controller: _address2Controller,
+              textCapitalization: TextCapitalization.words,
+              hintText: address2Hint,
+              onChanged: provider.setAddressLine2,
+            ),
+            const SizedBox(height: 24),
+
+            // ── Address Line 3 ──
+            _buildFieldLabel(theme, address3Label, Icons.add_business_outlined),
+            const SizedBox(height: 8),
+            AppTextField(
+              controller: _address3Controller,
+              textCapitalization: TextCapitalization.words,
+              hintText: address3Hint,
+              onChanged: provider.setAddressLine3,
+            ),
+            const SizedBox(height: 24),
+
+            // ── City ──
+            _buildFieldLabel(theme, cityLabel, Icons.apartment_outlined),
+            const SizedBox(height: 8),
+            AppTextField(
+              controller: _cityController,
+              textCapitalization: TextCapitalization.words,
+              validator: (v) => AppValidators.requiredField(
+                  v, cityLabel.replaceAll('*', '')),
+              hintText: cityHint,
+              onChanged: provider.setCity,
+            ),
+            const SizedBox(height: 24),
+
+            CustomPremiumDropdown<String>(
+              label: stateLabel,
+              hint: stateHint,
+              validator: (v) => AppValidators.requiredField(
+                  v, stateLabel.replaceAll('*', '')),
+              items: CustomDropdownBuilder.fromMap(LhdnConstants.stateCodes,
+                  icon: Icons.map_outlined),
+              value: provider.stateCode.isEmpty ? null : provider.stateCode,
+              onChanged: (value) {
+                if (value != null) provider.setStateCode(value);
+              },
+              isSearchable: true,
+            ),
+            const SizedBox(height: 24),
+
+            // ── Postcode ──
+            _buildFieldLabel(theme, postcodeLabel, Icons.pin_outlined),
+            const SizedBox(height: 8),
+            AppTextField(
+              controller: _postcodeController,
+              keyboardType: TextInputType.number,
+              validator: AppValidators.postalCode,
+              hintText: postcodeHint,
+              onChanged: provider.setPostalCode,
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }

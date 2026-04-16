@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 /// Thin wrapper around FirebaseAuth providing Email/Password
 /// and Google Sign-In authentication methods.
+/// Google Sign-In uses the v7 API: GoogleSignIn.instance + .authenticate()
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -37,22 +38,21 @@ class AuthService {
     );
   }
 
-  /// Initiates the Google Sign-In flow using google_sign_in v7+ API
-  /// and authenticates with Firebase using the idToken.
+  /// Initiates the Google Sign-In flow using google_sign_in v7 API.
+  /// v7 uses GoogleSignIn.instance singleton + .authenticate().
+  /// accessToken is removed in v7; only idToken is used.
   Future<UserCredential> signInWithGoogle() async {
     final gsi = GoogleSignIn.instance;
 
-    // Initialize (safe to call multiple times; no-op if already initialized)
+    // Initialize (safe to call multiple times)
     await gsi.initialize();
 
-    // Trigger the interactive sign-in flow.
-    // Returns a GoogleSignInAccount on success; throws on failure.
+    // Trigger the interactive sign-in / consent flow.
     final GoogleSignInAccount account = await gsi.authenticate();
 
-    // Extract the idToken from the authentication result (synchronous getter).
+    // In v7, only idToken is available (accessToken was removed).
     final idToken = account.authentication.idToken;
 
-    // Create an OAuthCredential for Firebase using only the idToken.
     final oauthCredential = GoogleAuthProvider.credential(
       idToken: idToken,
     );
@@ -90,8 +90,7 @@ class AuthService {
     await user.reauthenticateWithCredential(credential);
   }
 
-  /// Re-authenticates the current user using Google Sign-In.
-  /// Triggers an interactive popup to get fresh credentials.
+  /// Re-authenticates the current user using Google Sign-In (v7 API).
   Future<void> reauthenticateWithGoogle() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -100,11 +99,10 @@ class AuthService {
 
     final gsi = GoogleSignIn.instance;
     await gsi.initialize();
-    
-    // Trigger identity verification
+
     final account = await gsi.authenticate();
-    
     final idToken = account.authentication.idToken;
+
     final oauthCredential = GoogleAuthProvider.credential(
       idToken: idToken,
     );
