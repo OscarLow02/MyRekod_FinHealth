@@ -131,94 +131,126 @@ class AppDialogs {
   /// 1b. FORM MODAL (Center)
   /// For: Reset Password, Change Display Name, etc.
   /// ───────────────────────────────────────────────────────────────────────────
-  static Future<T?> showFormModal<T>(
+  /// Shows a form-based dialog.
+  /// [onPrimaryPressed] is an async callback. Return `true` to confirm and
+  /// dismiss the dialog, or `false` / throw to keep it open (e.g. validation
+  /// failed).
+  static Future<bool> showFormModal(
     BuildContext context, {
     required String title,
     required Widget formBody,
     required String primaryButtonText,
-    required VoidCallback onPrimaryPressed,
+    required Future<bool> Function() onPrimaryPressed,
     String? secondaryButtonText,
     VoidCallback? onSecondaryPressed,
     IconData icon = Icons.edit_rounded,
     Color? iconColor,
-  }) {
+  }) async {
     final theme = Theme.of(context);
     final activeIconColor = iconColor ?? AppTheme.primary;
 
-    return showDialog<T>(
+    final result = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) {
-        return Dialog(
-          backgroundColor: theme.colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
-          ),
-          elevation: 24,
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Glowing Icon
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: activeIconColor.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      icon,
-                      size: 32,
-                      color: activeIconColor,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Title
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Form Content
-                  formBody,
-                  const SizedBox(height: 32),
-                  // Actions
-                  ElevatedButton(
-                    onPressed: onPrimaryPressed,
-                    child: Text(primaryButtonText),
-                  ),
-                  if (secondaryButtonText != null) ...[
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        if (onSecondaryPressed != null) onSecondaryPressed();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                        ),
-                      ),
-                      child: Text(
-                        secondaryButtonText,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+        bool _isBusy = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return Dialog(
+              backgroundColor: theme.colorScheme.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
               ),
-            ),
-          ),
+              elevation: 24,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Glowing Icon
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: activeIconColor.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(icon, size: 32, color: activeIconColor),
+                      ),
+                      const SizedBox(height: 24),
+                      // Title
+                      Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Form Content
+                      formBody,
+                      const SizedBox(height: 32),
+                      // Primary Action
+                      ElevatedButton(
+                        onPressed: _isBusy
+                            ? null
+                            : () async {
+                                setDialogState(() => _isBusy = true);
+                                try {
+                                  final shouldClose = await onPrimaryPressed();
+                                  if (shouldClose && ctx.mounted) {
+                                    Navigator.of(ctx).pop(true);
+                                  }
+                                } finally {
+                                  if (ctx.mounted) {
+                                    setDialogState(() => _isBusy = false);
+                                  }
+                                }
+                              },
+                        child: _isBusy
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(primaryButtonText),
+                      ),
+                      if (secondaryButtonText != null) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: _isBusy
+                              ? null
+                              : () {
+                                  Navigator.of(ctx).pop(false);
+                                  if (onSecondaryPressed != null) onSecondaryPressed();
+                                },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                            ),
+                          ),
+                          child: Text(
+                            secondaryButtonText,
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
+    return result ?? false;
   }
 
   // ───────────────────────────────────────────────────────────────────────────

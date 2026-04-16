@@ -115,8 +115,9 @@ class _LoginScreenState extends State<LoginScreen> {
       text: _emailController.text.trim(),
     );
     final resetFormKey = GlobalKey<FormState>();
+    String? sendError;
 
-    final confirmed = await AppDialogs.showFormModal<bool>(
+    final sent = await AppDialogs.showFormModal(
       context,
       title: 'Reset Password',
       icon: Icons.lock_reset_rounded,
@@ -151,8 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (value == null || value.trim().isEmpty) {
                   return 'Email is required';
                 }
-                final emailRegex =
-                    RegExp(r'^[\w\.\-]+@[\w\.\-]+\.\w+$');
+                final emailRegex = RegExp(r'^[\w\.\-]+@[\w\.\-]+\.\w+$');
                 if (!emailRegex.hasMatch(value.trim())) {
                   return 'Enter a valid email address';
                 }
@@ -162,20 +162,29 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ),
-      onPrimaryPressed: () {
-        if (resetFormKey.currentState!.validate()) {
-          Navigator.of(context).pop(true);
+      // ── This callback runs INSIDE the dialog before it closes ──
+      onPrimaryPressed: () async {
+        // 1. Validate form — return false to keep dialog open
+        if (!resetFormKey.currentState!.validate()) return false;
+
+        // 2. Call Firebase — throws on error
+        try {
+          await _authService
+              .sendPasswordResetEmail(resetEmailController.text.trim());
+          return true; // success → dialog closes
+        } catch (e) {
+          sendError = _parseFirebaseError(e);
+          return false; // error → keep dialog open (snackbar shown below)
         }
       },
     );
 
-    if (confirmed != true || !mounted) return;
+    resetEmailController.dispose();
 
-    setState(() => _isLoading = true);
-    try {
-      await _authService
-          .sendPasswordResetEmail(resetEmailController.text.trim());
-      if (!mounted) return;
+    if (!mounted) return;
+
+    if (sent) {
+      // ── Success snackbar ──
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -183,24 +192,19 @@ class _LoginScreenState extends State<LoginScreen> {
               const Icon(Icons.check_circle_rounded,
                   color: AppTheme.neonGreenDark, size: 20),
               const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Password reset link sent to ${resetEmailController.text.trim()}',
-                ),
+              const Expanded(
+                child: Text('Password reset link sent! Check your inbox.'),
               ),
             ],
           ),
           duration: const Duration(seconds: 5),
         ),
       );
-    } catch (e) {
-      if (!mounted) return;
+    } else if (sendError != null) {
+      // ── Error snackbar (only if Firebase threw) ──
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_parseFirebaseError(e))),
+        SnackBar(content: Text(sendError!)),
       );
-    } finally {
-      resetEmailController.dispose();
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 

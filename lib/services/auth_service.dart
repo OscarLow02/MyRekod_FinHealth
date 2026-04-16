@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
 
 /// Thin wrapper around FirebaseAuth providing Email/Password
 /// and Google Sign-In authentication methods.
@@ -42,8 +44,16 @@ class AuthService {
   /// Firebase will silently succeed even if the email doesn't exist
   /// (to prevent user enumeration attacks).
   Future<void> sendPasswordResetEmail(String email) async {
-    await _auth.sendPasswordResetEmail(email: email);
+    debugPrint('[AuthService] sendPasswordResetEmail → calling Firebase for: $email');
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      debugPrint('[AuthService] sendPasswordResetEmail → SUCCESS ✅');
+    } catch (e) {
+      debugPrint('[AuthService] sendPasswordResetEmail → ERROR ❌: $e');
+      rethrow;
+    }
   }
+
 
   /// Initiates the Google Sign-In flow using google_sign_in v7 API.
   /// v7 uses GoogleSignIn.instance singleton + .authenticate().

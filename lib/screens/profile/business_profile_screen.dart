@@ -293,8 +293,9 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     final controller = TextEditingController();
     final formKey = GlobalKey<FormState>();
     bool obscure = true;
+    String? capturedPassword;
 
-    return await AppDialogs.showFormModal<String>(
+    final confirmed = await AppDialogs.showFormModal(
       context,
       title: 'Verify Identity',
       icon: Icons.lock_person_rounded,
@@ -339,13 +340,17 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
           ),
         ),
       ),
-      onPrimaryPressed: () {
-        if (formKey.currentState!.validate()) {
-          Navigator.pop(context, controller.text);
-        }
+      onPrimaryPressed: () async {
+        if (!formKey.currentState!.validate()) return false;
+        capturedPassword = controller.text; // capture before dialog closes
+        return true;
       },
     );
+
+    controller.dispose();
+    return confirmed ? capturedPassword : null;
   }
+
 
   Future<void> _deactivateAccount() async {
     // 1. Initial Confirmation Warning
