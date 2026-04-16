@@ -115,3 +115,16 @@ To maintain the "Luminescent Vault" premium feel while ensuring radical accessib
 *   **Country Selector**: Integrated prefix showing the flag (Emoji) and dial code.
 *   **Searchable Picker**: Tapping the country prefix opens a searchable bottom sheet with `radiusXLarge` corners.
 *   **Feedback**: Proper focused states using the `primary` token with a 1.5px border.
+
+---
+
+## 7. Interruption Architecture Surfaces
+
+To guarantee users never feel trapped and to retain consistency in popups, we use 4 primary layouts built on top of `AppDialogs`:
+
+### Modal & Sheet Principles
+*   **Surface Consistency**: Popups must use the theme's `surface` color with `radiusXLarge` (24px) corners to distinguish themselves from embedded `surface_container` cards.
+*   **The "Ease of Exit" Rule**: All non-destructive bottom sheets *must* be dismissible by tapping the outer blurred background (scrim).
+    *   *Exception*: Action Modals covering data destruction (e.g. Delete Record) or System Requirements MUST disable background tap dismissal.
+*   **Decorative Graphics (Vector-less)**: Complex graphics (glows, auras) must be built programmatically using standard Flutter `Icons`, stacked inside `Containers` with `BoxShadows` to ensure 60fps rendering without external payload bloat like SVGs.
+*   **Interaction Decoupling**: All navigation and business logic within Modals must be decoupled from the UI using `VoidCallback` arguments.

@@ -10,6 +10,7 @@ import '../../core/lhdn_constants.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/phone_input_field.dart';
 import '../../core/validators.dart';
+import '../../widgets/app_dialogs.dart';
 
 /// Business Profile settings screen.
 /// Toggles between read-only and editable modes.
@@ -496,6 +497,47 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         const SizedBox(height: 16),
                         _buildStateDropdown(theme),
                       ],
+                      const SizedBox(height: 32),
+
+                      // ── Test Interruption UI ──
+                      if (_isEditMode)
+                        Center(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              AppDialogs.showActionModal(
+                                context,
+                                title: 'Test Delete?',
+                                body: 'Are you sure you want to delete this test?',
+                                primaryButtonText: 'Yes, Delete',
+                                onPrimaryPressed: () {},
+                                secondaryButtonText: 'Cancel',
+                                onSecondaryPressed: () {},
+                              );
+                            },
+                            child: const Text('TEST MODAL'),
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      if (_isEditMode)
+                        Center(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              AppDialogs.showFeatureDiscoverySheet(
+                                context,
+                                title: 'Score Improved!',
+                                body: 'Your Business Health Score is now Excellent!',
+                                primaryButtonText: 'Keep it Up',
+                                onPrimaryPressed: () {},
+                                heroIcon: Icons.verified_rounded,
+                                customHeroContent: const Text(
+                                  '842',
+                                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                              );
+                            },
+                            child: const Text('TEST BOTTOM SHEET'),
+                          ),
+                        ),
                       const SizedBox(height: 32),
 
                       // ── Deactivate Button ──
