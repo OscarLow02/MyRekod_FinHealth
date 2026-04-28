@@ -153,7 +153,7 @@ class AppDialogs {
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
-        bool _isBusy = false;
+        bool isBusy = false;
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
             return Dialog(
@@ -193,10 +193,10 @@ class AppDialogs {
                       const SizedBox(height: 32),
                       // Primary Action
                       ElevatedButton(
-                        onPressed: _isBusy
+                        onPressed: isBusy
                             ? null
                             : () async {
-                                setDialogState(() => _isBusy = true);
+                                setDialogState(() => isBusy = true);
                                 try {
                                   final shouldClose = await onPrimaryPressed();
                                   if (shouldClose && ctx.mounted) {
@@ -204,11 +204,11 @@ class AppDialogs {
                                   }
                                 } finally {
                                   if (ctx.mounted) {
-                                    setDialogState(() => _isBusy = false);
+                                    setDialogState(() => isBusy = false);
                                   }
                                 }
                               },
-                        child: _isBusy
+                        child: isBusy
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
@@ -222,7 +222,7 @@ class AppDialogs {
                       if (secondaryButtonText != null) ...[
                         const SizedBox(height: 12),
                         OutlinedButton(
-                          onPressed: _isBusy
+                          onPressed: isBusy
                               ? null
                               : () {
                                   Navigator.of(ctx).pop(false);
@@ -601,6 +601,157 @@ class AppDialogs {
                 ),
               ),
             ]
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 5. NEW ENTRY MODAL (Bottom Sheet)
+  // Covers: Record Sale, Record Expense
+  // ───────────────────────────────────────────────────────────────────────────
+  static Future<void> showNewEntryModal(
+    BuildContext context, {
+    required VoidCallback onRecordSale,
+    required VoidCallback onRecordExpense,
+  }) {
+    final theme = Theme.of(context);
+    return _showBaseSheet(
+      context,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              // TODO: Implement i18n
+              'New Entry',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              // TODO: Implement i18n
+              'What would you like to record?',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildEntryOption(
+                    context,
+                    title: 'Record Sale',
+                    subtitle: 'Manual entry or e-Invoice',
+                    icon: Icons.point_of_sale_rounded,
+                    color: AppTheme.primary,
+                    gradientColors: [
+                      AppTheme.primary.withValues(alpha: 0.15),
+                      AppTheme.primary.withValues(alpha: 0.05),
+                    ],
+                    onTap: () {
+                      Navigator.pop(context);
+                      onRecordSale();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildEntryOption(
+                    context,
+                    title: 'Record Expense',
+                    subtitle: 'Scan receipt or manual',
+                    icon: Icons.receipt_long_rounded,
+                    color: Colors.orange.shade700,
+                    gradientColors: [
+                      Colors.orange.shade700.withValues(alpha: 0.15),
+                      Colors.orange.shade700.withValues(alpha: 0.05),
+                    ],
+                    onTap: () {
+                      Navigator.pop(context);
+                      onRecordExpense();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildEntryOption(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required List<Color> gradientColors,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+          border: Border.all(
+            color: color.withValues(alpha: 0.3),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.05),
+              blurRadius: 15,
+              spreadRadius: -5,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: color, size: 32),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.3,
+              ),
+            ),
           ],
         ),
       ),

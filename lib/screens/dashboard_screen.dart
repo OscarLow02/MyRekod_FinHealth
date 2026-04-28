@@ -3,7 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../core/app_theme.dart';
 import '../services/firestore_service.dart';
 import '../models/business_profile.dart';
+import '../widgets/app_dialogs.dart';
 import 'profile/profile_menu_screen.dart';
+import 'transactions_screen.dart';
+import 'expenses/scanner_screen.dart';
 
 /// Dashboard screen with bottom navigation skeleton.
 /// Sprint 1 placeholder — full implementation in Sprint 2.
@@ -60,7 +63,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: _buildBottomNav(theme),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Implement quick-add transaction (Sprint 2)
+          AppDialogs.showNewEntryModal(
+            context,
+            onRecordSale: () {
+              // TODO: Sprint 3 - Implement Record Sale
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Record Sale coming soon!')),
+              );
+            },
+            onRecordExpense: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ScannerScreen()),
+              );
+            },
+          );
         },
         child: const Icon(Icons.add_rounded, size: 28),
       ),
@@ -75,7 +92,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 0:
         return _buildHomePage(theme, displayName);
       case 1:
-        return _buildPlaceholderPage(theme, 'Transactions', Icons.receipt_long_outlined);
+        return const TransactionsScreen();
       case 2:
         return _buildPlaceholderPage(theme, 'Customers', Icons.people_outline_rounded);
       case 3:
