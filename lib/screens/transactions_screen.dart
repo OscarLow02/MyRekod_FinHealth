@@ -1,5 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:csv/csv.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../core/app_theme.dart';
+import '../models/expense_record.dart';
+import '../providers/expense_provider.dart';
+import '../widgets/app_dialogs.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -11,6 +19,7 @@ class TransactionsScreen extends StatefulWidget {
 class _TransactionsScreenState extends State<TransactionsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedFilterIndex = 0; // 0: All, 1: 7 Days, 2: 30 Days
+  bool _isExporting = false;
 
   @override
   void initState() {
@@ -30,6 +39,99 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     super.dispose();
   }
 
+  // ── Filtering Logic ─────────────────────────────────────────────────────
+
+  List<ExpenseRecord> _applyFilter(List<ExpenseRecord> expenses) {
+    final now = DateTime.now();
+    switch (_selectedFilterIndex) {
+      case 1: // Last 7 Days
+        final cutoff = now.subtract(const Duration(days: 7));
+        return expenses.where((e) => e.date.isAfter(cutoff)).toList();
+      case 2: // Last 30 Days
+        final cutoff = now.subtract(const Duration(days: 30));
+        return expenses.where((e) => e.date.isAfter(cutoff)).toList();
+      default: // All Time
+        return expenses;
+    }
+  }
+
+  double _calculateTotal(List<ExpenseRecord> expenses) {
+    return expenses.fold(0.0, (sum, item) => sum + item.amount);
+  }
+
+  // ── CSV Export (Digital Shoebox) ─────────────────────────────────────────
+
+  Future<void> _exportToCSV(List<ExpenseRecord> expenses) async {
+    if (expenses.isEmpty) {
+      AppDialogs.showActionModal(
+        context,
+        title: 'No Data to Export',
+        body: 'There are no expense records to export. Add some expenses first.',
+        primaryButtonText: 'OK',
+        onPrimaryPressed: () {},
+        icon: Icons.info_outline_rounded,
+        iconColor: AppTheme.primary,
+        primaryButtonColor: AppTheme.primary,
+      );
+      return;
+    }
+
+    setState(() => _isExporting = true);
+
+    try {
+      // Build CSV rows
+      final List<List<dynamic>> rows = [
+        // Header row
+        ['Date', 'Vendor', 'Category', 'Amount (RM)', 'Receipt Attached'],
+        // Data rows (sorted by date, newest first)
+        ...expenses.map((e) => [
+          '${e.date.year}-${e.date.month.toString().padLeft(2, '0')}-${e.date.day.toString().padLeft(2, '0')}',
+          e.vendor,
+          e.category,
+          e.amount.toStringAsFixed(2),
+          e.imagePath != null ? 'Yes' : 'No',
+        ]),
+        // Summary row
+        [],
+        ['', '', 'TOTAL', _calculateTotal(expenses).toStringAsFixed(2), ''],
+        ['', '', 'Generated', DateTime.now().toIso8601String(), ''],
+      ];
+
+      final csvString = const ListToCsvConverter().convert(rows);
+
+      // Write to a temp file
+      final appDir = await getApplicationDocumentsDirectory();
+      final fileName = 'MyRekod_Expenses_${DateTime.now().millisecondsSinceEpoch}.csv';
+      final file = File('${appDir.path}/$fileName');
+      await file.writeAsString(csvString);
+
+      if (!mounted) return;
+      setState(() => _isExporting = false);
+
+      // Share the file
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'MyRekod Expense Report',
+          files: [XFile(file.path)],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isExporting = false);
+
+      AppDialogs.showActionModal(
+        context,
+        title: 'Export Failed',
+        body: 'Could not generate CSV file.\n\nError: $e',
+        primaryButtonText: 'OK',
+        onPrimaryPressed: () {},
+        icon: Icons.error_outline_rounded,
+        iconColor: Colors.redAccent,
+        primaryButtonColor: Colors.redAccent,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -40,6 +142,27 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
         title: const Text('Transactions'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          if (isExpenseTab)
+            IconButton(
+              icon: _isExporting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.file_download_outlined),
+              tooltip: 'Export CSV',
+              onPressed: _isExporting
+                  ? null
+                  : () {
+                      final expenses = _applyFilter(
+                        context.read<ExpenseProvider>().expenses,
+                      );
+                      _exportToCSV(expenses);
+                    },
+            ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppTheme.primary,
@@ -68,19 +191,26 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
             ),
           ),
           
-          // Summary Cards
+          // Summary Cards (uses real data for Expenses)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: isExpenseTab
-                ? _buildSummaryCard(
-                    title: 'Total Expenses',
-                    amount: 'RM 1,250.00',
-                    color: Colors.orange.shade700,
-                    icon: Icons.trending_down_rounded,
+                ? Consumer<ExpenseProvider>(
+                    builder: (context, provider, _) {
+                      final filteredExpenses = _applyFilter(provider.expenses);
+                      final total = _calculateTotal(filteredExpenses);
+                      return _buildSummaryCard(
+                        title: 'Total Expenses',
+                        amount: 'RM ${total.toStringAsFixed(2)}',
+                        color: Colors.orange.shade700,
+                        icon: Icons.trending_down_rounded,
+                      );
+                    },
                   )
                 : _buildSummaryCard(
+                    // TODO: Wire up SalesProvider when implemented
                     title: 'Total Sales',
-                    amount: 'RM 3,450.00',
+                    amount: 'RM 0.00',
                     color: AppTheme.primary,
                     icon: Icons.trending_up_rounded,
                   ),
@@ -92,9 +222,27 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
             child: TabBarView(
               controller: _tabController,
               children: [
-                // Expenses Tab
-                _buildExpenseList(),
-                // Sales Tab
+                // Expenses Tab — real data
+                Consumer<ExpenseProvider>(
+                  builder: (context, provider, _) {
+                    if (provider.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final filteredExpenses = _applyFilter(provider.expenses);
+
+                    if (filteredExpenses.isEmpty) {
+                      return _buildEmptyState(
+                        icon: Icons.receipt_long_rounded,
+                        message: 'No expenses recorded yet',
+                        color: Colors.orange.shade700,
+                      );
+                    }
+
+                    return _buildExpenseList(filteredExpenses);
+                  },
+                ),
+                // Sales Tab — placeholder
                 _buildSalesList(),
               ],
             ),
@@ -202,24 +350,78 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     );
   }
 
-  Widget _buildExpenseList() {
-    // Placeholder list
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String message,
+    required Color color,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(48.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 48, color: color.withValues(alpha: 0.5)),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              // TODO: Implement i18n
+              message,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpenseList(List<ExpenseRecord> expenses) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: 5,
+      itemCount: expenses.length,
       itemBuilder: (context, index) {
+        final expense = expenses[index];
+        final dateStr = '${expense.date.year}-'
+            '${expense.date.month.toString().padLeft(2, '0')}-'
+            '${expense.date.day.toString().padLeft(2, '0')}';
+        
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: Colors.orange.shade700.withValues(alpha: 0.2),
-              child: Icon(Icons.receipt_long_rounded, color: Colors.orange.shade700),
+              child: Icon(
+                expense.imagePath != null
+                    ? Icons.receipt_long_rounded
+                    : Icons.edit_note_rounded,
+                color: Colors.orange.shade700,
+              ),
             ),
-            title: Text('Supplier ${index + 1}'),
-            subtitle: Text('2026-04-${28 - index} • Raw Materials'),
+            title: Text(
+              expense.vendor.isNotEmpty ? expense.vendor : 'Unknown Vendor',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            subtitle: Text(
+              '$dateStr • ${expense.category}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
             trailing: Text(
-              '-RM ${(100 + index * 50).toStringAsFixed(2)}',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+              '-RM ${expense.amount.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.redAccent,
+              ),
             ),
           ),
         );
@@ -228,27 +430,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
   }
 
   Widget _buildSalesList() {
-    // Placeholder list
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: 5,
-      itemBuilder: (context, index) {
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: AppTheme.primary.withValues(alpha: 0.2),
-              child: const Icon(Icons.point_of_sale_rounded, color: AppTheme.primary),
-            ),
-            title: Text('Customer ${index + 1}'),
-            subtitle: Text('2026-04-${28 - index} • Standard Sales'),
-            trailing: Text(
-              '+RM ${(200 + index * 75).toStringAsFixed(2)}',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-            ),
-          ),
-        );
-      },
+    // Placeholder until Sales module is implemented
+    return _buildEmptyState(
+      icon: Icons.point_of_sale_rounded,
+      message: 'Sales tracking coming soon',
+      color: AppTheme.primary,
     );
   }
 }

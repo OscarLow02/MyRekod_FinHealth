@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../core/app_theme.dart';
+import '../../services/ocr_service.dart';
+import '../../widgets/app_dialogs.dart';
 import 'record_expense_screen.dart';
 
 class ScannerScreen extends StatefulWidget {
@@ -13,6 +17,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
   bool _isScanning = false;
   late AnimationController _animationController;
   late Animation<double> _scanLineAnimation;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -33,19 +38,99 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
     super.dispose();
   }
 
-  void _simulateScan() {
+  // ── Permission Handling ─────────────────────────────────────────────────
+
+  Future<bool> _requestCameraPermission() async {
+    final status = await Permission.camera.status;
+    if (status.isGranted) return true;
+
+    final result = await Permission.camera.request();
+    if (result.isGranted) return true;
+
+    if (result.isPermanentlyDenied && mounted) {
+      // TODO: Implement i18n
+      AppDialogs.showActionModal(
+        context,
+        title: 'Camera Permission Required',
+        body: 'Please enable camera access in your device settings to scan receipts.',
+        primaryButtonText: 'Open Settings',
+        onPrimaryPressed: () => openAppSettings(),
+        secondaryButtonText: 'Cancel',
+        icon: Icons.camera_alt_rounded,
+        iconColor: Colors.orange.shade700,
+        primaryButtonColor: AppTheme.primary,
+      );
+    }
+    return false;
+  }
+
+  // ── Image Capture ───────────────────────────────────────────────────────
+
+  Future<void> _captureFromCamera() async {
+    final hasPermission = await _requestCameraPermission();
+    if (!hasPermission) return;
+
+    final XFile? photo = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85, // Balance quality vs file size
+    );
+
+    if (photo != null && mounted) {
+      _processImage(photo.path);
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    final XFile? photo = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+
+    if (photo != null && mounted) {
+      _processImage(photo.path);
+    }
+  }
+
+  // ── OCR Processing ──────────────────────────────────────────────────────
+
+  Future<void> _processImage(String imagePath) async {
     setState(() => _isScanning = true);
     _animationController.repeat(reverse: true);
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => _isScanning = false);
-        _animationController.stop();
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const RecordExpenseScreen(scannedAmount: 125.50)),
-        );
-      }
-    });
+
+    try {
+      final result = await OcrService.extractReceiptData(imagePath);
+
+      if (!mounted) return;
+
+      _animationController.stop();
+      setState(() => _isScanning = false);
+
+      // Navigate to form with extracted data + image path
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RecordExpenseScreen(
+            scannedAmount: result['amount'] as double?,
+            scannedVendor: result['vendor'] as String?,
+            scannedDate: result['date'] as String?,
+            imagePath: imagePath,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      _animationController.stop();
+      setState(() => _isScanning = false);
+
+      // Gracefully navigate with whatever we have (null fields)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RecordExpenseScreen(imagePath: imagePath),
+        ),
+      );
+    }
   }
 
   @override
@@ -60,7 +145,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
         children: [
           // Simulated Camera Background
           Container(
-            color: const Color(0xFF1A1A1A), // Darker grey for camera simulation
+            color: const Color(0xFF1A1A1A),
           ),
           
           // AppBar Overlay
@@ -79,15 +164,17 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                       onPressed: () => Navigator.pop(context),
                     ),
                     Text(
+                      // TODO: Implement i18n
                       'Scan Receipt',
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    // Gallery picker button
                     IconButton(
-                      icon: const Icon(Icons.flash_off_rounded, color: Colors.white, size: 28),
-                      onPressed: () {},
+                      icon: const Icon(Icons.photo_library_rounded, color: Colors.white, size: 28),
+                      onPressed: _isScanning ? null : _pickFromGallery,
                     ),
                   ],
                 ),
@@ -164,6 +251,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
             child: Column(
               children: [
                 Text(
+                  // TODO: Implement i18n
                   _isScanning ? 'Analyzing Receipt...' : 'Align receipt within the frame',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
@@ -172,7 +260,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                 ),
                 const SizedBox(height: 32),
                 GestureDetector(
-                  onTap: _isScanning ? null : _simulateScan,
+                  onTap: _isScanning ? null : _captureFromCamera,
                   child: Container(
                     width: 80,
                     height: 80,
@@ -201,7 +289,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                 ),
                 const SizedBox(height: 24),
                 TextButton(
-                  onPressed: () {
+                  onPressed: _isScanning ? null : () {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (_) => const RecordExpenseScreen()),
@@ -214,6 +302,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                     ),
                   ),
                   child: Text(
+                    // TODO: Implement i18n
                     'Enter Manually',
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: AppTheme.neonGreenDark,
@@ -229,4 +318,3 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
     );
   }
 }
-
