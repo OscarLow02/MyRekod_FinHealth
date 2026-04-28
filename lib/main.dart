@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'core/app_theme.dart';
 import 'providers/onboarding_provider.dart';
+import 'providers/expense_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/auth_wrapper.dart';
 
@@ -24,6 +25,7 @@ class MyRekodApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => OnboardingProvider()),
+        ChangeNotifierProvider(create: (_) => ExpenseProvider()),
       ],
       child: MaterialApp(
         title: 'MyRekod',

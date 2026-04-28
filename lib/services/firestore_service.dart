@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/business_profile.dart';
 import '../models/sale_item.dart';
 import '../models/tax_config.dart';
+import '../models/expense_record.dart';
 
 /// Thin wrapper around Cloud Firestore for all app CRUD operations.
 ///
@@ -11,6 +12,8 @@ import '../models/tax_config.dart';
 ///   {userId}/                          ← BusinessProfile document
 ///     sale_items/
 ///       {itemId}/                      ← SaleItem document
+///     expenses/
+///       {expenseId}/                   ← ExpenseRecord document
 ///     settings/
 ///       tax_config/                    ← TaxConfig document
 /// ```
@@ -85,6 +88,37 @@ class FirestoreService {
     await _itemsCol(userId).doc(itemId).delete();
   }
 
+  // ── Expenses ────────────────────────────────────────────────────────────
+
+  CollectionReference<Map<String, dynamic>> _expensesCol(String uid) =>
+      _profileDoc(uid).collection('expenses');
+
+  /// Returns a real-time stream of all expense records for a user.
+  /// Ordered by date, newest first.
+  Stream<List<ExpenseRecord>> watchExpenses(String userId) {
+    return _expensesCol(userId)
+        .orderBy('date', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => ExpenseRecord.fromMap(doc.data(), doc.id)).toList());
+  }
+
+  /// Adds a new expense to Firestore. Firestore auto-generates the doc ID.
+  Future<ExpenseRecord> addExpense(String userId, ExpenseRecord expense) async {
+    final ref = await _expensesCol(userId).add(expense.toMap());
+    final doc = await ref.get();
+    return ExpenseRecord.fromMap(doc.data()!, doc.id);
+  }
+
+  /// Updates an existing expense record.
+  Future<void> updateExpense(String userId, ExpenseRecord expense) async {
+    await _expensesCol(userId).doc(expense.id).update(expense.toMap());
+  }
+
+  /// Deletes an expense record by its document ID.
+  Future<void> deleteExpense(String userId, String expenseId) async {
+    await _expensesCol(userId).doc(expenseId).delete();
+  }
+
   // ── Tax Config ──────────────────────────────────────────────────────────
 
   /// Saves (upserts) the tax configuration for a user.
@@ -110,6 +144,12 @@ class FirestoreService {
     // Delete items subcollection first (optional but cleaner)
     final items = await _itemsCol(userId).get();
     for (var doc in items.docs) {
+      await doc.reference.delete();
+    }
+    
+    // Delete expenses subcollection
+    final expenses = await _expensesCol(userId).get();
+    for (var doc in expenses.docs) {
       await doc.reference.delete();
     }
     

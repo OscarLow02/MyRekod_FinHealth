@@ -114,4 +114,14 @@ class LhdnConstants {
     '74200': 'Photographic activities (Freelance Photographers)',
     '96091': 'Other personal service activities n.e.c.',
   };
+  /// Predefined Expense Categories for Expense Tracking
+  static const List<String> expenseCategories = [
+    'Raw Materials & Stock',
+    'Utilities',
+    'Logistics & Transport',
+    'Food & Beverage',
+    'Rent',
+    'Equipment & Maintenance',
+    'Others',
+  ];
 }
