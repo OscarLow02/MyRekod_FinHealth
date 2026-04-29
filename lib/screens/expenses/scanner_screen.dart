@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -18,6 +19,9 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
   late AnimationController _animationController;
   late Animation<double> _scanLineAnimation;
   final ImagePicker _imagePicker = ImagePicker();
+  
+  CameraController? _cameraController;
+  bool _isCameraInitialized = false;
 
   @override
   void initState() {
@@ -30,11 +34,38 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
     _scanLineAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+    
+    _initializeCamera();
+  }
+  
+  Future<void> _initializeCamera() async {
+    final hasPermission = await _requestCameraPermission();
+    if (!hasPermission) return;
+
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+
+      final firstCamera = cameras.first;
+      _cameraController = CameraController(
+        firstCamera,
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+
+      await _cameraController!.initialize();
+      if (mounted) {
+        setState(() => _isCameraInitialized = true);
+      }
+    } catch (e) {
+      debugPrint('Error initializing camera: $e');
+    }
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _cameraController?.dispose();
     super.dispose();
   }
 
@@ -67,16 +98,17 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
   // ── Image Capture ───────────────────────────────────────────────────────
 
   Future<void> _captureFromCamera() async {
-    final hasPermission = await _requestCameraPermission();
-    if (!hasPermission) return;
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      return;
+    }
 
-    final XFile? photo = await _imagePicker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85, // Balance quality vs file size
-    );
-
-    if (photo != null && mounted) {
-      _processImage(photo.path);
+    try {
+      final XFile photo = await _cameraController!.takePicture();
+      if (mounted) {
+        _processImage(photo.path);
+      }
+    } catch (e) {
+      debugPrint('Error capturing picture: $e');
     }
   }
 
@@ -143,9 +175,53 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Simulated Camera Background
-          Container(
-            color: const Color(0xFF1A1A1A),
+          // Live Camera Background
+          if (_isCameraInitialized && _cameraController != null)
+            SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _cameraController!.value.previewSize?.height ?? 1,
+                  height: _cameraController!.value.previewSize?.width ?? 1,
+                  child: CameraPreview(_cameraController!),
+                ),
+              ),
+            )
+          else
+            Container(
+              color: const Color(0xFF1A1A1A),
+              child: const Center(
+                child: CircularProgressIndicator(color: AppTheme.neonGreenDark),
+              ),
+            ),
+          
+          // Semi-transparent overlay to darken everything except the viewfinder
+          ColorFiltered(
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.6),
+              BlendMode.srcOut,
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.black,
+                    backgroundBlendMode: BlendMode.dstOut,
+                  ),
+                ),
+                Center(
+                  child: Container(
+                    width: size.width * 0.85,
+                    height: size.height * 0.55,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           
           // AppBar Overlay
@@ -182,20 +258,20 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
             ),
           ),
           
-          // Simulated Camera Viewfinder
+          // Viewfinder Borders and Animation
           Center(
             child: Container(
               width: size.width * 0.85,
               height: size.height * 0.55,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: AppTheme.neonGreenDark.withValues(alpha: _isScanning ? 0.8 : 0.3),
+                  color: AppTheme.neonGreenDark.withOpacity(_isScanning ? 0.8 : 0.5),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
                 boxShadow: _isScanning ? [
                   BoxShadow(
-                    color: AppTheme.neonGreenDark.withValues(alpha: 0.2),
+                    color: AppTheme.neonGreenDark.withOpacity(0.2),
                     blurRadius: 30,
                     spreadRadius: 5,
                   )
@@ -219,7 +295,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                                 color: AppTheme.neonGreenLight,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.neonGreenDark.withValues(alpha: 0.8),
+                                    color: AppTheme.neonGreenDark.withOpacity(0.8),
                                     blurRadius: 10,
                                     spreadRadius: 2,
                                   ),
@@ -228,14 +304,6 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                             ),
                           );
                         },
-                      ),
-                    if (!_isScanning)
-                      Center(
-                        child: Icon(
-                          Icons.document_scanner_rounded,
-                          size: 64,
-                          color: Colors.white.withValues(alpha: 0.2),
-                        ),
                       ),
                   ],
                 ),
@@ -254,7 +322,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                   // TODO: Implement i18n
                   _isScanning ? 'Analyzing Receipt...' : 'Align receipt within the frame',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: Colors.white.withOpacity(0.9),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -267,7 +335,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 4),
-                      color: _isScanning ? Colors.white.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.2),
+                      color: _isScanning ? Colors.white.withOpacity(0.5) : Colors.white.withOpacity(0.2),
                     ),
                     child: Center(
                       child: Container(
