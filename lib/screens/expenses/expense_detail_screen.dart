@@ -2,6 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:csv/csv.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../core/app_theme.dart';
 import '../../models/expense_record.dart';
 import '../../providers/expense_provider.dart';
@@ -79,6 +82,45 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     }
   }
 
+  Future<void> _exportToCsv() async {
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(_currentExpense.date);
+      final rows = [
+        ['ID', 'Date', 'Vendor', 'Category', 'Amount', 'Notes', 'Receipt Path'],
+        [
+          _currentExpense.id,
+          dateStr,
+          _currentExpense.vendor,
+          _currentExpense.category,
+          _currentExpense.amount.toStringAsFixed(2),
+          _currentExpense.notes ?? '',
+          _currentExpense.imagePath ?? 'No Receipt',
+        ]
+      ];
+
+      final csvData = const ListToCsvConverter().convert(rows);
+      final directory = await getTemporaryDirectory();
+      final fileName = 'Expense_${_currentExpense.vendor}_$dateStr.csv';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsString(csvData);
+
+      final box = context.findRenderObject() as RenderBox?;
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'MyRekod Expense - ${_currentExpense.vendor}',
+        sharePositionOrigin:
+            box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to export CSV: $e')),
+        );
+      }
+    }
+  }
+
   Widget _buildDetailCard(
     ThemeData theme, {
     required IconData icon,
@@ -137,7 +179,8 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(_currentExpense.date);
+    final dateStr =
+        DateFormat('dd MMM yyyy, hh:mm a').format(_currentExpense.date);
 
     return Scaffold(
       appBar: AppBar(
@@ -322,6 +365,14 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
               ),
             ),
             const SizedBox(height: 40),
+
+            // Bottom Actions
+            AppButton(
+              text: 'Export to CSV',
+              icon: const Icon(Icons.download_rounded, size: 20),
+              onPressed: _exportToCsv,
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),

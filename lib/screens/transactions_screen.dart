@@ -80,41 +80,41 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     setState(() => _isExporting = true);
 
     try {
-      // Build CSV rows
+      // 1. Build CSV rows (Improved the 'Receipt Attached' column)
       final List<List<dynamic>> rows = [
-        // Header row
-        ['Date', 'Vendor', 'Category', 'Amount (RM)', 'Receipt Attached'],
-        // Data rows (sorted by date, newest first)
+        ['Date', 'Vendor', 'Category', 'Amount (RM)', 'Receipt Path'],
         ...expenses.map((e) => [
           '${e.date.year}-${e.date.month.toString().padLeft(2, '0')}-${e.date.day.toString().padLeft(2, '0')}',
           e.vendor,
           e.category,
           e.amount.toStringAsFixed(2),
-          e.imagePath != null ? 'Yes' : 'No',
+          e.imagePath ?? 'No Receipt', // Outputs the actual path instead of just 'Yes'
         ]),
-        // Summary row
         [],
         ['', '', 'TOTAL', _calculateTotal(expenses).toStringAsFixed(2), ''],
-        ['', '', 'Generated', DateTime.now().toIso8601String(), ''],
+        // Cleaned up the generation timestamp using standard ISO 8601
+        ['', '', 'Generated', DateTime.now().toIso8601String().split('T')[0], ''], 
       ];
 
       final csvString = const ListToCsvConverter().convert(rows);
 
-      // Write to a temp file
+      // 2. Better File Naming (e.g., MyRekod_Expenses_2026-05-02.csv)
       final appDir = await getApplicationDocumentsDirectory();
-      final fileName = 'MyRekod_Expenses_${DateTime.now().millisecondsSinceEpoch}.csv';
+      // Using a human-readable date format for the filename
+      final dateStr = DateTime.now().toIso8601String().split('T')[0]; 
+      final fileName = 'MyRekod_Expenses_$dateStr.csv';
       final file = File('${appDir.path}/$fileName');
       await file.writeAsString(csvString);
 
       if (!mounted) return;
       setState(() => _isExporting = false);
 
-      // Share the file
-      await SharePlus.instance.share(
-        ShareParams(
-          text: 'MyRekod Expense Report',
-          files: [XFile(file.path)],
-        ),
+      // 3. Fix the double-file export bug by removing the 'text:' parameter
+      final box = context.findRenderObject() as RenderBox?;
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'MyRekod Expense Report - $dateStr', // Used for email subject lines
+        sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
       );
     } catch (e) {
       if (!mounted) return;
