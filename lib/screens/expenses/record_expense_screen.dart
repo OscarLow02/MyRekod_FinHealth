@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/app_theme.dart';
@@ -41,6 +42,7 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
   bool _isSaving = false;
   String? _currentImagePath;
   final ImagePicker _imagePicker = ImagePicker();
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -65,13 +67,17 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
       if (widget.scannedAmount != null) {
         _amountController.text = widget.scannedAmount!.toStringAsFixed(2);
       }
-      if (widget.scannedVendor != null && widget.scannedVendor!.isNotEmpty) {
+      if (widget.scannedVendor != null) {
         _vendorController.text = widget.scannedVendor!;
       }
-      if (widget.scannedDate != null && widget.scannedDate!.isNotEmpty) {
+      if (widget.scannedDate != null) {
         _dateController.text = widget.scannedDate!;
+        try {
+          final parts = widget.scannedDate!.split('-');
+          _selectedDate = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+        } catch (_) {}
       } else {
-        _dateController.text = DateTime.now().toIso8601String().split('T')[0];
+        _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
       }
     }
   }
@@ -100,6 +106,49 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
         setState(() => _currentImagePath = newPath);
       }
     }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: AppTheme.primary,
+                  onPrimary: Colors.white,
+                ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _dateController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  void _handleBackPress() {
+    AppDialogs.showActionModal(
+      context,
+      title: 'Discard Changes?',
+      body: 'If you go back now, all details entered will be discarded.',
+      primaryButtonText: 'Discard',
+      primaryButtonColor: Colors.redAccent,
+      onPrimaryPressed: () {
+        Navigator.of(context).pop(); // This pops the RecordExpenseScreen
+      },
+      secondaryButtonText: 'Keep Editing',
+      icon: Icons.warning_amber_rounded,
+      iconColor: Colors.orange,
+    );
   }
 
   Future<String?> _persistImageLocally(String tempPath) async {
@@ -276,12 +325,22 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
     final isAutoFilled =
         widget.scannedAmount != null || widget.scannedVendor != null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isEdit ? 'Edit Expense' : 'Record Expense'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(isEdit ? 'Edit Expense' : 'Record Expense'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _handleBackPress,
+          ),
+        ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
         child: Form(
@@ -460,13 +519,18 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: AppTextField(
-                      label: 'Date',
-                      icon: Icons.calendar_month_rounded,
-                      controller: _dateController,
-                      hintText: 'YYYY-MM-DD',
-                      validator: (val) =>
-                          val == null || val.isEmpty ? 'Required' : null,
+                    child: GestureDetector(
+                      onTap: () => _selectDate(context),
+                      child: AbsorbPointer(
+                        child: AppTextField(
+                          label: 'Date',
+                          icon: Icons.calendar_month_rounded,
+                          controller: _dateController,
+                          hintText: 'YYYY-MM-DD',
+                          validator: (val) =>
+                              val == null || val.isEmpty ? 'Required' : null,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -548,6 +612,7 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }
