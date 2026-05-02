@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 import 'package:image_picker/image_picker.dart';
 import '../../core/app_theme.dart';
 import '../../models/expense_record.dart';
@@ -10,6 +9,7 @@ import '../../providers/expense_provider.dart';
 import '../../widgets/custom_widgets.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/app_dialogs.dart';
+import '../../services/ocr_service.dart';
 
 class RecordExpenseScreen extends StatefulWidget {
   final double? scannedAmount;
@@ -56,6 +56,9 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
       _selectedCategory = e.category;
       _notesController.text = e.notes ?? '';
       _currentImagePath = e.imagePath;
+
+      // ADD THIS CALL FOR EDIT MODE
+      _resolveImagePath(e.imagePath); 
     } else {
       // Create Mode: Auto-fill from OCR data if available
       _currentImagePath = widget.imagePath;
@@ -82,27 +85,25 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
     super.dispose();
   }
 
-  // ── Image Persistence ───────────────────────────────────────────────────
+  // ── Image Persistence & Resolution ─────────────────────────────────────
+
+  Future<void> _resolveImagePath(String? path) async {
+    if (path == null || path.isEmpty) return;
+
+    File file = File(path);
+    if (!await file.exists()) {
+      final fileName = path.split('/').last;
+      final appDir = await getApplicationDocumentsDirectory();
+      final newPath = '${appDir.path}/receipts/$fileName';
+
+      if (await File(newPath).exists() && mounted) {
+        setState(() => _currentImagePath = newPath);
+      }
+    }
+  }
 
   Future<String?> _persistImageLocally(String tempPath) async {
-    try {
-      final appDir = await getApplicationDocumentsDirectory();
-      final receiptsDir = Directory(p.join(appDir.path, 'receipts'));
-      if (!await receiptsDir.exists()) {
-        await receiptsDir.create(recursive: true);
-      }
-
-      final fileName =
-          'receipt_${DateTime.now().millisecondsSinceEpoch}'
-          '${p.extension(tempPath)}';
-      final permanentPath = p.join(receiptsDir.path, fileName);
-
-      await File(tempPath).copy(permanentPath);
-      return permanentPath;
-    } catch (e) {
-      debugPrint('Failed to persist image: $e');
-      return null;
-    }
+    return await OcrService.standardSecureCapturedImage(tempPath);
   }
 
   Future<void> _reuploadReceipt() async {

@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 /// On-device OCR service for extracting structured data from Malaysian receipts.
 ///
@@ -78,6 +82,48 @@ class OcrService {
       // Always release native resources.
       await textRecognizer.close();
     }
+  }
+
+  // Standard iOS/Android Image Persistence logic
+  static Future<String> standardSecureCapturedImage(String tempPath) async {
+    try {
+      // Standard access to the standard application documents directory
+      final appDir = await getApplicationDocumentsDirectory();
+      final String permanentDir = p.join(appDir.path, 'receipts');
+
+      // Standard HCI check for standard directory existence
+      await Directory(permanentDir).create(recursive: true);
+
+      // Standard file naming utilizing standardized timestamp to prevent standard collisions
+      final String fileName = 'receipt_${DateTime.now().millisecondsSinceEpoch}${p.extension(tempPath)}';
+      final String permanentPath = p.join(permanentDir, fileName);
+
+      // Standard synchronous standard file copy procedure
+      await File(tempPath).copy(permanentPath);
+
+      return permanentPath; // Returns the standardized permanent file URI standard
+    } catch (e) {
+      debugPrint("CRITICAL Standard Exception during Standard Image Persistence: $e");
+      return tempPath; // Fallback to standard temporary if standard failure occurs
+    }
+  }
+
+  /// Dynamically resolves a stored image path, accounting for iOS Sandbox UUID changes.
+  static Future<String?> resolveImagePath(String? originalPath) async {
+    if (originalPath == null || originalPath.isEmpty) return null;
+
+    final file = File(originalPath);
+    if (await file.exists()) return originalPath;
+
+    // Reconstruct for iOS Sandbox UUID change
+    try {
+      final fileName = originalPath.split('/').last;
+      final appDir = await getApplicationDocumentsDirectory();
+      final newPath = p.join(appDir.path, 'receipts', fileName);
+      if (await File(newPath).exists()) return newPath;
+    } catch (_) {}
+
+    return null;
   }
 
   // ── Amount Extraction ────────────────────────────────────────────────────

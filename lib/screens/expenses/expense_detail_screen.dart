@@ -11,6 +11,7 @@ import '../../providers/expense_provider.dart';
 import '../../widgets/app_dialogs.dart';
 import '../../widgets/custom_widgets.dart';
 import 'record_expense_screen.dart';
+import '../../services/ocr_service.dart';
 
 class ExpenseDetailScreen extends StatefulWidget {
   final ExpenseRecord expense;
@@ -23,11 +24,20 @@ class ExpenseDetailScreen extends StatefulWidget {
 
 class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   late ExpenseRecord _currentExpense;
+  File? _resolvedImage;
 
   @override
   void initState() {
     super.initState();
     _currentExpense = widget.expense;
+    _resolveImagePath();
+  }
+
+  Future<void> _resolveImagePath() async {
+    final resolvedPath = await OcrService.resolveImagePath(_currentExpense.imagePath);
+    if (resolvedPath != null && mounted) {
+      setState(() => _resolvedImage = File(resolvedPath));
+    }
   }
 
   void _deleteExpense() {
@@ -349,20 +359,17 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                   width: 1,
                 ),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge - 1),
-                child: _currentExpense.imagePath != null &&
-                        _currentExpense.imagePath!.isNotEmpty
-                    ? Image.file(
-                        File(_currentExpense.imagePath!),
+              child: _resolvedImage != null
+                  ? ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusLarge - 1),
+                      child: Image.file(
+                        _resolvedImage!,
                         width: double.infinity,
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildEmptyImagePlaceholder(theme);
-                        },
-                      )
-                    : _buildEmptyImagePlaceholder(theme),
-              ),
+                      ),
+                    )
+                  : _buildEmptyImagePlaceholder(theme),
             ),
             const SizedBox(height: 40),
 
