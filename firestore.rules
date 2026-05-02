@@ -20,6 +20,11 @@ service cloud.firestore {
       match /settings/{settingId} {
         allow read, write: if isOwner(userId);
       }
+
+      // Expenses subcollection
+      match /expenses/{expenseId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Default: Deny everything else

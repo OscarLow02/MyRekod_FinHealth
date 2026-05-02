@@ -8,6 +8,7 @@ import '../core/app_theme.dart';
 import '../models/expense_record.dart';
 import '../providers/expense_provider.dart';
 import '../widgets/app_dialogs.dart';
+import 'expenses/expense_detail_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -397,6 +398,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ExpenseDetailScreen(expense: expense),
+                ),
+              );
+            },
             leading: CircleAvatar(
               backgroundColor: Colors.orange.shade700.withValues(alpha: 0.2),
               child: Icon(

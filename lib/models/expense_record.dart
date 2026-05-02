@@ -7,6 +7,7 @@ class ExpenseRecord {
   final String vendor;
   final String category;
   final String? imagePath;
+  final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -17,6 +18,7 @@ class ExpenseRecord {
     required this.vendor,
     required this.category,
     this.imagePath,
+    this.notes,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -24,12 +26,12 @@ class ExpenseRecord {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'date': Timestamp.fromDate(date),
       'amount': amount,
       'vendor': vendor,
       'category': category,
       'imagePath': imagePath,
+      'notes': notes,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -43,6 +45,7 @@ class ExpenseRecord {
       vendor: map['vendor'] ?? '',
       category: map['category'] ?? '',
       imagePath: map['imagePath'],
+      notes: map['notes'],
       createdAt: map['createdAt'] != null
           ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -59,6 +62,7 @@ class ExpenseRecord {
     String? vendor,
     String? category,
     String? imagePath,
+    String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -69,6 +73,7 @@ class ExpenseRecord {
       vendor: vendor ?? this.vendor,
       category: category ?? this.category,
       imagePath: imagePath ?? this.imagePath,
+      notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );

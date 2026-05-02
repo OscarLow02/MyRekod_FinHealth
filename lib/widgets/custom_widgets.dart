@@ -92,6 +92,9 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final Widget? suffixIcon;
   final Widget? prefixIcon;
+  final int? maxLines;
+  final String? label;
+  final IconData? icon;
   final bool enabled;
   final TextCapitalization textCapitalization;
   final void Function(String)? onChanged;
@@ -109,35 +112,75 @@ class AppTextField extends StatelessWidget {
     this.enabled = true,
     this.textCapitalization = TextCapitalization.none,
     this.onChanged,
+    this.maxLines = 1,
+    this.label,
+    this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final borderColor = AppTheme.secondaryDark; // #B6A4F3
 
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      validator: validator,
-      enabled: enabled,
-      textCapitalization: textCapitalization,
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        hintText: hintText,
-        labelText: labelText,
-        suffixIcon: suffixIcon,
-        prefixIcon: prefixIcon,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          borderSide:
-              BorderSide(color: borderColor.withValues(alpha: 0.5), width: 1),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (label != null) ...[
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                label!,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+        TextFormField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          validator: validator,
+          enabled: enabled,
+          textCapitalization: textCapitalization,
+          onChanged: onChanged,
+          maxLines: maxLines,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            hintText: hintText,
+            // labelText removed here to avoid overlap when label is on top
+            suffixIcon: suffixIcon,
+            prefixIcon: prefixIcon,
+            filled: true,
+            fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              borderSide: BorderSide(color: Colors.transparent),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              borderSide: BorderSide(color: borderColor, width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              borderSide: BorderSide(color: theme.colorScheme.error, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5),
+            ),
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          borderSide: BorderSide(color: borderColor, width: 1.5),
-        ),
-      ),
+      ],
     );
   }
 }
