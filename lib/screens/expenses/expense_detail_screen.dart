@@ -104,7 +104,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('RM ${_currentExpense.amount.toStringAsFixed(2)}'),
+        title: const Text('Expense Details'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -119,6 +119,49 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // Big Amount Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.orange.shade700.withValues(alpha: 0.15),
+                    Colors.orange.shade700.withValues(alpha: 0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                border: Border.all(
+                  color: Colors.orange.shade700.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Amount',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'RM ${_currentExpense.amount.toStringAsFixed(2)}',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: theme.colorScheme.onSurface,
+                      fontSize: 32,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // Transaction Info Card
             Container(
               decoration: BoxDecoration(
