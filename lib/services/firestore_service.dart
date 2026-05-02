@@ -3,6 +3,7 @@ import '../models/business_profile.dart';
 import '../models/sale_item.dart';
 import '../models/tax_config.dart';
 import '../models/expense_record.dart';
+import 'package:flutter/foundation.dart';
 
 /// Thin wrapper around Cloud Firestore for all app CRUD operations.
 ///
@@ -40,10 +41,10 @@ class FirestoreService {
   /// as the document ID for easy lookup. Uses [merge: true] so partial
   /// updates don't clobber existing fields.
   Future<void> saveBusinessProfile(BusinessProfile profile) async {
-    await _profileDoc(profile.userId).set(
+    _profileDoc(profile.userId).set(
       profile.toFirestore(),
       SetOptions(merge: true),
-    );
+    ).catchError((e) => debugPrint("Profile sync error: $e"));
   }
 
   /// Retrieves a [BusinessProfile] by user ID.
@@ -71,21 +72,22 @@ class FirestoreService {
         .map((snap) => snap.docs.map(SaleItem.fromFirestore).toList());
   }
 
-  /// Adds a new sale item to Firestore. Firestore auto-generates the doc ID.
+  /// Adds a new sale item to Firestore. Uses "Fire and Forget".
   Future<SaleItem> addSaleItem(String userId, SaleItem item) async {
-    final ref = await _itemsCol(userId).add(item.toFirestore());
-    final doc = await ref.get();
-    return SaleItem.fromFirestore(doc);
+    final docRef = _itemsCol(userId).doc();
+    final newItem = item.copyWith(id: docRef.id);
+    docRef.set(newItem.toFirestore()).catchError((e) => debugPrint("Item sync error: $e"));
+    return newItem;
   }
 
-  /// Updates an existing sale item.
+  /// Updates an existing sale item. Uses "Fire and Forget".
   Future<void> updateSaleItem(String userId, SaleItem item) async {
-    await _itemsCol(userId).doc(item.id).update(item.toFirestore());
+    _itemsCol(userId).doc(item.id).update(item.toFirestore()).catchError((e) => debugPrint("Item update error: $e"));
   }
 
-  /// Deletes a sale item by its document ID.
+  /// Deletes a sale item by its document ID. Uses "Fire and Forget".
   Future<void> deleteSaleItem(String userId, String itemId) async {
-    await _itemsCol(userId).doc(itemId).delete();
+    _itemsCol(userId).doc(itemId).delete().catchError((e) => debugPrint("Item delete error: $e"));
   }
 
   // ── Expenses ────────────────────────────────────────────────────────────
@@ -102,31 +104,40 @@ class FirestoreService {
         .map((snap) => snap.docs.map((doc) => ExpenseRecord.fromMap(doc.data(), doc.id)).toList());
   }
 
-  /// Adds a new expense to Firestore. Firestore auto-generates the doc ID.
+  /// Adds a new expense to Firestore. Uses "Fire and Forget" for instant offline-first responsiveness.
   Future<ExpenseRecord> addExpense(String userId, ExpenseRecord expense) async {
-    final ref = await _expensesCol(userId).add(expense.toMap());
-    final doc = await ref.get();
-    return ExpenseRecord.fromMap(doc.data()!, doc.id);
+    final docRef = _expensesCol(userId).doc();
+    final newExpense = expense.copyWith(id: docRef.id);
+    docRef.set(newExpense.toMap()).catchError((error) {
+      debugPrint("Background sync error: $error");
+    });
+    return newExpense;
   }
 
-  /// Updates an existing expense record.
+  /// Updates an existing expense record. Uses "Fire and Forget".
   Future<void> updateExpense(String userId, ExpenseRecord expense) async {
-    await _expensesCol(userId).doc(expense.id).update(expense.toMap());
+    final docRef = _expensesCol(userId).doc(expense.id);
+    docRef.update(expense.toMap()).catchError((error) {
+      debugPrint("Background sync error: $error");
+    });
   }
 
-  /// Deletes an expense record by its document ID.
+  /// Deletes an expense record by its document ID. Uses "Fire and Forget".
   Future<void> deleteExpense(String userId, String expenseId) async {
-    await _expensesCol(userId).doc(expenseId).delete();
+    final docRef = _expensesCol(userId).doc(expenseId);
+    docRef.delete().catchError((error) {
+      debugPrint("Background sync error: $error");
+    });
   }
 
   // ── Tax Config ──────────────────────────────────────────────────────────
 
-  /// Saves (upserts) the tax configuration for a user.
+  /// Saves (upserts) the tax configuration for a user. Uses "Fire and Forget".
   Future<void> saveTaxConfig(String userId, TaxConfig config) async {
-    await _taxConfigDoc(userId).set(
+    _taxConfigDoc(userId).set(
       config.toFirestore(),
       SetOptions(merge: true),
-    );
+    ).catchError((e) => debugPrint("Tax config sync error: $e"));
   }
 
   /// Retrieves the tax configuration for a user.
