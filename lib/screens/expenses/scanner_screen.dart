@@ -98,70 +98,119 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
   // ── Image Capture ───────────────────────────────────────────────────────
 
   Future<void> _captureFromCamera() async {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) {
-      return;
-    }
+    // Prevent double-tapping the shutter button
+    if (_cameraController == null || !_cameraController!.value.isInitialized || _isScanning) return;
 
-    try {
-      final XFile photo = await _cameraController!.takePicture();
-      if (mounted) {
-        _processImage(photo.path);
-      }
-    } catch (e) {
-      debugPrint('Error capturing picture: $e');
-    }
-  }
-
-  Future<void> _pickFromGallery() async {
-    final XFile? photo = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-    );
-
-    if (photo != null && mounted) {
-      _processImage(photo.path);
-    }
-  }
-
-  // ── OCR Processing ──────────────────────────────────────────────────────
-
-  Future<void> _processImage(String imagePath) async {
     setState(() => _isScanning = true);
     _animationController.repeat(reverse: true);
 
     try {
-      final result = await OcrService.extractReceiptData(imagePath);
+      // Use the CameraController to take the picture natively
+      final XFile photo = await _cameraController!.takePicture();
+
+      // Secure the image locally
+      final String permanentImagePath = await OcrService.standardSecureCapturedImage(photo.path);
+
+      // Run Offline OCR
+      final Map<String, dynamic> extractedData = await OcrService.extractReceiptData(permanentImagePath);
 
       if (!mounted) return;
 
-      _animationController.stop();
-      setState(() => _isScanning = false);
-
-      // Navigate to form with extracted data + image path
+      // Navigate to the form
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => RecordExpenseScreen(
-            scannedAmount: result['amount'] as double?,
-            scannedVendor: result['vendor'] as String?,
-            scannedDate: result['date'] as String?,
-            imagePath: imagePath,
+          builder: (context) => RecordExpenseScreen(
+            scannedAmount: extractedData['amount'],
+            scannedVendor: extractedData['vendor'],
+            scannedDate: extractedData['date'],
+            imagePath: permanentImagePath,
           ),
         ),
       );
     } catch (e) {
+      debugPrint("Capture Error: $e");
+      if (mounted) {
+        _animationController.stop();
+        AppDialogs.showActionModal(
+          context,
+          title: 'Capture Failed',
+          body: 'Failed to capture the receipt. Please try again.',
+          primaryButtonText: 'OK',
+          onPrimaryPressed: () {}, // showActionModal auto-dismisses
+          icon: Icons.error_outline_rounded,
+          iconColor: Colors.redAccent,
+          primaryButtonColor: Colors.redAccent,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isScanning = false);
+        if (!_isScanning) _animationController.stop();
+      }
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    if (_isScanning) return;
+
+    setState(() => _isScanning = true);
+    _animationController.repeat(reverse: true);
+
+    try {
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (photo == null) {
+        setState(() => _isScanning = false);
+        _animationController.stop();
+        return;
+      }
+
+      final String permanentImagePath = await OcrService.standardSecureCapturedImage(photo.path);
+      final Map<String, dynamic> extractedData = await OcrService.extractReceiptData(permanentImagePath);
+
       if (!mounted) return;
 
-      _animationController.stop();
-      setState(() => _isScanning = false);
-
-      // Gracefully navigate with whatever we have (null fields)
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => RecordExpenseScreen(imagePath: imagePath),
+          builder: (context) => RecordExpenseScreen(
+            scannedAmount: extractedData['amount'],
+            scannedVendor: extractedData['vendor'],
+            scannedDate: extractedData['date'],
+            imagePath: permanentImagePath,
+          ),
         ),
       );
+    } catch (e) {
+      debugPrint("Gallery Error: $e");
+      if (mounted) {
+        _animationController.stop();
+        
+        // Handle the specific iCloud offline error (PlatformException)
+        final isICloudError = e.toString().contains('public.jpeg') || e.toString().contains('Cannot load representation');
+        
+        AppDialogs.showActionModal(
+          context,
+          title: isICloudError ? 'Image Unavailable Offline' : 'Gallery Error',
+          body: isICloudError 
+              ? 'This photo is stored in iCloud and requires an internet connection to download. Please select a locally saved photo or turn on WiFi.'
+              : 'Failed to pick image from gallery. Please try again.',
+          primaryButtonText: 'OK',
+          onPrimaryPressed: () {},
+          icon: isICloudError ? Icons.cloud_off_rounded : Icons.error_outline_rounded,
+          iconColor: isICloudError ? Colors.orange.shade700 : Colors.redAccent,
+          primaryButtonColor: isICloudError ? Colors.orange.shade700 : Colors.redAccent,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isScanning = false);
+        if (!_isScanning) _animationController.stop();
+      }
     }
   }
 
