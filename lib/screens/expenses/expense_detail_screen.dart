@@ -31,15 +31,17 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     AppDialogs.showActionModal(
       context,
       title: 'Delete Expense',
-      body: 'Are you sure you want to delete this expense? This action cannot be undone.',
+      body:
+          'Are you sure you want to delete this expense? This action cannot be undone.',
       primaryButtonText: 'Delete',
       primaryButtonColor: Colors.redAccent,
       icon: Icons.warning_rounded,
       iconColor: Colors.redAccent,
       onPrimaryPressed: () async {
-        Navigator.pop(context); // Close dialog
         try {
-          await context.read<ExpenseProvider>().deleteExpense(_currentExpense.id);
+          await context
+              .read<ExpenseProvider>()
+              .deleteExpense(_currentExpense.id);
           if (mounted) {
             Navigator.pop(context); // Go back to transactions
           }
@@ -77,20 +79,56 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     }
   }
 
-  Widget _buildInfoRow({required String label, required Widget child}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildDetailCard(
+    ThemeData theme, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+            ),
+            child:
+                Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          child,
         ],
       ),
     );
@@ -99,30 +137,47 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateStr = DateFormat('MMM dd, yyyy').format(_currentExpense.date);
-    final timeStr = DateFormat('HH:mm').format(_currentExpense.createdAt);
+    final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(_currentExpense.date);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Expense Details'),
+        title: Text(
+          'Expense Details',
+          style: TextStyle(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+            icon: const Icon(Icons.edit_outlined, size: 22),
+            onPressed: _editExpense,
+            tooltip: 'Edit',
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded,
+                color: Colors.redAccent, size: 22),
             onPressed: _deleteExpense,
             tooltip: 'Delete',
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Big Amount Card
+            // Big Amount Card (Keeps Orange Gradient as requested)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 32),
+              padding: const EdgeInsets.symmetric(vertical: 40),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -132,7 +187,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge * 2),
                 border: Border.all(
                   color: Colors.orange.shade700.withValues(alpha: 0.3),
                   width: 1.5,
@@ -141,239 +196,156 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
               child: Column(
                 children: [
                   Text(
-                    'Amount',
-                    style: theme.textTheme.labelLarge?.copyWith(
+                    'TOTAL AMOUNT',
+                    style: theme.textTheme.labelMedium?.copyWith(
                       color: Colors.orange.shade700,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Text(
                     'RM ${_currentExpense.amount.toStringAsFixed(2)}',
-                    style: theme.textTheme.headlineMedium?.copyWith(
+                    style: theme.textTheme.displayMedium?.copyWith(
                       fontWeight: FontWeight.w900,
                       color: theme.colorScheme.onSurface,
-                      fontSize: 32,
+                      letterSpacing: -1.0,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.orange.shade700.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Text(
+                      'Category: ${_currentExpense.category}',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
-            // Transaction Info Card
-            Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                border: Border.all(color: theme.colorScheme.outlineVariant),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.receipt_long_rounded, color: theme.colorScheme.primary, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Transaction Info',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        InkWell(
-                          onTap: _editExpense,
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.edit_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInfoRow(
-                          label: 'Merchant',
-                          child: Text(
-                            _currentExpense.vendor.isNotEmpty ? _currentExpense.vendor : 'Unknown Vendor',
-                            style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        _buildInfoRow(
-                          label: 'Date & Time',
-                          child: Text(
-                            '$dateStr at $timeStr',
-                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        _buildInfoRow(
-                          label: 'Category',
-                          child: Row(
-                            children: [
-                              Icon(Icons.folder_outlined, size: 16, color: theme.colorScheme.onSurface),
-                              const SizedBox(width: 6),
-                              Text(
-                                _currentExpense.category,
-                                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (_currentExpense.notes != null && _currentExpense.notes!.isNotEmpty)
-                          _buildInfoRow(
-                            label: 'Notes',
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                              ),
-                              child: Text(
-                                '"${_currentExpense.notes}"',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontStyle: FontStyle.italic,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+            // Transaction Info Section
+            Text(
+              'Transaction Info',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 16),
 
-            // Attached Receipt Card
-            Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                border: Border.all(color: theme.colorScheme.outlineVariant),
+            _buildDetailCard(
+              theme,
+              icon: Icons.calendar_today_rounded,
+              label: 'Date & Time',
+              value: dateStr,
+            ),
+            _buildDetailCard(
+              theme,
+              icon: Icons.storefront_rounded,
+              label: 'Merchant',
+              value: _currentExpense.vendor.isNotEmpty
+                  ? _currentExpense.vendor
+                  : 'Unknown Vendor',
+            ),
+            if (_currentExpense.notes != null &&
+                _currentExpense.notes!.isNotEmpty)
+              _buildDetailCard(
+                theme,
+                icon: Icons.notes_rounded,
+                label: 'Notes',
+                value: _currentExpense.notes!,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.image_outlined, color: theme.colorScheme.primary, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Attached Receipt',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+
+            const SizedBox(height: 32),
+
+            // Receipt Attachment Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Receipt Attachment',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                TextButton(
+                  onPressed: _editExpense, // Re-use edit flow to change photo
+                  child: Text(
+                    'REPLACE',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: _currentExpense.imagePath != null && _currentExpense.imagePath!.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                            child: Image.file(
-                              File(_currentExpense.imagePath!),
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  height: 150,
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
-                                  child: Center(
-                                    child: Text(
-                                      'Image file not found locally',
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          )
-                        : Container(
-                            height: 100,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.image_not_supported_outlined, color: theme.colorScheme.onSurfaceVariant),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'No receipt attached',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Bottom Buttons
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Implement Share Details logic
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-                  foregroundColor: theme.colorScheme.onSurface,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  ),
-                  elevation: 0,
                 ),
-                icon: const Icon(Icons.share_rounded, size: 20),
-                label: const Text('Share Details', style: TextStyle(fontWeight: FontWeight.w600)),
-              ),
+              ],
             ),
-            const SizedBox(height: 12),
-            SizedBox(
+            const SizedBox(height: 16),
+
+            // Image Container
+            Container(
               width: double.infinity,
-              child: AppButton(
-                text: 'Download CSV',
-                onPressed: () {
-                  // TODO: Implement single CSV export logic
-                },
-                icon: const Icon(Icons.download_rounded, size: 20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant,
+                  width: 1,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge - 1),
+                child: _currentExpense.imagePath != null &&
+                        _currentExpense.imagePath!.isNotEmpty
+                    ? Image.file(
+                        File(_currentExpense.imagePath!),
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildEmptyImagePlaceholder(theme);
+                        },
+                      )
+                    : _buildEmptyImagePlaceholder(theme),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyImagePlaceholder(ThemeData theme) {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.image_not_supported_outlined,
+              color: theme.colorScheme.onSurfaceVariant, size: 40),
+          const SizedBox(height: 12),
+          Text(
+            'No receipt attached',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }
