@@ -5,7 +5,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:image_picker/image_picker.dart';
 import '../../core/app_theme.dart';
-import '../../core/lhdn_constants.dart';
 import '../../models/expense_record.dart';
 import '../../providers/expense_provider.dart';
 import '../../widgets/custom_widgets.dart';
@@ -46,13 +45,14 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     if (widget.existingExpense != null) {
       // Edit Mode: Pre-fill from existing expense
       final e = widget.existingExpense!;
       _amountController.text = e.amount.toStringAsFixed(2);
       _vendorController.text = e.vendor;
-      _dateController.text = '${e.date.year}-${e.date.month.toString().padLeft(2, '0')}-${e.date.day.toString().padLeft(2, '0')}';
+      _dateController.text =
+          '${e.date.year}-${e.date.month.toString().padLeft(2, '0')}-${e.date.day.toString().padLeft(2, '0')}';
       _selectedCategory = e.category;
       _notesController.text = e.notes ?? '';
       _currentImagePath = e.imagePath;
@@ -92,7 +92,8 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
         await receiptsDir.create(recursive: true);
       }
 
-      final fileName = 'receipt_${DateTime.now().millisecondsSinceEpoch}'
+      final fileName =
+          'receipt_${DateTime.now().millisecondsSinceEpoch}'
           '${p.extension(tempPath)}';
       final permanentPath = p.join(receiptsDir.path, fileName);
 
@@ -133,8 +134,9 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
     try {
       // 1. Persist new image if it changed and is temporary
       String? finalImagePath = _currentImagePath;
-      if (_currentImagePath != null && !_currentImagePath!.contains('Documents/receipts')) {
-         finalImagePath = await _persistImageLocally(_currentImagePath!);
+      if (_currentImagePath != null &&
+          !_currentImagePath!.contains('Documents/receipts')) {
+        finalImagePath = await _persistImageLocally(_currentImagePath!);
       }
 
       // 2. Parse the date from the text field
@@ -154,13 +156,15 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
 
       // 3. Construct the ExpenseRecord
       final expense = ExpenseRecord(
-        id: isEdit ? widget.existingExpense!.id : '', 
+        id: isEdit ? widget.existingExpense!.id : '',
         date: expenseDate,
         amount: double.tryParse(_amountController.text) ?? 0.0,
         vendor: _vendorController.text.trim(),
         category: _selectedCategory!,
         imagePath: finalImagePath,
-        notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+        notes: _notesController.text.trim().isNotEmpty
+            ? _notesController.text.trim()
+            : null,
         createdAt: isEdit ? widget.existingExpense!.createdAt : DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -184,7 +188,7 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
         primaryButtonText: 'Done',
         onPrimaryPressed: () {
           // Dialog is auto-dismissed by showActionModal, just pop the screen
-          Navigator.pop(context, expense); 
+          Navigator.pop(context, expense);
         },
         icon: Icons.check_circle_outline_rounded,
         iconColor: Colors.green,
@@ -207,13 +211,70 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
     }
   }
 
+  // ── Add New Category Dialog ──────────────────────────────────────────────────────────
+  Future<void> _showAddCategoryDialog(
+    BuildContext context,
+    ExpenseProvider provider,
+  ) async {
+    final TextEditingController newCatController = TextEditingController();
+    final theme = Theme.of(context);
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          ),
+          title: Text(
+            'New Expense Category',
+            style: theme.textTheme.titleLarge,
+          ),
+          content: AppTextField(
+            controller: newCatController,
+            hintText: 'e.g., Digital Ads, Maintenance',
+            textCapitalization: TextCapitalization.words,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final val = newCatController.text.trim();
+                if (val.isNotEmpty) {
+                  await provider.addCategory(val);
+                  setState(
+                    () => _selectedCategory = val,
+                  ); // Auto-select the newly created category
+                }
+                Navigator.pop(ctx);
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasReceipt = _currentImagePath != null;
     final isEdit = widget.existingExpense != null;
-    final isAutoFilled = widget.scannedAmount != null || widget.scannedVendor != null;
-    
+    final isAutoFilled =
+        widget.scannedAmount != null || widget.scannedVendor != null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(isEdit ? 'Edit Expense' : 'Record Expense'),
@@ -233,27 +294,37 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
-                  border: Border.all(color: Colors.orange.shade700.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: Colors.orange.shade700.withValues(alpha: 0.3),
+                  ),
                   borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
                 ),
                 child: Column(
                   children: [
                     if (hasReceipt)
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusLarge,
+                        ),
                         child: Image.file(
                           File(_currentImagePath!),
                           height: 180,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.broken_image,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
                         ),
                       )
                     else
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.05,
+                          ),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -268,19 +339,41 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                       children: [
                         TextButton.icon(
                           onPressed: _reuploadReceipt,
-                          icon: Icon(hasReceipt ? Icons.edit_rounded : Icons.upload_rounded, color: Colors.orange.shade700, size: 18),
-                          label: Text(hasReceipt ? 'Change Image' : 'Upload Receipt', style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.w600)),
+                          icon: Icon(
+                            hasReceipt
+                                ? Icons.edit_rounded
+                                : Icons.upload_rounded,
+                            color: Colors.orange.shade700,
+                            size: 18,
+                          ),
+                          label: Text(
+                            hasReceipt ? 'Change Image' : 'Upload Receipt',
+                            style: TextStyle(
+                              color: Colors.orange.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                         if (hasReceipt) ...[
                           const SizedBox(width: 16),
                           TextButton.icon(
                             onPressed: _removeReceipt,
-                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
-                            label: const Text('Remove', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.redAccent,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'Remove',
+                              style: TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ]
+                        ],
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -298,16 +391,27 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                   ),
                   if (isAutoFilled && !isEdit)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.secondaryDark.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                        border: Border.all(color: AppTheme.secondaryDark.withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusMedium,
+                        ),
+                        border: Border.all(
+                          color: AppTheme.secondaryDark.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.auto_awesome_rounded, size: 14, color: AppTheme.secondaryDark),
+                          Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 14,
+                            color: AppTheme.secondaryDark,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Auto-filled',
@@ -328,7 +432,8 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                 icon: Icons.storefront_rounded,
                 controller: _vendorController,
                 hintText: 'Enter vendor name',
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
 
@@ -336,12 +441,15 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                 label: 'Amount (RM)',
                 icon: Icons.payments_rounded,
                 controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 hintText: '0.00',
                 validator: (val) {
                   if (val == null || val.isEmpty) return 'Amount is required';
                   final amount = double.tryParse(val);
-                  if (amount == null || amount <= 0) return 'Enter a valid amount';
+                  if (amount == null || amount <= 0)
+                    return 'Enter a valid amount';
                   return null;
                 },
               ),
@@ -356,30 +464,69 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                       icon: Icons.calendar_month_rounded,
                       controller: _dateController,
                       hintText: 'YYYY-MM-DD',
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Required' : null,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: CustomPremiumDropdown<String>(
-                      label: 'Category',
-                      value: _selectedCategory,
-                      items: LhdnConstants.expenseCategories
-                          .map((cat) => CustomDropdownItem<String>(
-                                label: cat,
-                                value: cat,
-                                icon: Icons.folder_outlined,
-                              ))
-                          .toList(),
-                      onChanged: (val) => setState(() => _selectedCategory = val),
-                      validator: (val) => val == null ? 'Required' : null,
-                      fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    child: Consumer<ExpenseProvider>(
+                      builder: (context, provider, _) {
+                        // 1. Get categories from provider
+                        final allCategories = List<String>.from(provider.categories);
+
+                        // 2. Safe-check: If editing an old expense with a deleted category, keep it visible
+                        if (_selectedCategory != null &&
+                            !allCategories.contains(_selectedCategory)) {
+                          allCategories.add(_selectedCategory!);
+                        }
+
+                        // 3. Map to CustomDropdownItems and append the "+ Add New Category" option
+                        final dropdownItems =
+                            allCategories
+                                .map(
+                                  (cat) => CustomDropdownItem<String>(
+                                    label: cat,
+                                    value: cat,
+                                    icon: Icons.folder_outlined,
+                                  ),
+                                )
+                                .toList()
+                              ..add(
+                                CustomDropdownItem<String>(
+                                  label: '+ Add New Category',
+                                  value: 'ADD_NEW',
+                                  icon: Icons.add_circle_outline_rounded,
+                                  isAction: true,
+                                ),
+                              );
+
+                        return CustomPremiumDropdown<String>(
+                          label: 'Category',
+                          value: _selectedCategory,
+                          items: dropdownItems,
+                          isSearchable: true,
+                          onChanged: (val) {
+                            if (val == 'ADD_NEW') {
+                              _showAddCategoryDialog(
+                                context,
+                                provider,
+                              ); // Trigger the popup
+                            } else {
+                              setState(() => _selectedCategory = val);
+                            }
+                          },
+                          validator: (val) => val == null ? 'Required' : null,
+                          fillColor: theme.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.3),
+                        );
+                      },
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               AppTextField(
                 label: 'Notes (Optional)',
                 icon: Icons.notes_rounded,

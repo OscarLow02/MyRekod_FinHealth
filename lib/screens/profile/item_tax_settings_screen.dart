@@ -6,7 +6,10 @@ import '../../models/tax_config.dart';
 import '../../core/lhdn_constants.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/custom_dropdown.dart';
+import 'package:provider/provider.dart';
+import '../../providers/expense_provider.dart';
 import '../../widgets/app_dialogs.dart';
+import '../../widgets/custom_widgets.dart';
 import 'widgets/add_item_bottom_sheet.dart';
 
 /// Item & Tax Settings screen.
@@ -452,6 +455,8 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
               ),
             ),
             const SizedBox(height: 32),
+            _buildExpenseCategoriesSection(context),
+            const SizedBox(height: 32),
 
             // ═══════════════════════════════
             // Section 2: Item Catalog
@@ -718,6 +723,129 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 12),
         ),
       ),
+    );
+  }
+  Widget _buildExpenseCategoriesSection(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Consumer<ExpenseProvider>(
+      builder: (context, provider, _) {
+        final allCats = provider.categories;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSectionHeader(
+                    theme,
+                    icon: Icons.category_outlined,
+                    title: 'EXPENSE CATEGORIES',
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.add_circle_outline_rounded,
+                      color: AppTheme.primary),
+                  onPressed: () {
+                    final controller = TextEditingController();
+                    AppDialogs.showFormModal(
+                      context,
+                      title: 'Add Category',
+                      formBody: AppTextField(
+                        controller: controller,
+                        hintText: 'e.g. Travel, Marketing',
+                        textCapitalization: TextCapitalization.words,
+                      ),
+                      primaryButtonText: 'Add',
+                      onPrimaryPressed: () async {
+                        final val = controller.text.trim();
+                        if (val.isNotEmpty) {
+                          await provider.addCategory(val);
+                          return true;
+                        }
+                        return false;
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            if (allCats.isEmpty)
+              Text(
+                'No categories available. Add one using the button above.',
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ),
+
+            // Generate a list tile for every category
+            ...allCats.map(
+              (cat) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  Icons.folder_outlined,
+                  color: theme.colorScheme.onSurface,
+                ),
+                title: Text(cat, style: theme.textTheme.bodyLarge),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      onPressed: () {
+                        final controller = TextEditingController(text: cat);
+                        AppDialogs.showFormModal(
+                          context,
+                          title: 'Rename Category',
+                          formBody: AppTextField(
+                            controller: controller,
+                            hintText: 'New category name',
+                            textCapitalization: TextCapitalization.words,
+                          ),
+                          primaryButtonText: 'Save',
+                          onPrimaryPressed: () async {
+                            final val = controller.text.trim();
+                            if (val.isNotEmpty && val != cat) {
+                              await provider.updateCategory(cat, val);
+                              return true;
+                            }
+                            return val == cat; // true if no change, false if empty
+                          },
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        AppDialogs.showActionModal(
+                          context,
+                          title: 'Delete Category',
+                          body:
+                              'Are you sure you want to delete "$cat"? This will not affect existing records.',
+                          primaryButtonText: 'Delete',
+                          primaryButtonColor: Colors.redAccent,
+                          secondaryButtonText: 'Cancel',
+                          icon: Icons.warning_rounded,
+                          iconColor: Colors.redAccent,
+                          onPrimaryPressed: () {
+                            provider.deleteCategory(cat);
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Divider(),
+          ],
+        );
+      },
     );
   }
 }

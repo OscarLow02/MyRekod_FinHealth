@@ -8,11 +8,14 @@ class CustomDropdownItem<T> {
   final String? emoji; // Useful for flags
   final T value;
 
+  final bool isAction;
+
   const CustomDropdownItem({
     required this.label,
     this.icon,
     this.emoji,
     required this.value,
+    this.isAction = false,
   });
 }
 
@@ -314,16 +317,21 @@ class _DropdownSelectionSheetState<T>
                                       size: 18,
                                       color: isSelected
                                           ? AppTheme.primary
-                                          : theme.colorScheme.onSurfaceVariant,
+                                          : (item.isAction
+                                              ? AppTheme.primary
+                                              : theme.colorScheme.onSurfaceVariant),
                                     ),
                                   )
                                 : null,
                         title: Text(
                           item.label,
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight:
-                                isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected ? AppTheme.primary : null,
+                            fontWeight: isSelected || item.isAction
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: isSelected
+                                ? AppTheme.primary
+                                : (item.isAction ? AppTheme.primary : null),
                           ),
                         ),
                         trailing: isSelected
