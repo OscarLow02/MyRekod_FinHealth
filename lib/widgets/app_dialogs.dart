@@ -641,44 +641,46 @@ class AppDialogs {
               ),
             ),
             const SizedBox(height: 32),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildEntryOption(
-                    context,
-                    title: 'Record Sale',
-                    subtitle: 'Manual entry or e-Invoice',
-                    icon: Icons.point_of_sale_rounded,
-                    color: AppTheme.primary,
-                    gradientColors: [
-                      AppTheme.primary.withValues(alpha: 0.15),
-                      AppTheme.primary.withValues(alpha: 0.05),
-                    ],
-                    onTap: () {
-                      Navigator.pop(context);
-                      onRecordSale();
-                    },
+            IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildEntryOption(
+                      context,
+                      title: 'Record Sale',
+                      subtitle: 'Manual entry or e-Invoice',
+                      icon: Icons.point_of_sale_rounded,
+                      color: AppTheme.primary,
+                      gradientColors: [
+                        AppTheme.primary.withValues(alpha: 0.15),
+                        AppTheme.primary.withValues(alpha: 0.05),
+                      ],
+                      onTap: () {
+                        Navigator.pop(context);
+                        onRecordSale();
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildEntryOption(
-                    context,
-                    title: 'Record Expense',
-                    subtitle: 'Scan receipt or manual',
-                    icon: Icons.receipt_long_rounded,
-                    color: Colors.orange.shade700,
-                    gradientColors: [
-                      Colors.orange.shade700.withValues(alpha: 0.15),
-                      Colors.orange.shade700.withValues(alpha: 0.05),
-                    ],
-                    onTap: () {
-                      Navigator.pop(context);
-                      onRecordExpense();
-                    },
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildEntryOption(
+                      context,
+                      title: 'Record Expense',
+                      subtitle: 'Scan receipt or manual',
+                      icon: Icons.receipt_long_rounded,
+                      color: Colors.orange.shade700,
+                      gradientColors: [
+                        Colors.orange.shade700.withValues(alpha: 0.15),
+                        Colors.orange.shade700.withValues(alpha: 0.05),
+                      ],
+                      onTap: () {
+                        Navigator.pop(context);
+                        onRecordExpense();
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -699,6 +701,7 @@ class AppDialogs {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        height: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
