@@ -189,8 +189,9 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateStr =
-        DateFormat('dd MMM yyyy, hh:mm a').format(_currentExpense.date);
+    final dateStr = DateFormat('dd MMM yyyy').format(_currentExpense.date);
+    final createdStr = DateFormat('dd MMM yyyy, hh:mm a').format(_currentExpense.createdAt);
+    final modifiedStr = DateFormat('yyyy/MM/dd').format(_currentExpense.updatedAt);
 
     return Scaffold(
       appBar: AppBar(
@@ -289,21 +290,38 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Transaction Info Section
-            Text(
-              'Transaction Info',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Transaction Info',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                Text(
+                  'Last modified: $modifiedStr',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
             _buildDetailCard(
               theme,
               icon: Icons.calendar_today_rounded,
-              label: 'Date & Time',
+              label: 'Date',
               value: dateStr,
+            ),
+            _buildDetailCard(
+              theme,
+              icon: Icons.history_rounded,
+              label: 'Created Date & Time',
+              value: createdStr,
             ),
             _buildDetailCard(
               theme,
