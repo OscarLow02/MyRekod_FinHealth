@@ -12,6 +12,7 @@ import '../providers/expense_provider.dart';
 import '../providers/sales_provider.dart';
 import '../widgets/app_dialogs.dart';
 import 'expenses/expense_detail_screen.dart';
+import 'sales/sale_detail_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -494,6 +495,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16, vertical: 8,
             ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SaleDetailScreen(sale: sale),
+                ),
+              );
+            },
             leading: CircleAvatar(
               backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
               child: const Icon(
