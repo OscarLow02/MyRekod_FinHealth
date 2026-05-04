@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:intl/intl.dart';
 import '../core/app_theme.dart';
 import '../models/expense_record.dart';
+import '../models/sale_record.dart';
 import '../providers/expense_provider.dart';
+import '../providers/sales_provider.dart';
 import '../widgets/app_dialogs.dart';
 import 'expenses/expense_detail_screen.dart';
 
@@ -144,25 +147,31 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          if (isExpenseTab)
-            IconButton(
-              icon: _isExporting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.file_download_outlined),
-              tooltip: 'Export CSV',
-              onPressed: _isExporting
-                  ? null
-                  : () {
+          IconButton(
+            icon: _isExporting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.file_download_outlined),
+            tooltip: 'Export CSV',
+            onPressed: _isExporting
+                ? null
+                : () {
+                    if (isExpenseTab) {
                       final expenses = _applyFilter(
                         context.read<ExpenseProvider>().expenses,
                       );
                       _exportToCSV(expenses);
-                    },
-            ),
+                    } else {
+                      final sales = _applySalesFilter(
+                        context.read<SalesProvider>().saleRecords,
+                      );
+                      _exportSalesToCSV(sales);
+                    }
+                  },
+          ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -208,12 +217,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                       );
                     },
                   )
-                : _buildSummaryCard(
-                    // TODO: Wire up SalesProvider when implemented
-                    title: 'Total Sales',
-                    amount: 'RM 0.00',
-                    color: AppTheme.primary,
-                    icon: Icons.trending_up_rounded,
+                : Consumer<SalesProvider>(
+                    builder: (context, provider, _) {
+                      final filteredSales = _applySalesFilter(provider.saleRecords);
+                      final total = _calculateSalesTotal(filteredSales);
+                      return _buildSummaryCard(
+                        title: 'Total Sales',
+                        amount: 'RM ${total.toStringAsFixed(2)}',
+                        color: AppTheme.primary,
+                        icon: Icons.trending_up_rounded,
+                      );
+                    },
                   ),
           ),
           const SizedBox(height: 16),
@@ -243,8 +257,26 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                     return _buildExpenseList(filteredExpenses);
                   },
                 ),
-                // Sales Tab — placeholder
-                _buildSalesList(),
+                // Sales Tab — real data
+                Consumer<SalesProvider>(
+                  builder: (context, provider, _) {
+                    if (provider.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final filteredSales = _applySalesFilter(provider.saleRecords);
+
+                    if (filteredSales.isEmpty) {
+                      return _buildEmptyState(
+                        icon: Icons.point_of_sale_rounded,
+                        message: 'No sales recorded yet',
+                        color: AppTheme.primary,
+                      );
+                    }
+
+                    return _buildSalesList(filteredSales);
+                  },
+                ),
               ],
             ),
           ),
@@ -438,12 +470,202 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     );
   }
 
-  Widget _buildSalesList() {
-    // Placeholder until Sales module is implemented
-    return _buildEmptyState(
-      icon: Icons.point_of_sale_rounded,
-      message: 'Sales tracking coming soon',
-      color: AppTheme.primary,
+  Widget _buildSalesList(List<SaleRecord> sales) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: sales.length,
+      itemBuilder: (context, index) {
+        final sale = sales[index];
+        final dateStr = DateFormat('yyyy-MM-dd').format(sale.saleDate);
+
+        // Status indicator color
+        final statusColor = switch (sale.commercialStatus) {
+          CommercialStatus.paid => AppTheme.neonGreenDark,
+          CommercialStatus.pendingPayment => Colors.orange,
+        };
+        final statusLabel = switch (sale.commercialStatus) {
+          CommercialStatus.paid => 'Paid',
+          CommercialStatus.pendingPayment => 'Pending',
+        };
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 8,
+            ),
+            leading: CircleAvatar(
+              backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
+              child: const Icon(
+                Icons.receipt_rounded,
+                color: AppTheme.primary,
+              ),
+            ),
+            title: Text(
+              sale.itemName,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text(
+                  '$dateStr • ${sale.customerName}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    // Invoice number badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusSmall,
+                        ),
+                      ),
+                      child: Text(
+                        sale.invoiceNumber,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Payment status chip
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusSmall,
+                        ),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            trailing: Text(
+              '+RM ${sale.totalPayable.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.neonGreenDark,
+              ),
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  // ── Sales Filtering Logic ─────────────────────────────────────────────────
+
+  List<SaleRecord> _applySalesFilter(List<SaleRecord> sales) {
+    final now = DateTime.now();
+    switch (_selectedFilterIndex) {
+      case 1: // Last 7 Days
+        final cutoff = now.subtract(const Duration(days: 7));
+        return sales.where((s) => s.saleDate.isAfter(cutoff)).toList();
+      case 2: // Last 30 Days
+        final cutoff = now.subtract(const Duration(days: 30));
+        return sales.where((s) => s.saleDate.isAfter(cutoff)).toList();
+      default: // All Time
+        return sales;
+    }
+  }
+
+  double _calculateSalesTotal(List<SaleRecord> sales) {
+    return sales.fold(0.0, (sum, r) => sum + r.totalPayable);
+  }
+
+  // ── CSV Export for Sales ──────────────────────────────────────────────────
+
+  Future<void> _exportSalesToCSV(List<SaleRecord> sales) async {
+    if (sales.isEmpty) {
+      AppDialogs.showActionModal(
+        context,
+        title: 'No Data to Export',
+        body: 'There are no sale records to export.',
+        primaryButtonText: 'OK',
+        onPrimaryPressed: () {},
+        icon: Icons.info_outline_rounded,
+        iconColor: AppTheme.primary,
+        primaryButtonColor: AppTheme.primary,
+      );
+      return;
+    }
+
+    setState(() => _isExporting = true);
+
+    try {
+      final List<List<dynamic>> rows = [
+        ['Invoice', 'Date', 'Customer', 'Item', 'Qty', 'Subtotal (RM)', 'Tax (RM)', 'Total (RM)', 'Payment', 'Status'],
+        ...sales.map((s) => [
+          s.invoiceNumber,
+          DateFormat('yyyy-MM-dd').format(s.saleDate),
+          s.customerName,
+          s.itemName,
+          s.quantity.toStringAsFixed(s.quantity == s.quantity.roundToDouble() ? 0 : 2),
+          s.subtotal.toStringAsFixed(2),
+          s.taxAmount.toStringAsFixed(2),
+          s.totalPayable.toStringAsFixed(2),
+          s.paymentMode,
+          s.commercialStatus.name,
+        ]),
+        [],
+        ['', '', '', '', 'TOTAL', '', '', _calculateSalesTotal(sales).toStringAsFixed(2), '', ''],
+        ['', '', '', '', 'Generated', DateTime.now().toIso8601String().split('T')[0], '', '', '', ''],
+      ];
+
+      final csvString = const ListToCsvConverter().convert(rows);
+
+      final appDir = await getApplicationDocumentsDirectory();
+      final dateStr = DateTime.now().toIso8601String().split('T')[0];
+      final fileName = 'MyRekod_Sales_$dateStr.csv';
+      final file = File('${appDir.path}/$fileName');
+      await file.writeAsString(csvString);
+
+      if (!mounted) return;
+      setState(() => _isExporting = false);
+
+      final box = context.findRenderObject() as RenderBox?;
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'MyRekod Sales Report - $dateStr',
+        sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isExporting = false);
+
+      AppDialogs.showActionModal(
+        context,
+        title: 'Export Failed',
+        body: 'Could not generate CSV file.\n\nError: $e',
+        primaryButtonText: 'OK',
+        onPrimaryPressed: () {},
+        icon: Icons.error_outline_rounded,
+        iconColor: Colors.redAccent,
+        primaryButtonColor: Colors.redAccent,
+      );
+    }
   }
 }

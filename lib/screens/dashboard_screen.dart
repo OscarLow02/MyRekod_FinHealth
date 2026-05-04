@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../core/app_theme.dart';
 import '../services/firestore_service.dart';
 import '../models/business_profile.dart';
+import '../providers/sales_provider.dart';
+import '../providers/sale_calculator_provider.dart';
 import '../widgets/app_dialogs.dart';
 import 'profile/profile_menu_screen.dart';
 import 'transactions_screen.dart';
 import 'expenses/scanner_screen.dart';
+import 'sales/record_sale_screen.dart';
 
 /// Dashboard screen with bottom navigation skeleton.
 /// Sprint 1 placeholder — full implementation in Sprint 2.
@@ -66,9 +70,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           AppDialogs.showNewEntryModal(
             context,
             onRecordSale: () {
-              // TODO: Sprint 3 - Implement Record Sale
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Record Sale coming soon!')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChangeNotifierProvider(
+                    create: (_) => SaleCalculatorProvider(),
+                    child: const RecordSaleScreen(),
+                  ),
+                ),
               );
             },
             onRecordExpense: () {
@@ -141,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'RM 0.00',
+                  'RM ${context.watch<SalesProvider>().todaySalesTotal.toStringAsFixed(2)}',
                   style: theme.textTheme.displayMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,

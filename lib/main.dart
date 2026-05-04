@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'core/app_theme.dart';
 import 'providers/onboarding_provider.dart';
 import 'providers/expense_provider.dart';
+import 'providers/sales_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/auth_wrapper.dart';
 
@@ -26,6 +27,7 @@ class MyRekodApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => OnboardingProvider()),
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+        ChangeNotifierProvider(create: (_) => SalesProvider()),
       ],
       child: MaterialApp(
         title: 'MyRekod',
