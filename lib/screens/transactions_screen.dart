@@ -265,6 +265,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                       return const Center(child: CircularProgressIndicator());
                     }
 
+                    if (provider.error != null) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Text(
+                            'Error fetching sales:\n${provider.error}',
+                            style: const TextStyle(color: Colors.red),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
+
                     final filteredSales = _applySalesFilter(provider.saleRecords);
 
                     if (filteredSales.isEmpty) {

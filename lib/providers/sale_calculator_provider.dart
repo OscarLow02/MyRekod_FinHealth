@@ -162,23 +162,19 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
       // Stream sale items catalog
       _itemsSub?.cancel();
-      _itemsSub = _firestoreService.watchSaleItems(user.uid).listen(
-        (items) {
-          _saleItems = items;
-          notifyListeners();
-        },
-        onError: (e) => debugPrint('Sale items stream error: $e'),
-      );
+      _itemsSub = _firestoreService.watchSaleItems(user.uid).listen((items) {
+        _saleItems = items;
+        notifyListeners();
+      }, onError: (e) => debugPrint('Sale items stream error: $e'));
 
       // Stream customers list
       _customersSub?.cancel();
-      _customersSub = _firestoreService.watchCustomers(user.uid).listen(
-        (customerList) {
-          _customers = customerList;
-          notifyListeners();
-        },
-        onError: (e) => debugPrint('Customers stream error: $e'),
-      );
+      _customersSub = _firestoreService.watchCustomers(user.uid).listen((
+        customerList,
+      ) {
+        _customers = customerList;
+        notifyListeners();
+      }, onError: (e) => debugPrint('Customers stream error: $e'));
 
       _isLoading = false;
       notifyListeners();
@@ -312,24 +308,35 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   /// Submits the sale record to Firestore.
   ///
-  /// 1. Generates the next invoice number atomically
-  /// 2. Builds the finalized SaleRecord
-  /// 3. Persists to Firestore (Fire and Forget)
+  /// 1. Saves new customer if requested
+  /// 2. Generates the next invoice number atomically
+  /// 3. Builds the finalized SaleRecord
+  /// 4. Persists to Firestore (Fire and Forget)
   ///
   /// Returns the saved [SaleRecord] or null on failure.
-  Future<SaleRecord?> submitSale() async {
+  Future<SaleRecord?> submitSale({bool saveNewCustomer = false}) async {
     if (_currentUserId == null || !canSubmit) return null;
 
     try {
-      // Step 1: Atomic invoice number
-      final invoiceNumber = await _firestoreService
-          .generateNextInvoiceNumber(_currentUserId!);
+      // Step 1: Save new customer if requested
+      if (saveNewCustomer && _selectedCustomer?.id == 'temp-new') {
+        final savedCustomer = await _firestoreService.addCustomer(
+          _currentUserId!,
+          _selectedCustomer!,
+        );
+        _selectedCustomer = savedCustomer;
+      }
 
-      // Step 2: Build finalized record
+      // Step 2: Atomic invoice number
+      final invoiceNumber = await _firestoreService.generateNextInvoiceNumber(
+        _currentUserId!,
+      );
+
+      // Step 3: Build finalized record
       final record = buildSaleRecord(invoiceNumber: invoiceNumber);
       if (record == null) return null;
 
-      // Step 3: Persist
+      // Step 4: Persist
       final saved = await _firestoreService.addSaleRecord(
         _currentUserId!,
         record,

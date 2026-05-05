@@ -11,18 +11,8 @@ service cloud.firestore {
     match /business_profiles/{userId} {
       allow read, write: if isOwner(userId);
 
-      // Sale Items subcollection
-      match /sale_items/{itemId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Settings subcollection (e.g., tax_config)
-      match /settings/{settingId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Expenses subcollection
-      match /expenses/{expenseId} {
+      // Explicitly allow access to all subcollections
+      match /{subpaths=**} {
         allow read, write: if isOwner(userId);
       }
     }

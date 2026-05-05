@@ -21,6 +21,8 @@ class RecordSaleScreen extends StatefulWidget {
   State<RecordSaleScreen> createState() => _RecordSaleScreenState();
 }
 
+enum CustomerMode { walkIn, existing, newCustomer }
+
 class _RecordSaleScreenState extends State<RecordSaleScreen> {
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController(text: '1');
@@ -28,6 +30,13 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   final _discountDescController = TextEditingController();
   final _notesController = TextEditingController();
   final _taxRateController = TextEditingController();
+
+  CustomerMode _customerMode = CustomerMode.walkIn;
+  CustomerType _newCustomerType = CustomerType.b2c;
+  final _newCustomerNameController = TextEditingController();
+  final _newCustomerTinController = TextEditingController();
+  final _newCustomerIdController = TextEditingController();
+  bool _saveNewCustomer = true;
 
   bool _showAdvanced = false;
   bool _isSaving = false;
@@ -37,7 +46,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     super.initState();
     // Initialize the provider after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SaleCalculatorProvider>().initialize();
+      final calc = context.read<SaleCalculatorProvider>();
+      calc.initialize();
+      calc.selectCustomer(Customer.walkIn);
     });
   }
 
@@ -48,7 +59,37 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     _discountDescController.dispose();
     _notesController.dispose();
     _taxRateController.dispose();
+    _newCustomerNameController.dispose();
+    _newCustomerTinController.dispose();
+    _newCustomerIdController.dispose();
     super.dispose();
+  }
+
+  void _updateNewCustomerInProvider() {
+    if (_customerMode == CustomerMode.newCustomer) {
+      final calc = context.read<SaleCalculatorProvider>();
+      calc.selectCustomer(
+        Customer(
+          id: 'temp-new',
+          name: _newCustomerNameController.text.trim(),
+          customerType: _newCustomerType,
+          tinNumber: _newCustomerTinController.text.trim(),
+          idNumber: _newCustomerIdController.text.trim(),
+        ),
+      );
+    }
+  }
+
+  void _onCustomerModeChanged(CustomerMode mode) {
+    setState(() => _customerMode = mode);
+    final calc = context.read<SaleCalculatorProvider>();
+    if (mode == CustomerMode.walkIn) {
+      calc.selectCustomer(Customer.walkIn);
+    } else if (mode == CustomerMode.existing) {
+      calc.selectCustomer(null);
+    } else {
+      _updateNewCustomerInProvider();
+    }
   }
 
   // ── Back Press / Discard Guard ──────────────────────────────────────────
@@ -87,9 +128,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: AppTheme.primary,
-                  onPrimary: Colors.white,
-                ),
+              primary: AppTheme.primary,
+              onPrimary: Colors.white,
+            ),
           ),
           child: child!,
         );
@@ -111,7 +152,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final record = await calc.submitSale();
+      final record = await calc.submitSale(
+        saveNewCustomer:
+            _customerMode == CustomerMode.newCustomer && _saveNewCustomer,
+      );
 
       if (!mounted) return;
       setState(() => _isSaving = false);
@@ -165,7 +209,16 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         _discountDescController.clear();
         _notesController.clear();
         _taxRateController.clear();
-        setState(() => _showAdvanced = false);
+        _newCustomerNameController.clear();
+        _newCustomerTinController.clear();
+        _newCustomerIdController.clear();
+        setState(() {
+          _showAdvanced = false;
+          _customerMode = CustomerMode.walkIn;
+          _newCustomerType = CustomerType.b2c;
+          _saveNewCustomer = true;
+        });
+        context.read<SaleCalculatorProvider>().selectCustomer(Customer.walkIn);
       },
       secondaryButtonText: 'Done',
       onSecondaryPressed: () => Navigator.pop(context),
@@ -198,7 +251,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.3,
+          ),
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
         ),
         child: Column(
@@ -212,7 +267,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               theme,
             ),
             _reviewDivider(theme),
-            _reviewRow('Subtotal', 'RM ${calc.subtotal.toStringAsFixed(2)}', theme),
+            _reviewRow(
+              'Subtotal',
+              'RM ${calc.subtotal.toStringAsFixed(2)}',
+              theme,
+            ),
             if (calc.discountAmount > 0)
               _reviewRow(
                 'Discount',
@@ -337,9 +396,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.error_outline,
-                          size: 48,
-                          color: theme.colorScheme.error),
+                      Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: theme.colorScheme.error,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'Could not load data',
@@ -412,9 +473,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildDateField(calc, theme),
-                        ),
+                        Expanded(child: _buildDateField(calc, theme)),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -609,49 +668,208 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         }
       },
       validator: (val) => val == null ? 'Please select an item' : null,
-      fillColor:
-          theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+        alpha: 0.3,
+      ),
     );
   }
 
-  /// Customer selection dropdown with Walk-in as default option.
-  Widget _buildCustomerSelector(
-      SaleCalculatorProvider calc, ThemeData theme) {
-    // Build customer dropdown items: Walk-in first, then saved customers
-    final customerItems = <CustomDropdownItem<String>>[
-      CustomDropdownItem<String>(
-        label: 'Walk-in Customer (B2C)',
-        value: Customer.walkIn.id,
-        icon: Icons.person_rounded,
-      ),
-      ...calc.customers.map(
-        (c) => CustomDropdownItem<String>(
-          label: '${c.name}  •  ${c.customerType.name.toUpperCase()}',
-          value: c.id,
-          icon: c.customerType == CustomerType.b2b
-              ? Icons.business_rounded
-              : Icons.person_outline_rounded,
+  /// Customer selection with segmented toggle (Walk-in, Existing, New).
+  Widget _buildCustomerSelector(SaleCalculatorProvider calc, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.person_outline_rounded,
+              size: 16,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Customer',
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
-      ),
-    ];
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<CustomerMode>(
+            segments: const [
+              ButtonSegment(
+                value: CustomerMode.walkIn,
+                icon: Icon(Icons.directions_walk_rounded),
+                label: Text('Walk-in'),
+              ),
+              ButtonSegment(
+                value: CustomerMode.existing,
+                icon: Icon(Icons.people_alt_rounded),
+                label: Text('Existing'),
+              ),
+              ButtonSegment(
+                value: CustomerMode.newCustomer,
+                icon: Icon(Icons.person_add_rounded),
+                label: Text('New'),
+              ),
+            ],
+            selected: {_customerMode},
+            onSelectionChanged: (Set<CustomerMode> newSelection) {
+              _onCustomerModeChanged(newSelection.first);
+            },
+            style: SegmentedButton.styleFrom(
+              backgroundColor: theme.colorScheme.surface,
+              selectedForegroundColor: theme.colorScheme.onPrimary,
+              selectedBackgroundColor: theme.colorScheme.primary,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _buildCustomerModeContent(calc, theme),
+        ),
+      ],
+    );
+  }
 
-    return CustomPremiumDropdown<String>(
-      label: 'Customer',
-      value: calc.selectedCustomer?.id,
-      hint: 'Select customer',
-      items: customerItems,
-      isSearchable: true,
-      onChanged: (val) {
-        if (val == Customer.walkIn.id) {
-          calc.selectCustomer(Customer.walkIn);
-        } else if (val != null) {
-          final customer = calc.customers.firstWhere((c) => c.id == val);
-          calc.selectCustomer(customer);
-        }
-      },
-      validator: (val) => val == null ? 'Please select a customer' : null,
-      fillColor:
-          theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+  Widget _buildCustomerModeContent(
+    SaleCalculatorProvider calc,
+    ThemeData theme,
+  ) {
+    switch (_customerMode) {
+      case CustomerMode.walkIn:
+        return const SizedBox.shrink(); // No additional fields needed
+      case CustomerMode.existing:
+        final customerItems = calc.customers
+            .map(
+              (c) => CustomDropdownItem<String>(
+                label: '${c.name}  •  ${c.customerType.name.toUpperCase()}',
+                value: c.id,
+                icon: c.customerType == CustomerType.b2b
+                    ? Icons.business_rounded
+                    : Icons.person_outline_rounded,
+              ),
+            )
+            .toList();
+
+        return CustomPremiumDropdown<String>(
+          label: 'Select Customer',
+          value: calc.selectedCustomer?.isWalkIn == true
+              ? null
+              : calc.selectedCustomer?.id,
+          hint: 'Search customers...',
+          items: customerItems,
+          isSearchable: true,
+          onChanged: (val) {
+            if (val != null) {
+              final customer = calc.customers.firstWhere((c) => c.id == val);
+              calc.selectCustomer(customer);
+            }
+          },
+          validator: (val) => val == null ? 'Please select a customer' : null,
+          fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.3,
+          ),
+        );
+      case CustomerMode.newCustomer:
+        return _buildNewCustomerForm(theme);
+    }
+  }
+
+  Widget _buildNewCustomerForm(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        border: Border.all(color: theme.colorScheme.surfaceContainerHighest),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ChoiceChip(
+                label: const Text('Individual (B2C)'),
+                selected: _newCustomerType == CustomerType.b2c,
+                onSelected: (val) {
+                  if (val) {
+                    setState(() => _newCustomerType = CustomerType.b2c);
+                    _updateNewCustomerInProvider();
+                  }
+                },
+                selectedColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+              ),
+              const SizedBox(width: 8),
+              ChoiceChip(
+                label: const Text('Business (B2B)'),
+                selected: _newCustomerType == CustomerType.b2b,
+                onSelected: (val) {
+                  if (val) {
+                    setState(() => _newCustomerType = CustomerType.b2b);
+                    _updateNewCustomerInProvider();
+                  }
+                },
+                selectedColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            label: _newCustomerType == CustomerType.b2b
+                ? 'Business Name'
+                : 'Full Name',
+            controller: _newCustomerNameController,
+            icon: Icons.person_rounded,
+            onChanged: (_) => _updateNewCustomerInProvider(),
+            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+          ),
+          const SizedBox(height: 12),
+          AppTextField(
+            label: 'LHDN TIN (Optional for B2C)',
+            controller: _newCustomerTinController,
+            icon: Icons.tag_rounded,
+            onChanged: (_) => _updateNewCustomerInProvider(),
+            validator: (val) {
+              if (_newCustomerType == CustomerType.b2b &&
+                  (val == null || val.isEmpty)) {
+                return 'Required for B2B';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          AppTextField(
+            label: _newCustomerType == CustomerType.b2b
+                ? 'BRN Number'
+                : 'MyKad / Passport',
+            controller: _newCustomerIdController,
+            icon: Icons.badge_rounded,
+            onChanged: (_) => _updateNewCustomerInProvider(),
+            validator: (val) {
+              if (_newCustomerType == CustomerType.b2b &&
+                  (val == null || val.isEmpty)) {
+                return 'Required for B2B';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          CheckboxListTile(
+            title: const Text('Save to Contact List'),
+            value: _saveNewCustomer,
+            onChanged: (val) => setState(() => _saveNewCustomer = val ?? true),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            activeColor: theme.colorScheme.primary,
+          ),
+        ],
+      ),
     );
   }
 
@@ -662,8 +880,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
       children: [
         Row(
           children: [
-            Icon(Icons.calendar_month_rounded,
-                size: 16, color: theme.colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.calendar_month_rounded,
+              size: 16,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(width: 8),
             Text(
               'Date',
@@ -682,8 +903,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.3),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.3,
+              ),
               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
             ),
             child: Text(
@@ -705,11 +927,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          border: Border.all(
-            color: theme.colorScheme.surfaceContainerHighest,
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.2,
           ),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          border: Border.all(color: theme.colorScheme.surfaceContainerHighest),
         ),
         child: Row(
           children: [
@@ -743,8 +965,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   }
 
   /// The advanced fields section (discount, tax, notes).
-  Widget _buildAdvancedSection(
-      SaleCalculatorProvider calc, ThemeData theme) {
+  Widget _buildAdvancedSection(SaleCalculatorProvider calc, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -757,8 +978,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 label: 'Discount (RM)',
                 icon: Icons.discount_rounded,
                 controller: _discountController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 hintText: '0.00',
                 onChanged: (val) {
                   final d = double.tryParse(val) ?? 0.0;
@@ -802,8 +1024,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     }
                   }
                 },
-                fillColor: theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.3),
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
+                ),
               ),
             ),
             const SizedBox(width: 16),
@@ -813,8 +1036,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 label: 'Rate (%)',
                 icon: Icons.percent_rounded,
                 controller: _taxRateController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 hintText: '0',
                 enabled: calc.taxType != '06' && calc.taxType != 'E',
                 onChanged: (val) {
