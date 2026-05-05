@@ -56,9 +56,9 @@ class SaleCalculatorProvider extends ChangeNotifier {
   String _notes = '';
   DateTime _saleDate = DateTime.now();
 
-  // Tax override fields (populated from TaxConfig, editable per-sale)
   String _taxType = '06'; // Default: Not Applicable
   double _taxRate = 0.0;
+  double? _customPrice;
 
   // ── Form State Getters ─────────────────────────────────────────────────
 
@@ -74,7 +74,9 @@ class SaleCalculatorProvider extends ChangeNotifier {
   double get taxRate => _taxRate;
 
   /// Unit price from the selected item, or 0 if none selected.
-  double get unitPrice => _selectedItem?.unitPrice ?? 0.0;
+  double get unitPrice => _customPrice ?? _selectedItem?.unitPrice ?? 0.0;
+
+  bool get isPriceOverridden => _customPrice != null;
 
   // ══════════════════════════════════════════════════════════════════════════
   //  COMPUTED GETTERS — The Calculation Engine
@@ -192,6 +194,12 @@ class SaleCalculatorProvider extends ChangeNotifier {
   /// Select an item from the catalog. Auto-populates unit price.
   void selectItem(SaleItem? item) {
     _selectedItem = item;
+    _customPrice = null; // Reset custom price when changing item
+    notifyListeners();
+  }
+
+  void setCustomPrice(double? price) {
+    _customPrice = price;
     notifyListeners();
   }
 
