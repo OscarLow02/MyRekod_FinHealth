@@ -324,13 +324,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           _currentSale.invoiceNumber,
           dateStr,
           _currentSale.customerName,
-          _currentSale.itemName,
-          _currentSale.quantity.toStringAsFixed(
-            _currentSale.quantity == _currentSale.quantity.roundToDouble()
-                ? 0
-                : 2,
-          ),
-          _currentSale.unitPrice.toStringAsFixed(2),
+          _currentSale.lineItems.map((l) => l.item.name).join('; '),
+          _currentSale.lineItems.fold<double>(0, (sum, l) => sum + l.quantity).toString(),
+          _currentSale.lineItems.isEmpty ? '0.00' : _currentSale.lineItems.first.unitPrice.toStringAsFixed(2),
           _currentSale.subtotal.toStringAsFixed(2),
           _currentSale.discountAmount.toStringAsFixed(2),
           _currentSale.taxAmount.toStringAsFixed(2),
@@ -652,20 +648,16 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                         _currentSale.paymentMode),
             const SizedBox(height: 24),
 
-            // ── Item Breakdown ────────────────────────────────────────
             // TODO: Implement i18n
             _buildSectionHeader(theme, 'Item Breakdown'),
             const SizedBox(height: 12),
-            _buildDetailCard(theme,
-                icon: Icons.inventory_2_outlined,
-                label: 'Item',
-                value: _currentSale.itemName),
-            _buildDetailCard(theme,
-                icon: Icons.straighten_rounded,
-                label: 'Unit / Quantity',
-                value:
-                    '${_currentSale.quantity.toStringAsFixed(_currentSale.quantity == _currentSale.quantity.roundToDouble() ? 0 : 2)} '
-                    '× RM ${_currentSale.unitPrice.toStringAsFixed(2)}'),
+            ..._currentSale.lineItems.map((line) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: _buildDetailCard(theme,
+                      icon: Icons.inventory_2_outlined,
+                      label: line.item.name,
+                      value: '${line.quantity.toStringAsFixed(line.quantity == line.quantity.roundToDouble() ? 0 : 2)} ${line.item.measurementUnit} × RM ${line.unitPrice.toStringAsFixed(2)}'),
+                )),
             const SizedBox(height: 24),
 
             // ── Pricing Breakdown ─────────────────────────────────────

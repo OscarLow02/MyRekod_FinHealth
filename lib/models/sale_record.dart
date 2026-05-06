@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'customer.dart';
+import 'sale_item.dart';
+import 'sale_line_item.dart';
 
 // ── Status Enums ─────────────────────────────────────────────────────────────
 
@@ -100,12 +102,7 @@ class SaleRecord {
 
   // ── Item Details ───────────────────────────────────────────────────────
 
-  final String itemId;
-  final String itemName;
-  final String measurementUnit; // LHDN unit code, e.g. 'C62'
-  final String classificationCode; // LHDN classification, e.g. '022'
-  final double unitPrice;
-  final double quantity;
+  final List<SaleLineItem> lineItems;
 
   // ── Pricing Breakdown ──────────────────────────────────────────────────
 
@@ -176,12 +173,7 @@ class SaleRecord {
     this.customerIdNumber = '',
     this.customerIdScheme = 'BRN',
     // Item
-    required this.itemId,
-    required this.itemName,
-    this.measurementUnit = 'C62',
-    this.classificationCode = '022',
-    required this.unitPrice,
-    required this.quantity,
+    required this.lineItems,
     // Pricing
     required this.subtotal,
     this.discountAmount = 0.0,
@@ -219,13 +211,15 @@ class SaleRecord {
       'customerTin': customerTin,
       'customerIdNumber': customerIdNumber,
       'customerIdScheme': customerIdScheme,
-      // Item
-      'itemId': itemId,
-      'itemName': itemName,
-      'measurementUnit': measurementUnit,
-      'classificationCode': classificationCode,
-      'unitPrice': unitPrice,
-      'quantity': quantity,
+      // Items
+      'lineItems': lineItems.map((l) => {
+        'itemId': l.item.id,
+        'itemName': l.item.name,
+        'unitPrice': l.unitPrice,
+        'quantity': l.quantity,
+        'measurementUnit': l.item.measurementUnit,
+        'classificationCode': l.item.classificationCode,
+      }).toList(),
       // Pricing
       'subtotal': subtotal,
       'discountAmount': discountAmount,
@@ -275,13 +269,21 @@ class SaleRecord {
       customerTin: data['customerTin'] as String? ?? '',
       customerIdNumber: data['customerIdNumber'] as String? ?? '',
       customerIdScheme: data['customerIdScheme'] as String? ?? 'BRN',
-      // Item
-      itemId: data['itemId'] as String? ?? '',
-      itemName: data['itemName'] as String? ?? '',
-      measurementUnit: data['measurementUnit'] as String? ?? 'C62',
-      classificationCode: data['classificationCode'] as String? ?? '022',
-      unitPrice: (data['unitPrice'] as num?)?.toDouble() ?? 0.0,
-      quantity: (data['quantity'] as num?)?.toDouble() ?? 1.0,
+      // Items
+      lineItems: (data['lineItems'] as List? ?? []).map((l) {
+        final itemMap = l as Map<String, dynamic>;
+        return SaleLineItem(
+          item: SaleItem(
+            id: itemMap['itemId'] ?? '',
+            name: itemMap['itemName'] ?? '',
+            unitPrice: (itemMap['unitPrice'] as num?)?.toDouble() ?? 0.0,
+            measurementUnit: itemMap['measurementUnit'] ?? 'C62',
+            classificationCode: itemMap['classificationCode'] ?? '022',
+          ),
+          quantity: (itemMap['quantity'] as num?)?.toDouble() ?? 1.0,
+          customPrice: null, // Custom price is usually not persisted separately in the record snapshot
+        );
+      }).toList(),
       // Pricing
       subtotal: (data['subtotal'] as num?)?.toDouble() ?? 0.0,
       discountAmount: (data['discountAmount'] as num?)?.toDouble() ?? 0.0,
@@ -321,12 +323,7 @@ class SaleRecord {
     String? customerTin,
     String? customerIdNumber,
     String? customerIdScheme,
-    String? itemId,
-    String? itemName,
-    String? measurementUnit,
-    String? classificationCode,
-    double? unitPrice,
-    double? quantity,
+    List<SaleLineItem>? lineItems,
     double? subtotal,
     double? discountAmount,
     String? discountDescription,
@@ -353,12 +350,7 @@ class SaleRecord {
       customerTin: customerTin ?? this.customerTin,
       customerIdNumber: customerIdNumber ?? this.customerIdNumber,
       customerIdScheme: customerIdScheme ?? this.customerIdScheme,
-      itemId: itemId ?? this.itemId,
-      itemName: itemName ?? this.itemName,
-      measurementUnit: measurementUnit ?? this.measurementUnit,
-      classificationCode: classificationCode ?? this.classificationCode,
-      unitPrice: unitPrice ?? this.unitPrice,
-      quantity: quantity ?? this.quantity,
+      lineItems: lineItems ?? this.lineItems,
       subtotal: subtotal ?? this.subtotal,
       discountAmount: discountAmount ?? this.discountAmount,
       discountDescription: discountDescription ?? this.discountDescription,

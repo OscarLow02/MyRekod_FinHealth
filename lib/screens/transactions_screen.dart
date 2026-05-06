@@ -418,7 +418,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
             ),
             const SizedBox(height: 20),
             Text(
-              // TODO: Implement i18n
               message,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -524,7 +523,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
               ),
             ),
             title: Text(
-              sale.itemName,
+              sale.lineItems.isEmpty ? 'Sale' : (sale.lineItems.length == 1 ? sale.lineItems.first.item.name : '${sale.lineItems.first.item.name} (+${sale.lineItems.length - 1} items)'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             subtitle: Column(
@@ -644,8 +643,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
           s.invoiceNumber,
           DateFormat('yyyy-MM-dd').format(s.saleDate),
           s.customerName,
-          s.itemName,
-          s.quantity.toStringAsFixed(s.quantity == s.quantity.roundToDouble() ? 0 : 2),
+          s.lineItems.map((l) => l.item.name).join('; '),
+          s.lineItems.fold<double>(0, (sum, l) => sum + l.quantity).toString(),
           s.subtotal.toStringAsFixed(2),
           s.taxAmount.toStringAsFixed(2),
           s.totalPayable.toStringAsFixed(2),

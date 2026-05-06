@@ -6,6 +6,7 @@ import '../models/customer.dart';
 import '../models/sale_item.dart';
 import '../models/sale_record.dart';
 import '../models/tax_config.dart';
+import '../models/sale_line_item.dart';
 import '../services/firestore_service.dart';
 
 /// The real-time calculation engine for the Record Sale form.
@@ -47,9 +48,8 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   // ── Form State (mutable, drives computed getters) ──────────────────────
 
-  SaleItem? _selectedItem;
+  final List<SaleLineItem> _lineItems = [];
   Customer? _selectedCustomer;
-  double _quantity = 1.0;
   double _discountAmount = 0.0;
   String _discountDescription = '';
   String _paymentMode = '01'; // Default: Cash
@@ -58,13 +58,11 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   String _taxType = '06'; // Default: Not Applicable
   double _taxRate = 0.0;
-  double? _customPrice;
 
   // ── Form State Getters ─────────────────────────────────────────────────
 
-  SaleItem? get selectedItem => _selectedItem;
+  List<SaleLineItem> get lineItems => _lineItems;
   Customer? get selectedCustomer => _selectedCustomer;
-  double get quantity => _quantity;
   double get discountAmount => _discountAmount;
   String get discountDescription => _discountDescription;
   String get paymentMode => _paymentMode;
@@ -73,19 +71,23 @@ class SaleCalculatorProvider extends ChangeNotifier {
   String get taxType => _taxType;
   double get taxRate => _taxRate;
 
-  /// Unit price from the selected item, or 0 if none selected.
-  double get unitPrice => _customPrice ?? _selectedItem?.unitPrice ?? 0.0;
-
-  bool get isPriceOverridden => _customPrice != null;
+  // Legacy getters for compatibility with single-item logic if needed
+  SaleItem? get selectedItem => _lineItems.isNotEmpty ? _lineItems.first.item : null;
+  double get quantity => _lineItems.isNotEmpty ? _lineItems.first.quantity : 1.0;
+  double get unitPrice => _lineItems.isNotEmpty ? _lineItems.first.unitPrice : 0.0;
 
   // ══════════════════════════════════════════════════════════════════════════
   //  COMPUTED GETTERS — The Calculation Engine
   // ══════════════════════════════════════════════════════════════════════════
 
   /// Line subtotal before tax and discount.
-  /// Formula: unitPrice × quantity
+  /// Formula: sum of (unitPrice × quantity) for all line items
   double get subtotal {
-    return _round2dp(unitPrice * _quantity);
+    double total = 0.0;
+    for (var line in _lineItems) {
+      total += line.subtotal;
+    }
+    return _round2dp(total);
   }
 
   /// Net amount after discount, before tax.
@@ -130,9 +132,8 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   /// Whether the form has enough data to be submitted.
   bool get canSubmit {
-    return _selectedItem != null &&
+    return _lineItems.isNotEmpty &&
         _selectedCustomer != null &&
-        _quantity > 0 &&
         totalPayable >= 0;
   }
 
@@ -191,28 +192,66 @@ class SaleCalculatorProvider extends ChangeNotifier {
   //  SETTERS (mutate form state → trigger recalculation via notifyListeners)
   // ══════════════════════════════════════════════════════════════════════════
 
-  /// Select an item from the catalog. Auto-populates unit price.
-  void selectItem(SaleItem? item) {
-    _selectedItem = item;
-    _customPrice = null; // Reset custom price when changing item
-    notifyListeners();
-  }
-
-  void setCustomPrice(double? price) {
-    _customPrice = price;
-    notifyListeners();
-  }
-
   /// Select a customer (or Walk-in).
   void selectCustomer(Customer? customer) {
     _selectedCustomer = customer;
     notifyListeners();
   }
 
-  /// Update quantity. Clamped to minimum 0.01.
-  void setQuantity(double value) {
-    _quantity = math.max(0.01, value);
+  void addLineItem(SaleItem item) {
+    _lineItems.add(SaleLineItem(item: item));
     notifyListeners();
+  }
+
+  void updateLineItem(int index, SaleItem item) {
+    if (index >= 0 && index < _lineItems.length) {
+      _lineItems[index] = SaleLineItem(item: item);
+      notifyListeners();
+    }
+  }
+
+  void removeLineItem(int index) {
+    if (index >= 0 && index < _lineItems.length) {
+      _lineItems.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void updateLineItemQuantity(int index, double qty) {
+    if (index >= 0 && index < _lineItems.length) {
+      _lineItems[index].quantity = math.max(1, qty);
+      notifyListeners();
+    }
+  }
+
+  void updateLineItemPrice(int index, double? price) {
+    if (index >= 0 && index < _lineItems.length) {
+      _lineItems[index].customPrice = price;
+      notifyListeners();
+    }
+  }
+
+  void setQuantity(double value) {
+    if (_lineItems.isNotEmpty) {
+      _lineItems[0].quantity = value;
+      notifyListeners();
+    }
+  }
+
+  /// Select an item from the catalog. Auto-populates unit price.
+  void selectItem(SaleItem? item) {
+    if (item != null) {
+      _lineItems.clear();
+      _lineItems.add(SaleLineItem(item: item));
+      notifyListeners();
+    }
+  }
+
+  void setCustomPrice(double? price) {
+    if (_lineItems.isNotEmpty) {
+      _lineItems[0].customPrice = price;
+      notifyListeners();
+    }
   }
 
   /// Update discount amount. Clamped at 0.
@@ -274,7 +313,6 @@ class SaleCalculatorProvider extends ChangeNotifier {
   SaleRecord? buildSaleRecord({required String invoiceNumber}) {
     if (!canSubmit) return null;
 
-    final item = _selectedItem!;
     final customer = _selectedCustomer!;
 
     return SaleRecord(
@@ -288,13 +326,8 @@ class SaleCalculatorProvider extends ChangeNotifier {
       customerTin: customer.tinNumber,
       customerIdNumber: customer.idNumber,
       customerIdScheme: customer.idScheme,
-      // Item details
-      itemId: item.id,
-      itemName: item.name,
-      measurementUnit: item.measurementUnit,
-      classificationCode: item.classificationCode,
-      unitPrice: item.unitPrice,
-      quantity: _quantity,
+      // Item details (Note: Simplified for legacy; adjust model if supporting multi-item records)
+      lineItems: _lineItems,
       // Pricing (all computed)
       subtotal: subtotal,
       discountAmount: _discountAmount,
@@ -359,11 +392,10 @@ class SaleCalculatorProvider extends ChangeNotifier {
     }
   }
 
-  /// Resets the form to its initial state for a new sale.
+  /// Resets the form for a fresh sale.
   void resetForm() {
-    _selectedItem = null;
+    _lineItems.clear();
     _selectedCustomer = null;
-    _quantity = 1.0;
     _discountAmount = 0.0;
     _discountDescription = '';
     _paymentMode = '01';

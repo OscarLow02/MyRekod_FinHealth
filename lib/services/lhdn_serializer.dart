@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import '../models/business_profile.dart';
 import '../models/sale_record.dart';
 import '../models/customer.dart';
+import '../models/sale_line_item.dart';
 import '../core/lhdn_constants.dart';
 
 /// Builds a complete LHDN UBL 2.1 compliant JSON payload
@@ -97,7 +98,7 @@ class LhdnPayloadBuilder {
 
           // ── Invoice Lines ────────────────────────────────────────────
           // Fields 48–55
-          "InvoiceLine": [_buildInvoiceLine(record)],
+          "InvoiceLine": record.lineItems.asMap().entries.map((entry) => _buildInvoiceLine(entry.value, record, entry.key + 1)).toList(),
         }
       ]
     };
@@ -348,25 +349,31 @@ class LhdnPayloadBuilder {
   //  INVOICE LINE (Fields 48–55)
   // ══════════════════════════════════════════════════════════════════════════
 
-  static Map<String, dynamic> _buildInvoiceLine(SaleRecord record) {
-    final lineExtension = record.subtotal; // qty × unitPrice
+  static Map<String, dynamic> _buildInvoiceLine(SaleLineItem lineItem, SaleRecord record, int index) {
+    final lineExtension = lineItem.unitPrice * lineItem.quantity;
 
-    final line = <String, dynamic>{
-      "ID": [{"_": "1"}],
+    // For transaction-wide discounts/taxes, we apply them proportionally or just to the first line?
+    // LHDN expects them per line. For now, if it's transaction-wide in the app, 
+    // we'll apply the rate to each line.
+    final itemDiscount = index == 1 ? record.discountAmount : 0.0;
+    final itemTax = (lineExtension - itemDiscount) * (record.taxRate / 100);
+
+    return {
+      "ID": [{"_": index.toString()}],
       "InvoicedQuantity": [
-        {"_": record.quantity, "unitCode": record.measurementUnit}
+        {"_": lineItem.quantity, "unitCode": lineItem.item.measurementUnit}
       ],
       "LineExtensionAmount": [
         {"_": _fmt(lineExtension), "currencyID": _currencyCode}
       ],
       // Discount (Allowance/Charge)
-      if (record.discountAmount > 0)
+      if (itemDiscount > 0)
         "AllowanceCharge": [
           {
             "ChargeIndicator": [{"_": false}],
             "MultiplierFactorNumeric": [{"_": 0}],
             "Amount": [
-              {"_": _fmt(record.discountAmount), "currencyID": _currencyCode}
+              {"_": _fmt(itemDiscount), "currencyID": _currencyCode}
             ],
             "AllowanceChargeReason": [
               {"_": record.discountDescription.isNotEmpty ? record.discountDescription : "Discount"}
@@ -376,15 +383,15 @@ class LhdnPayloadBuilder {
       "TaxTotal": [
         {
           "TaxAmount": [
-            {"_": _fmt(record.taxAmount), "currencyID": _currencyCode}
+            {"_": _fmt(itemTax), "currencyID": _currencyCode}
           ],
           "TaxSubtotal": [
             {
               "TaxableAmount": [
-                {"_": _fmt(lineExtension - record.discountAmount), "currencyID": _currencyCode}
+                {"_": _fmt(lineExtension - itemDiscount), "currencyID": _currencyCode}
               ],
               "TaxAmount": [
-                {"_": _fmt(record.taxAmount), "currencyID": _currencyCode}
+                {"_": _fmt(itemTax), "currencyID": _currencyCode}
               ],
               "Percent": [{"_": record.taxRate}],
               "TaxCategory": [
@@ -409,19 +416,19 @@ class LhdnPayloadBuilder {
             {
               "ItemClassificationCode": [
                 {
-                  "_": record.classificationCode,
+                  "_": lineItem.item.classificationCode,
                   "listID": "CLASS"
                 }
               ]
             }
           ],
-          "Description": [{"_": record.itemName}],
+          "Description": [{"_": lineItem.item.name}],
         }
       ],
       "Price": [
         {
           "PriceAmount": [
-            {"_": _fmt(record.unitPrice), "currencyID": _currencyCode}
+            {"_": _fmt(lineItem.unitPrice), "currencyID": _currencyCode}
           ]
         }
       ],
@@ -433,8 +440,6 @@ class LhdnPayloadBuilder {
         }
       ],
     };
-
-    return line;
   }
 
   // ══════════════════════════════════════════════════════════════════════════

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/app_theme.dart';
 import '../../core/lhdn_constants.dart';
 import '../../models/customer.dart';
+import '../../models/sale_line_item.dart';
 import '../../providers/sale_calculator_provider.dart';
 import '../../widgets/custom_widgets.dart';
 import '../../widgets/custom_dropdown.dart';
@@ -192,13 +193,19 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _reviewRow('Item', calc.selectedItem?.name ?? '-', theme),
+            ...calc.lineItems.map((line) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _reviewRow('Item', line.item.name, theme),
+                _reviewRow(
+                  'Qty × Price',
+                  '${line.quantity.toStringAsFixed(line.quantity == line.quantity.roundToDouble() ? 0 : 2)} × RM ${line.unitPrice.toStringAsFixed(2)}',
+                  theme,
+                ),
+                const SizedBox(height: 4),
+              ],
+            )),
             _reviewRow('Customer', calc.selectedCustomer?.name ?? '-', theme),
-            _reviewRow(
-              'Qty × Price',
-              '${calc.quantity.toStringAsFixed(calc.quantity == calc.quantity.roundToDouble() ? 0 : 2)} × RM ${calc.unitPrice.toStringAsFixed(2)}',
-              theme,
-            ),
             _reviewDivider(theme),
             _reviewRow('Subtotal', 'RM ${calc.subtotal.toStringAsFixed(2)}', theme),
             if (calc.discountAmount > 0)
@@ -289,39 +296,30 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                         children: [
                           _buildCustomerTypeSection(calc, theme),
                           const SizedBox(height: 28),
-                          Text('Sale Details', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+
+                          _buildItemDetailsSection(calc, theme),
+                          const SizedBox(height: 28),
+
+                          Text('Additional Details', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 20),
-                          _buildItemSelector(calc, theme),
-                          const SizedBox(height: 16),
+
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                child: AppTextField(
-                                  label: 'Quantity',
-                                  icon: Icons.numbers_rounded,
-                                  controller: _quantityController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  onChanged: (val) {
-                                    final qty = double.tryParse(val);
-                                    if (qty != null) calc.setQuantity(qty);
-                                  },
-                                  validator: (val) => (val == null || val.isEmpty) ? 'Required' : (double.tryParse(val) == null ? 'Invalid' : null),
+                                child: CustomPremiumDropdown<String>(
+                                  label: 'Payment Mode',
+                                  value: calc.paymentMode,
+                                  items: CustomDropdownBuilder.fromMap(LhdnConstants.paymentModes, icon: Icons.payment_rounded),
+                                  onChanged: (val) => val != null ? calc.setPaymentMode(val) : null,
+                                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                                 ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(child: _buildDateField(calc, theme)),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          CustomPremiumDropdown<String>(
-                            label: 'Payment Mode',
-                            value: calc.paymentMode,
-                            items: CustomDropdownBuilder.fromMap(LhdnConstants.paymentModes, icon: Icons.payment_rounded),
-                            onChanged: (val) => val != null ? calc.setPaymentMode(val) : null,
-                            fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                          ),
                           const SizedBox(height: 24),
+
                           _buildAdvancedToggle(theme),
                           if (_showAdvanced) ...[
                             const SizedBox(height: 20),
@@ -414,21 +412,217 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  Widget _buildItemSelector(SaleCalculatorProvider calc, ThemeData theme) {
+  Widget _buildItemDetailsSection(SaleCalculatorProvider calc, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(color: theme.colorScheme.surfaceContainerHighest),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Item Details',
+            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          ...calc.lineItems.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final line = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: _buildItemBlock(calc, theme, idx, line),
+            );
+          }),
+          if (calc.lineItems.isEmpty) _buildItemPlaceholder(calc, theme),
+          const SizedBox(height: 12),
+          _buildAddAnotherItemButton(calc, theme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemBlock(SaleCalculatorProvider calc, ThemeData theme, int index, SaleLineItem line) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Select Item', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            if (calc.lineItems.length > 1)
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 20),
+                onPressed: () => calc.removeLineItem(index),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        CustomPremiumDropdown<String>(
+          label: '',
+          value: line.item.id,
+          hint: 'Select from catalog',
+          items: calc.saleItems.map((item) => CustomDropdownItem<String>(label: item.name, value: item.id, icon: Icons.inventory_2_rounded)).toList(),
+          isSearchable: true,
+          onChanged: (val) {
+            if (val != null) {
+              final newItem = calc.saleItems.firstWhere((i) => i.id == val);
+              calc.updateLineItem(index, newItem);
+            }
+          },
+          fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Quantity', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove, size: 20),
+                          onPressed: () => calc.updateLineItemQuantity(index, line.quantity - 1),
+                        ),
+                        Text(
+                          line.quantity.toStringAsFixed(0),
+                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add, size: 20),
+                          onPressed: () => calc.updateLineItemQuantity(index, line.quantity + 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              flex: 4,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Unit Price (RM)', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          line.unitPrice.toStringAsFixed(2),
+                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 20, color: AppTheme.secondaryDark),
+                          onPressed: () => _showPriceOverrideDialog(calc, index, line),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildItemPlaceholder(SaleCalculatorProvider calc, ThemeData theme) {
     return CustomPremiumDropdown<String>(
-      label: 'Item / Service',
-      value: calc.selectedItem?.id,
+      label: 'Select Item',
+      value: null,
       hint: 'Select from catalog',
-      items: calc.saleItems.map((item) => CustomDropdownItem<String>(label: '${item.name}  •  RM ${item.unitPrice.toStringAsFixed(2)}', value: item.id, icon: Icons.inventory_2_rounded)).toList(),
+      items: calc.saleItems.map((item) => CustomDropdownItem<String>(label: item.name, value: item.id, icon: Icons.inventory_2_rounded)).toList(),
       isSearchable: true,
       onChanged: (val) {
         if (val != null) {
           final item = calc.saleItems.firstWhere((i) => i.id == val);
-          calc.selectItem(item);
+          calc.addLineItem(item);
         }
       },
-      validator: (val) => val == null ? 'Please select an item' : null,
       fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+    );
+  }
+
+  Widget _buildAddAnotherItemButton(SaleCalculatorProvider calc, ThemeData theme) {
+    return InkWell(
+      onTap: () => _showItemPicker(calc, theme),
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          border: Border.all(color: AppTheme.secondaryDark.withValues(alpha: 0.5), style: BorderStyle.solid),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.add_circle_outline, size: 20, color: AppTheme.secondaryDark),
+            const SizedBox(width: 8),
+            Text(
+              'Add Another Item',
+              style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: AppTheme.secondaryDark),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showItemPicker(SaleCalculatorProvider calc, ThemeData theme) {
+    AppDialogs.showActionModal(
+      context,
+      title: 'Add Item',
+      body: 'Select an item from your catalog.',
+      primaryButtonText: 'Cancel',
+      onPrimaryPressed: () {},
+    );
+  }
+
+  void _showPriceOverrideDialog(SaleCalculatorProvider calc, int index, SaleLineItem line) {
+    final controller = TextEditingController(text: line.unitPrice.toStringAsFixed(2));
+    AppDialogs.showFormModal(
+      context,
+      title: 'Edit Unit Price',
+      formBody: AppTextField(
+        controller: controller,
+        label: 'New Unit Price (RM)',
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      ),
+      primaryButtonText: 'Apply',
+      onPrimaryPressed: () async {
+        final price = double.tryParse(controller.text);
+        if (price != null) {
+          calc.updateLineItemPrice(index, price);
+        }
+        return true;
+      },
+      secondaryButtonText: 'Cancel',
+      onSecondaryPressed: () {},
     );
   }
 
@@ -577,3 +771,4 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 }
+
