@@ -71,6 +71,27 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     }
   }
 
+  bool _isItemAlreadyAdded(SaleCalculatorProvider calc, String itemId, {int? excludeIndex}) {
+    for (int i = 0; i < calc.lineItems.length; i++) {
+      if (i == excludeIndex) continue;
+      if (calc.lineItems[i].item.id == itemId) return true;
+    }
+    return false;
+  }
+
+  void _showDuplicateError() {
+    AppDialogs.showActionModal(
+      context,
+      title: 'Already Added',
+      body: 'You have already added this item to the current sale.',
+      primaryButtonText: 'Got it',
+      onPrimaryPressed: () {},
+      icon: Icons.info_outline_rounded,
+      iconColor: AppTheme.primary,
+      primaryButtonColor: AppTheme.primary,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -203,12 +224,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   // ── Preview Bottom Sheet ────────────────────────────────────────────────
 
   void _showPreviewSheet() {
-    if (!_formKey.currentState!.validate()) return;
+    try {
+      final formState = _formKey.currentState;
+      if (formState != null && !formState.validate()) return;
 
-    final calc = context.read<SaleCalculatorProvider>();
-    if (!calc.canSubmit) return;
+      final calc = context.read<SaleCalculatorProvider>();
+      if (!calc.canSubmit) return;
 
-    final theme = Theme.of(context);
+      final theme = Theme.of(context);
 
     AppDialogs.showTransactionReviewSheet(
       context,
@@ -260,6 +283,18 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         ),
       ),
     );
+  } catch (e) {
+      debugPrint('Preview sheet error: $e');
+      AppDialogs.showActionModal(
+        context,
+        title: 'Review Error',
+        body: 'Could not open the review sheet. Please ensure all items are selected correctly.\n\nDetails: $e',
+        primaryButtonText: 'OK',
+        onPrimaryPressed: () {},
+        icon: Icons.error_outline_rounded,
+        iconColor: Colors.redAccent,
+      );
+    }
   }
 
   Widget _reviewRow(String label, String value, ThemeData theme, {bool isBold = false, Color? valueColor}) {
@@ -504,6 +539,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           isSearchable: true,
           onChanged: (val) {
             if (val != null) {
+              if (_isItemAlreadyAdded(calc, val, excludeIndex: index)) {
+                _showDuplicateError();
+                return;
+              }
               final newItem = calc.saleItems.firstWhere((i) => i.id == val);
               calc.updateLineItem(index, newItem);
             }
@@ -595,6 +634,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
       isSearchable: true,
       onChanged: (val) {
         if (val != null) {
+          if (_isItemAlreadyAdded(calc, val)) {
+            _showDuplicateError();
+            return;
+          }
           final item = calc.saleItems.firstWhere((i) => i.id == val);
           calc.addLineItem(item);
         }
@@ -630,13 +673,28 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   }
 
   void _showItemPicker(SaleCalculatorProvider calc, ThemeData theme) {
-    AppDialogs.showActionModal(
-      context,
-      title: 'Add Item',
-      body: 'Select an item from your catalog.',
-      primaryButtonText: 'Cancel',
-      onPrimaryPressed: () {},
-    );
+    CustomPremiumDropdown.showPicker<String>(
+      context: context,
+      title: 'Select Item',
+      isSearchable: true,
+      items: calc.saleItems
+          .map((item) => CustomDropdownItem<String>(
+                label: item.name,
+                value: item.id,
+                icon: Icons.inventory_2_rounded,
+              ))
+          .toList(),
+      onActionPressed: () => _openAddItemSheet(calc),
+    ).then((val) {
+      if (val != null) {
+        if (_isItemAlreadyAdded(calc, val)) {
+          _showDuplicateError();
+          return;
+        }
+        final item = calc.saleItems.firstWhere((i) => i.id == val);
+        calc.addLineItem(item);
+      }
+    });
   }
 
   void _showPriceOverrideDialog(SaleCalculatorProvider calc, int index, SaleLineItem line) {

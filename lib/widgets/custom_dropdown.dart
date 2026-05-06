@@ -30,6 +30,9 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
   final bool isEditMode;
   final bool isSearchable;
   final Color? fillColor;
+  final String? Function(T?)? validator;
+  final VoidCallback? onActionPressed;
+  final IconData actionIcon;
 
   const CustomPremiumDropdown({
     super.key,
@@ -40,30 +43,46 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
     this.hint,
     this.isEditMode = true,
     this.isSearchable = false,
+    this.fillColor,
     this.validator,
     this.onActionPressed,
     this.actionIcon = Icons.add_circle_outline_rounded,
-    this.fillColor,
   });
 
-  final String? Function(T?)? validator;
-  final VoidCallback? onActionPressed;
-  final IconData actionIcon;
-
-  Future<void> _openSelectionSheet(
-      BuildContext context, FormFieldState<T> state) {
+  static Future<T?> showPicker<T>({
+    required BuildContext context,
+    required String title,
+    required List<CustomDropdownItem<T>> items,
+    T? selectedValue,
+    bool isSearchable = false,
+    VoidCallback? onActionPressed,
+    IconData actionIcon = Icons.add_circle_outline_rounded,
+  }) {
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _DropdownSelectionSheet<T>(
-        title: label,
+      builder: (_) => DropdownSelectionSheet<T>(
+        title: title,
         items: items,
-        selectedValue: value,
+        selectedValue: selectedValue,
         isSearchable: isSearchable,
         onActionPressed: onActionPressed,
         actionIcon: actionIcon,
       ),
+    );
+  }
+
+  Future<void> _openSelectionSheet(
+      BuildContext context, FormFieldState<T> state) {
+    return showPicker<T>(
+      context: context,
+      title: label,
+      items: items,
+      selectedValue: value,
+      isSearchable: isSearchable,
+      onActionPressed: onActionPressed,
+      actionIcon: actionIcon,
     ).then((selected) {
       if (selected != null) {
         onChanged(selected);
@@ -88,21 +107,23 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Label
-            Row(
-              children: [
-                if (selectedItem?.icon != null) ...[
-                  Icon(selectedItem!.icon, size: 16, color: AppTheme.primary),
-                  const SizedBox(width: 8),
-                ],
-                Text(
-                  label,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+            if (label.isNotEmpty) ...[
+              Row(
+                children: [
+                  if (selectedItem?.icon != null) ...[
+                    Icon(selectedItem!.icon, size: 16, color: AppTheme.primary),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    label,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
 
             // Trigger button
             InkWell(
@@ -169,7 +190,7 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
 }
 
 /// Full-page bottom sheet for dropdown selection.
-class _DropdownSelectionSheet<T> extends StatefulWidget {
+class DropdownSelectionSheet<T> extends StatefulWidget {
   final String title;
   final List<CustomDropdownItem<T>> items;
   final T? selectedValue;
@@ -177,7 +198,8 @@ class _DropdownSelectionSheet<T> extends StatefulWidget {
   final VoidCallback? onActionPressed;
   final IconData actionIcon;
 
-  const _DropdownSelectionSheet({
+  const DropdownSelectionSheet({
+    super.key,
     required this.title,
     required this.items,
     this.selectedValue,
@@ -187,12 +209,12 @@ class _DropdownSelectionSheet<T> extends StatefulWidget {
   });
 
   @override
-  State<_DropdownSelectionSheet<T>> createState() =>
-      _DropdownSelectionSheetState<T>();
+  State<DropdownSelectionSheet<T>> createState() =>
+      DropdownSelectionSheetState<T>();
 }
 
-class _DropdownSelectionSheetState<T>
-    extends State<_DropdownSelectionSheet<T>> {
+class DropdownSelectionSheetState<T>
+    extends State<DropdownSelectionSheet<T>> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _query = '';
 
