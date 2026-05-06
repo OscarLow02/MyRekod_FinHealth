@@ -40,11 +40,15 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
     this.hint,
     this.isEditMode = true,
     this.isSearchable = false,
-    this.fillColor,
     this.validator,
+    this.onActionPressed,
+    this.actionIcon = Icons.add_circle_outline_rounded,
+    this.fillColor,
   });
 
   final String? Function(T?)? validator;
+  final VoidCallback? onActionPressed;
+  final IconData actionIcon;
 
   Future<void> _openSelectionSheet(
       BuildContext context, FormFieldState<T> state) {
@@ -57,6 +61,8 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
         items: items,
         selectedValue: value,
         isSearchable: isSearchable,
+        onActionPressed: onActionPressed,
+        actionIcon: actionIcon,
       ),
     ).then((selected) {
       if (selected != null) {
@@ -168,12 +174,16 @@ class _DropdownSelectionSheet<T> extends StatefulWidget {
   final List<CustomDropdownItem<T>> items;
   final T? selectedValue;
   final bool isSearchable;
+  final VoidCallback? onActionPressed;
+  final IconData actionIcon;
 
   const _DropdownSelectionSheet({
     required this.title,
     required this.items,
     this.selectedValue,
     this.isSearchable = false,
+    this.onActionPressed,
+    this.actionIcon = Icons.add_circle_outline_rounded,
   });
 
   @override
@@ -236,6 +246,15 @@ class _DropdownSelectionSheetState<T>
                     ),
                   ),
                 ),
+                if (widget.onActionPressed != null)
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      widget.onActionPressed!();
+                    },
+                    icon: Icon(widget.actionIcon, color: AppTheme.primary),
+                    tooltip: 'Action',
+                  ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),

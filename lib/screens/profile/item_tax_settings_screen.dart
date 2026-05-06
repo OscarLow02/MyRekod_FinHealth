@@ -97,14 +97,13 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
   }
 
   bool get _isTaxEnabled => _defaultTaxType != '06';
-  
+
   bool get _isTaxRateEnabled =>
       _isTaxEnabled &&
       _numUnitsCtrl.text.isEmpty &&
       _ratePerUnitCtrl.text.isEmpty;
 
-  bool get _isSpecificEnabled =>
-      _isTaxEnabled && _taxRateCtrl.text.isEmpty;
+  bool get _isSpecificEnabled => _isTaxEnabled && _taxRateCtrl.text.isEmpty;
 
   // ── Save tax config to Firestore ──
   Future<void> _saveTaxConfig() async {
@@ -214,7 +213,7 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
       iconColor: Colors.redAccent,
       primaryButtonColor: Colors.redAccent,
     );
-    
+
     if (confirmed == true) {
       await _fs.deleteSaleItem(_userId!, item.id);
       if (mounted) setState(() => _items.removeWhere((e) => e.id == item.id));
@@ -242,292 +241,314 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Page Title ──
-            Text(
-              'Item & Tax Settings',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: AppTheme.primary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Configure your business compliance and item catalog.',
-              style: theme.textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 28),
-
-            // ═══════════════════════════════
-            // Section 1: Tax Configuration
-            // ═══════════════════════════════
-            _buildSectionHeader(
-              theme,
-              icon: Icons.account_balance_outlined,
-              title: 'GLOBAL TAX CONFIGURATION',
-            ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Tax Type Dropdown
-                  CustomPremiumDropdown<String>(
-                    label: 'Default Tax Type',
-                    items: CustomDropdownBuilder.fromMap(LhdnConstants.taxTypes, icon: Icons.percent_rounded),
-                    value: _defaultTaxType,
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _defaultTaxType = val;
-                          if (val == '06') _taxRateCtrl.clear();
-                        });
-                      }
-                    },
-                    fillColor: theme.scaffoldBackgroundColor,
-                    hint: 'Select Tax Type',
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Specific Tax (Units & Rate)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Number of Units',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildTaxTextField(
-                              controller: _numUnitsCtrl,
-                              enabled: _isSpecificEnabled,
-                              hintText: 'Units',
-                              theme: theme,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Rate per Unit',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildTaxTextField(
-                              controller: _ratePerUnitCtrl,
-                              enabled: _isSpecificEnabled,
-                              hintText: 'Rate',
-                              theme: theme,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Tax Rate
+                  // ── Page Title ──
                   Text(
-                    'Tax Rate',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
+                    'Item & Tax Settings',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Configure your business compliance and item catalog.',
+                    style: theme.textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 28),
+
+                  // ═══════════════════════════════
+                  // Section 1: Tax Configuration
+                  // ═══════════════════════════════
+                  _buildSectionHeader(
+                    theme,
+                    icon: Icons.account_balance_outlined,
+                    title: 'GLOBAL TAX CONFIGURATION',
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Tax Type Dropdown
+                        CustomPremiumDropdown<String>(
+                          label: 'Default Tax Type',
+                          items: CustomDropdownBuilder.fromMap(
+                            LhdnConstants.taxTypes,
+                            icon: Icons.percent_rounded,
+                          ),
+                          value: _defaultTaxType,
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _defaultTaxType = val;
+                                if (val == '06') _taxRateCtrl.clear();
+                              });
+                            }
+                          },
+                          fillColor: theme.scaffoldBackgroundColor,
+                          hint: 'Select Tax Type',
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Specific Tax (Units & Rate)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Number of Units',
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildTaxTextField(
+                                    controller: _numUnitsCtrl,
+                                    enabled: _isSpecificEnabled,
+                                    hintText: 'Units',
+                                    theme: theme,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Rate per Unit',
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildTaxTextField(
+                                    controller: _ratePerUnitCtrl,
+                                    enabled: _isSpecificEnabled,
+                                    hintText: 'Rate',
+                                    theme: theme,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Tax Rate
+                        Text(
+                          'Tax Rate',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTaxTextField(
+                                controller: _taxRateCtrl,
+                                enabled: _isTaxRateEnabled,
+                                hintText: 'Rate',
+                                theme: theme,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            // % Percentage chip
+                            Container(
+                              height: AppTheme.minTouchTarget,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: _isTaxRateEnabled
+                                    ? theme.scaffoldBackgroundColor
+                                    : theme.scaffoldBackgroundColor.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radiusMedium,
+                                ),
+                              ),
+                              child: Text(
+                                '% Percentage',
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontSize: 14,
+                                  color: _isTaxRateEnabled
+                                      ? theme.colorScheme.onSurfaceVariant
+                                      : theme.colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.4),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Tax Exemption Details
+                        Text(
+                          'Tax Exemption Details (Optional)',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _taxExemptionCtrl,
+                          style: theme.textTheme.bodyLarge,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(
+                              Icons.description_outlined,
+                              size: 20,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            hintText: 'e.g., Certificate Number',
+                            filled: true,
+                            fillColor: theme.scaffoldBackgroundColor,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMedium,
+                              ),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Save Tax Config Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: AppTheme.minTouchTarget + 4,
+                    child: ElevatedButton.icon(
+                      onPressed: _isSaving ? null : _saveTaxConfig,
+                      icon: _isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.save_rounded, size: 20),
+                      label: Text(_isSaving ? 'SAVING…' : 'SAVE TAX SETTINGS'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusMedium,
+                          ),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  _buildExpenseCategoriesSection(context),
+                  const SizedBox(height: 32),
+
+                  // ═══════════════════════════════
+                  // Section 2: Item Catalog
+                  // ═══════════════════════════════
                   Row(
                     children: [
                       Expanded(
-                        child: _buildTaxTextField(
-                          controller: _taxRateCtrl,
-                          enabled: _isTaxRateEnabled,
-                          hintText: 'Rate',
-                          theme: theme,
+                        child: _buildSectionHeader(
+                          theme,
+                          icon: Icons.inventory_2_outlined,
+                          title: 'ITEM CATALOG',
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      // % Percentage chip
                       Container(
-                        height: AppTheme.minTouchTarget,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: _isTaxRateEnabled
-                              ? theme.scaffoldBackgroundColor
-                              : theme.scaffoldBackgroundColor
-                                  .withValues(alpha: 0.5),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radiusMedium),
+                          color: AppTheme.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusSmall,
+                          ),
                         ),
                         child: Text(
-                          '% Percentage',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontSize: 14,
-                            color: _isTaxRateEnabled
-                                ? theme.colorScheme.onSurfaceVariant
-                                : theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.4),
+                          '${_items.length} ITEM${_items.length == 1 ? '' : 'S'}',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // Tax Exemption Details
-                  Text(
-                    'Tax Exemption Details (Optional)',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _taxExemptionCtrl,
-                    style: theme.textTheme.bodyLarge,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(
-                        Icons.description_outlined,
-                        size: 20,
-                        color: theme.colorScheme.onSurfaceVariant,
+                  // ── Add New Sale Item Button ──
+                  SizedBox(
+                    width: double.infinity,
+                    height: AppTheme.minTouchTarget + 8,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openAddItemSheet(),
+                      icon: const Icon(
+                        Icons.add_circle_outline_rounded,
+                        size: 22,
                       ),
-                      hintText: 'e.g., Certificate Number',
-                      filled: true,
-                      fillColor: theme.scaffoldBackgroundColor,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radiusMedium),
-                        borderSide: BorderSide.none,
+                      label: const Text('Add New Sale Item'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusMedium,
+                          ),
+                        ),
+                        elevation: 0,
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+
+                  // ── Item List ──
+                  if (_items.isEmpty)
+                    _buildEmptyCatalog(theme)
+                  else
+                    ..._items.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildItemTile(theme, item),
+                      ),
+                    ),
+
+                  if (_items.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildEmptyCatalogHint(theme),
+                  ],
+
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            // Save Tax Config Button
-            SizedBox(
-              width: double.infinity,
-              height: AppTheme.minTouchTarget + 4,
-              child: ElevatedButton.icon(
-                onPressed: _isSaving ? null : _saveTaxConfig,
-                icon: _isSaving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Icon(Icons.save_rounded, size: 20),
-                label: Text(_isSaving ? 'SAVING…' : 'SAVE TAX SETTINGS'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  ),
-                  elevation: 0,
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            _buildExpenseCategoriesSection(context),
-            const SizedBox(height: 32),
-
-            // ═══════════════════════════════
-            // Section 2: Item Catalog
-            // ═══════════════════════════════
-            Row(
-              children: [
-                Expanded(
-                  child: _buildSectionHeader(
-                    theme,
-                    icon: Icons.inventory_2_outlined,
-                    title: 'ITEM CATALOG',
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                  ),
-                  child: Text(
-                    '${_items.length} ITEM${_items.length == 1 ? '' : 'S'}',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // ── Add New Sale Item Button ──
-            SizedBox(
-              width: double.infinity,
-              height: AppTheme.minTouchTarget + 8,
-              child: ElevatedButton.icon(
-                onPressed: () => _openAddItemSheet(),
-                icon: const Icon(Icons.add_circle_outline_rounded, size: 22),
-                label: const Text('+ Add New Sale Item'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  ),
-                  elevation: 0,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ── Item List ──
-            if (_items.isEmpty)
-              _buildEmptyCatalog(theme)
-            else
-              ..._items.map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildItemTile(theme, item),
-                  )),
-
-            if (_items.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _buildEmptyCatalogHint(theme),
-            ],
-
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
     );
   }
 
@@ -653,8 +674,9 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
               'Add items to your menu to speed up\nsales checkout.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color:
-                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.6,
+                ),
               ),
             ),
           ],
@@ -679,8 +701,7 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge?.copyWith(
               fontSize: 14,
-              color:
-                  theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -725,6 +746,7 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
       ),
     );
   }
+
   Widget _buildExpenseCategoriesSection(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -745,8 +767,10 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.add_circle_outline_rounded,
-                      color: AppTheme.primary),
+                  icon: Icon(
+                    Icons.add_circle_outline_rounded,
+                    color: AppTheme.primary,
+                  ),
                   onPressed: () {
                     final controller = TextEditingController();
                     AppDialogs.showFormModal(
@@ -810,7 +834,8 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
                               await provider.updateCategory(cat, val);
                               return true;
                             }
-                            return val == cat; // true if no change, false if empty
+                            return val ==
+                                cat; // true if no change, false if empty
                           },
                         );
                       },

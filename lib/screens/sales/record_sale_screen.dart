@@ -9,6 +9,10 @@ import '../../providers/sale_calculator_provider.dart';
 import '../../widgets/custom_widgets.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/app_dialogs.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/firestore_service.dart';
+import '../../models/sale_item.dart';
+import '../profile/widgets/add_item_bottom_sheet.dart';
 
 /// Redesigned Record Sale form following the A-B-C hierarchy.
 /// Section A: Customer Type (Individual vs Business)
@@ -36,6 +40,36 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   bool _isWalkIn = false;
   bool _showAdvanced = false;
   bool _isSaving = false;
+  final _fs = FirestoreService();
+
+  Future<void> _openAddItemSheet(SaleCalculatorProvider calc) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final result = await showModalBottomSheet<SaleItem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const AddItemBottomSheet(),
+    );
+
+    if (result != null && mounted) {
+      try {
+        await _fs.addSaleItem(user.uid, result);
+        // Note: The provider's stream will automatically pick up the new item.
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to add item: $e'),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -474,6 +508,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               calc.updateLineItem(index, newItem);
             }
           },
+          onActionPressed: () => _openAddItemSheet(calc),
           fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         ),
         const SizedBox(height: 16),
@@ -564,6 +599,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           calc.addLineItem(item);
         }
       },
+      onActionPressed: () => _openAddItemSheet(calc),
       fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
     );
   }
