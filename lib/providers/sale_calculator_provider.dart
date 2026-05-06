@@ -58,6 +58,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   String _taxType = '06'; // Default: Not Applicable
   double _taxRate = 0.0;
+  bool _submitToLhdnNow = true;
 
   // ── Form State Getters ─────────────────────────────────────────────────
 
@@ -70,6 +71,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
   DateTime get saleDate => _saleDate;
   String get taxType => _taxType;
   double get taxRate => _taxRate;
+  bool get submitToLhdnNow => _submitToLhdnNow;
 
   // Legacy getters for compatibility with single-item logic if needed
   SaleItem? get selectedItem => _lineItems.isNotEmpty ? _lineItems.first.item : null;
@@ -276,6 +278,11 @@ class SaleCalculatorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setSubmitToLhdnNow(bool val) {
+    _submitToLhdnNow = val;
+    notifyListeners();
+  }
+
   /// Update tax rate percentage (e.g., 6.0 for 6%).
   void setTaxRate(double value) {
     _taxRate = math.max(0.0, value);
@@ -326,6 +333,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
       customerTin: customer.tinNumber,
       customerIdNumber: customer.idNumber,
       customerIdScheme: customer.idScheme,
+      customerSstRegistrationNumber: customer.sstRegistrationNumber,
       // Item details (Note: Simplified for legacy; adjust model if supporting multi-item records)
       lineItems: _lineItems,
       // Pricing (all computed)
@@ -341,7 +349,9 @@ class SaleCalculatorProvider extends ChangeNotifier {
       paymentMode: _paymentMode,
       // Status defaults
       commercialStatus: CommercialStatus.pendingPayment,
-      complianceStatus: ComplianceStatus.pendingConsolidation,
+      complianceStatus: customer.id == 'walk-in'
+          ? ComplianceStatus.pendingConsolidation
+          : (_submitToLhdnNow ? ComplianceStatus.valid : ComplianceStatus.pendingSubmission),
       // Notes
       notes: _notes,
     );
@@ -374,8 +384,23 @@ class SaleCalculatorProvider extends ChangeNotifier {
       );
 
       // Step 3: Build finalized record
-      final record = buildSaleRecord(invoiceNumber: invoiceNumber);
+      var record = buildSaleRecord(invoiceNumber: invoiceNumber);
       if (record == null) return null;
+
+      // Step 3.5: Simulate LHDN Submission if applicable
+      if (record.complianceStatus == ComplianceStatus.valid) {
+        // We simulate the generation of the 55-field JSON payload
+        // You can uncomment the serialization below if LhdnSerializer is updated to handle this
+        // final payload = LhdnSerializer.serializeSaleRecord(record);
+        // debugPrint('Generated LHDN Payload: $payload');
+        
+        // Simulate a successful response
+        record = record.copyWith(
+          lhdnUuid: 'SIMULATED-UUID-${DateTime.now().millisecondsSinceEpoch}',
+          lhdnLongId: 'LHDN-LONG-${DateTime.now().millisecondsSinceEpoch}',
+          lhdnValidatedAt: DateTime.now(),
+        );
+      }
 
       // Step 4: Persist
       final saved = await _firestoreService.addSaleRecord(
@@ -401,6 +426,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
     _paymentMode = '01';
     _notes = '';
     _saleDate = DateTime.now();
+    _submitToLhdnNow = true;
     // Restore tax defaults from config
     _taxType = _taxConfig.defaultTaxType;
     _taxRate = _taxConfig.taxRate ?? 0.0;

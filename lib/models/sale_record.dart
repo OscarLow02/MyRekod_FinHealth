@@ -99,6 +99,7 @@ class SaleRecord {
   final String customerTin;
   final String customerIdNumber;
   final String customerIdScheme;
+  final String customerSstRegistrationNumber;
 
   // ── Item Details ───────────────────────────────────────────────────────
 
@@ -172,6 +173,7 @@ class SaleRecord {
     this.customerTin = '',
     this.customerIdNumber = '',
     this.customerIdScheme = 'BRN',
+    this.customerSstRegistrationNumber = '',
     // Item
     required this.lineItems,
     // Pricing
@@ -211,6 +213,7 @@ class SaleRecord {
       'customerTin': customerTin,
       'customerIdNumber': customerIdNumber,
       'customerIdScheme': customerIdScheme,
+      'customerSstRegistrationNumber': customerSstRegistrationNumber,
       // Items
       'lineItems': lineItems.map((l) => {
         'itemId': l.item.id,
@@ -269,6 +272,7 @@ class SaleRecord {
       customerTin: data['customerTin'] as String? ?? '',
       customerIdNumber: data['customerIdNumber'] as String? ?? '',
       customerIdScheme: data['customerIdScheme'] as String? ?? 'BRN',
+      customerSstRegistrationNumber: data['customerSstRegistrationNumber'] as String? ?? '',
       // Items
       lineItems: (data['lineItems'] as List? ?? []).map((l) {
         final itemMap = l as Map<String, dynamic>;
@@ -323,6 +327,7 @@ class SaleRecord {
     String? customerTin,
     String? customerIdNumber,
     String? customerIdScheme,
+    String? customerSstRegistrationNumber,
     List<SaleLineItem>? lineItems,
     double? subtotal,
     double? discountAmount,
@@ -350,6 +355,7 @@ class SaleRecord {
       customerTin: customerTin ?? this.customerTin,
       customerIdNumber: customerIdNumber ?? this.customerIdNumber,
       customerIdScheme: customerIdScheme ?? this.customerIdScheme,
+      customerSstRegistrationNumber: customerSstRegistrationNumber ?? this.customerSstRegistrationNumber,
       lineItems: lineItems ?? this.lineItems,
       subtotal: subtotal ?? this.subtotal,
       discountAmount: discountAmount ?? this.discountAmount,

@@ -22,6 +22,7 @@ class Customer {
   final String tinNumber;
   final String idNumber; // BRN for business, MyKad/Passport for person
   final String idScheme; // 'BRN', 'NRIC', 'PASSPORT', 'ARMY'
+  final String sstRegistrationNumber; // Optional SST Number
 
   // Contact
   final String phoneNumber;
@@ -45,6 +46,7 @@ class Customer {
     this.tinNumber = '',
     this.idNumber = '',
     this.idScheme = 'BRN',
+    this.sstRegistrationNumber = '',
     this.phoneNumber = '',
     this.email = '',
     this.addressLine1 = '',
@@ -66,6 +68,7 @@ class Customer {
     tinNumber: 'EI00000000020',
     idNumber: 'NA',
     idScheme: 'BRN',
+    sstRegistrationNumber: 'NA',
     phoneNumber: 'NA',
     email: 'NA',
     addressLine1: 'NA',
@@ -82,6 +85,7 @@ class Customer {
       'tinNumber': tinNumber,
       'idNumber': idNumber,
       'idScheme': idScheme,
+      'sstRegistrationNumber': sstRegistrationNumber,
       'phoneNumber': phoneNumber,
       'email': email,
       'addressLine1': addressLine1,
@@ -109,6 +113,7 @@ class Customer {
       tinNumber: data['tinNumber'] as String? ?? '',
       idNumber: data['idNumber'] as String? ?? '',
       idScheme: data['idScheme'] as String? ?? 'BRN',
+      sstRegistrationNumber: data['sstRegistrationNumber'] as String? ?? '',
       phoneNumber: data['phoneNumber'] as String? ?? '',
       email: data['email'] as String? ?? '',
       addressLine1: data['addressLine1'] as String? ?? '',
@@ -135,6 +140,7 @@ class Customer {
     String? tinNumber,
     String? idNumber,
     String? idScheme,
+    String? sstRegistrationNumber,
     String? phoneNumber,
     String? email,
     String? addressLine1,
@@ -151,6 +157,7 @@ class Customer {
       tinNumber: tinNumber ?? this.tinNumber,
       idNumber: idNumber ?? this.idNumber,
       idScheme: idScheme ?? this.idScheme,
+      sstRegistrationNumber: sstRegistrationNumber ?? this.sstRegistrationNumber,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
       addressLine1: addressLine1 ?? this.addressLine1,

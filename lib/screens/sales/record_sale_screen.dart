@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -98,8 +99,6 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final calc = context.read<SaleCalculatorProvider>();
       calc.initialize();
-      // Default to walk-in individual
-      _selectWalkIn(calc);
     });
   }
 
@@ -387,6 +386,24 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                               Expanded(child: _buildDateField(calc, theme)),
                             ],
                           ),
+                          if (!_isWalkIn) ...[
+                            const SizedBox(height: 24),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                border: Border.all(color: theme.colorScheme.surfaceContainerHighest),
+                              ),
+                              child: SwitchListTile(
+                                title: Text('Submit to LHDN Now', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                                subtitle: Text('Generate JSON payload & validate e-Invoice', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                                value: calc.submitToLhdnNow,
+                                onChanged: (val) => calc.setSubmitToLhdnNow(val),
+                                activeColor: AppTheme.primary,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 24),
 
                           _buildAdvancedToggle(theme),
@@ -428,34 +445,212 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           ],
         ),
         const SizedBox(height: 24),
-        CustomPremiumDropdown<String>(
-          label: '',
-          value: _isWalkIn ? null : calc.selectedCustomer?.id,
-          hint: 'Select/Search Customer',
-          isSearchable: true,
-          items: calc.customers
-              .where((c) => _selectedType == SaleCustomerType.individual ? c.customerType == CustomerType.b2c : c.customerType == CustomerType.b2b)
-              .map((c) => CustomDropdownItem<String>(label: c.name, value: c.id, icon: Icons.person_outline_rounded))
-              .toList(),
-          onChanged: (val) {
-            if (val != null) {
-              setState(() => _isWalkIn = false);
-              final customer = calc.customers.firstWhere((c) => c.id == val);
-              calc.selectCustomer(customer);
-            }
-          },
-          fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        ),
-        if (_selectedType == SaleCustomerType.individual) ...[
+        if (_isWalkIn)
+          _buildWalkInCard(calc, theme)
+        else if (calc.selectedCustomer != null)
+          _buildSelectedCustomerCard(calc, theme)
+        else
+          CustomPremiumDropdown<String>(
+            label: '',
+            value: null,
+            hint: 'Select/Search Customer',
+            isSearchable: true,
+            items: calc.customers
+                .where((c) => _selectedType == SaleCustomerType.individual ? c.customerType == CustomerType.b2c : c.customerType == CustomerType.b2b)
+                .map((c) => CustomDropdownItem<String>(label: c.name, value: c.id, icon: Icons.person_outline_rounded))
+                .toList(),
+            onChanged: (val) {
+              if (val != null) {
+                final customer = calc.customers.firstWhere((c) => c.id == val);
+                calc.selectCustomer(customer);
+              }
+            },
+            fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          ),
+        if (_selectedType == SaleCustomerType.individual && !_isWalkIn) ...[
           const SizedBox(height: 12),
           AppButton(
             text: 'Walk-in Customer',
             isPrimary: false,
             onPressed: () => _selectWalkIn(calc),
-            icon: Icon(Icons.person_add_alt_1_rounded, size: 20, color: _isWalkIn ? AppTheme.neonGreenDark : theme.colorScheme.onSurface),
+            icon: Icon(Icons.person_add_alt_1_rounded, size: 20, color: theme.colorScheme.onSurface),
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildWalkInCard(SaleCalculatorProvider calc, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(color: theme.colorScheme.surfaceContainerHighest),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.storefront_rounded, color: AppTheme.primary, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Walk-In Customer Details', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primary)),
+                ],
+              ),
+              IconButton(
+                icon: Icon(Icons.edit_rounded, color: AppTheme.primary, size: 20),
+                onPressed: () {
+                  setState(() => _isWalkIn = false);
+                  calc.selectCustomer(null);
+                },
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text('Customer Name', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 4),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+            ),
+            child: Text('General Public', style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Icon(Icons.badge_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(width: 4),
+              Text('Tax Identification Number (TIN)', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              const Spacer(),
+              Icon(Icons.lock_outline_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+            ),
+            child: Text(Customer.walkIn.tinNumber, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectedCustomerCard(SaleCalculatorProvider calc, ThemeData theme) {
+    final customer = calc.selectedCustomer!;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(color: theme.colorScheme.surfaceContainerHighest),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Customer', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              IconButton(
+                icon: Icon(Icons.edit_rounded, color: AppTheme.primary, size: 20),
+                onPressed: () => calc.selectCustomer(null),
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: AppTheme.primary.withValues(alpha: 0.2),
+                child: Text(customer.name.isNotEmpty ? customer.name.substring(0, math.min(2, customer.name.length)).toUpperCase() : 'C', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(customer.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Divider(color: theme.colorScheme.surfaceContainerHighest),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('TIN', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 4),
+                    Text(customer.tinNumber.isNotEmpty ? customer.tinNumber : '-', style: theme.textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Address', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 4),
+                    Text(customer.city.isNotEmpty ? customer.city : '-', style: theme.textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('ID Number (${customer.idScheme})', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 4),
+                    Text(customer.idNumber.isNotEmpty ? customer.idNumber : '-', style: theme.textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Phone', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 4),
+                    Text(customer.phoneNumber.isNotEmpty ? customer.phoneNumber : '-', style: theme.textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('SST Registration Number', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 4),
+              Text(customer.sstRegistrationNumber.isNotEmpty ? customer.sstRegistrationNumber : '-', style: theme.textTheme.bodyMedium),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
