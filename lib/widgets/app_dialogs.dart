@@ -128,6 +128,90 @@ class AppDialogs {
   }
 
   /// ───────────────────────────────────────────────────────────────────────────
+  /// 1a. SYSTEM ALERT (Center)
+  /// For: Success messages, informative alerts (e.g., "Settings Saved")
+  /// ───────────────────────────────────────────────────────────────────────────
+  static Future<void> showSystemAlert(
+    BuildContext context, {
+    required String title,
+    String? body,
+    IconData icon = Icons.check_circle_rounded,
+    Color? iconColor,
+    String primaryButtonText = 'OK',
+  }) {
+    final theme = Theme.of(context);
+    final activeIconColor = iconColor ?? AppTheme.neonGreenDark;
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+          ),
+          elevation: 24,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Success Icon
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: activeIconColor.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 40,
+                    color: activeIconColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Title
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (body != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    body,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 32),
+                // Dismiss Action
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: activeIconColor,
+                    ),
+                    child: Text(primaryButtonText),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// ───────────────────────────────────────────────────────────────────────────
   /// 1b. FORM MODAL (Center)
   /// For: Reset Password, Change Display Name, etc.
   /// ───────────────────────────────────────────────────────────────────────────

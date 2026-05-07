@@ -60,6 +60,8 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   String _taxType = '06'; // Default: Not Applicable
   double _taxRate = 0.0;
+  double? _numUnits;    // Unit-based: number of units
+  double? _ratePerUnit; // Unit-based: rate per unit
   bool _submitToLhdnNow = true;
   String? _previewInvoiceNumber;
 
@@ -105,11 +107,24 @@ class SaleCalculatorProvider extends ChangeNotifier {
   }
 
   /// Calculated tax amount.
-  /// Formula: netAmount × (taxRate / 100)
-  /// Returns 0 if tax type is '06' (Not Applicable) or 'E' (Exempt).
+  /// - Total Percentage mode: netAmount × (taxRate / 100)
+  /// - Unit-Based mode: (total line items quantity / numUnits) × ratePerUnit
   double get taxAmount {
-    if (_taxType == '06' || _taxType == 'E') return 0.0;
-    return _round2dp(netAmount * (_taxRate / 100.0));
+    // Unit-based calculation takes priority if both units and rate are set
+    if (_numUnits != null && _ratePerUnit != null && _numUnits! > 0) {
+      double totalQty = 0.0;
+      for (var line in _lineItems) {
+        totalQty += line.quantity;
+      }
+      return _round2dp((totalQty / _numUnits!) * _ratePerUnit!);
+    }
+    
+    // Percentage mode
+    if (_taxRate > 0) {
+      return _round2dp(netAmount * (_taxRate / 100.0));
+    }
+    
+    return 0.0;
   }
 
   /// Exact total before rounding.
@@ -168,6 +183,8 @@ class SaleCalculatorProvider extends ChangeNotifier {
       _taxConfig = await _firestoreService.getTaxConfig(user.uid);
       _taxType = _taxConfig.defaultTaxType;
       _taxRate = _taxConfig.taxRate ?? 0.0;
+      _numUnits = _taxConfig.numUnits;
+      _ratePerUnit = _taxConfig.ratePerUnit;
 
       // Stream sale items catalog
       _itemsSub?.cancel();
@@ -460,6 +477,8 @@ class SaleCalculatorProvider extends ChangeNotifier {
     // Restore tax defaults from config
     _taxType = _taxConfig.defaultTaxType;
     _taxRate = _taxConfig.taxRate ?? 0.0;
+    _numUnits = _taxConfig.numUnits;
+    _ratePerUnit = _taxConfig.ratePerUnit;
     notifyListeners();
   }
 
@@ -532,10 +551,11 @@ class SaleCalculatorProvider extends ChangeNotifier {
   }
 
   /// Pre-fetches the next invoice number for the preview sheet.
+  /// Uses a read-only peek so the counter is NOT incremented.
   Future<void> fetchPreviewInvoiceNumber() async {
     if (_currentUserId == null) return;
     try {
-      final nextInv = await _firestoreService.generateNextInvoiceNumber(_currentUserId!);
+      final nextInv = await _firestoreService.peekNextInvoiceNumber(_currentUserId!);
       _previewInvoiceNumber = nextInv;
       notifyListeners();
     } catch (e) {

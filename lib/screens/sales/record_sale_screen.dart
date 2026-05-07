@@ -311,7 +311,13 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     ),
                     _buildSummaryRow('Subtotal', 'RM ${calc.subtotal.toStringAsFixed(2)}', theme),
                     const SizedBox(height: 12),
-                    _buildSummaryRow('Tax Amount (0%)', 'RM ${calc.taxAmount.toStringAsFixed(2)}', theme),
+                    _buildSummaryRow(
+                      calc.taxConfig.numUnits != null && calc.taxConfig.ratePerUnit != null
+                          ? 'Tax Amount (Unit-Based)'
+                          : 'Tax Amount (${calc.taxRate.toStringAsFixed(0)}%)',
+                      'RM ${calc.taxAmount.toStringAsFixed(2)}',
+                      theme,
+                    ),
                     const SizedBox(height: 12),
                     _buildSummaryRow('Rounding Adjustment', '${calc.roundingAmount >= 0 ? '+' : '-'}RM ${calc.roundingAmount.abs().toStringAsFixed(2)}', theme, isNegative: calc.roundingAmount < 0),
                     Padding(

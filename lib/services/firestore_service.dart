@@ -266,6 +266,20 @@ class FirestoreService {
 
   // ── Running Invoice ID Generator ───────────────────────────────────────
 
+  /// Reads the current counter and returns what the next invoice number
+  /// **would be**, without incrementing it.
+  ///
+  /// Used for display-only purposes (e.g., the review preview sheet).
+  /// Firestore path: `business_profiles/{uid}/settings/counters`
+  Future<String> peekNextInvoiceNumber(String userId) async {
+    final snapshot = await _counterDoc(userId).get();
+    int current = 0;
+    if (snapshot.exists && snapshot.data() != null) {
+      current = (snapshot.data()!['lastInvoiceNumber'] as num?)?.toInt() ?? 0;
+    }
+    return 'INV-${(current + 1).toString().padLeft(4, '0')}';
+  }
+
   /// Atomically generates and returns the next sequential invoice number.
   ///
   /// Uses a Firestore transaction on a counter document to ensure uniqueness
