@@ -99,7 +99,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final borderColor = AppTheme.secondaryDark; // #B6A4F3
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,7 +136,6 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(width: 12),
-                    // Country code letters (flag emojis fail on iOS Simulator so use code)
                     Text(
                       _selectedCountry.code,
                       style: const TextStyle(
@@ -169,26 +168,8 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
                 ),
               ),
             ),
-            filled: false,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: BorderSide(
-                  color: borderColor.withValues(alpha: 0.5), width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: BorderSide(color: borderColor, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5),
-            ),
+            filled: true,
+            // Borders inherited from Theme.inputDecorationTheme
           ),
         ),
       ],

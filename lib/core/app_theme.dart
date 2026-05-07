@@ -129,6 +129,7 @@ class AppTheme {
     required Color fillColor,
     required Color hintColor,
     required Color focusedBorderColor,
+    required Color borderColor,
   }) {
     return InputDecorationTheme(
       filled: true,
@@ -141,11 +142,11 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(radiusMedium),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: borderColor, width: 0.5),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(radiusMedium),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: borderColor, width: 0.5),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(radiusMedium),
@@ -247,6 +248,7 @@ class AppTheme {
         fillColor: darkSurfaceContainerHigh,
         hintColor: darkOnSurfaceVariant,
         focusedBorderColor: primary,
+        borderColor: primaryContainer.withValues(alpha: 0.3),
       ),
       elevatedButtonTheme: _elevatedButtonTheme(foreground: Colors.white),
       outlinedButtonTheme: _outlinedButtonTheme(
@@ -314,6 +316,7 @@ class AppTheme {
         fillColor: lightSurfaceContainer,
         hintColor: lightOnSurfaceVariant,
         focusedBorderColor: primary,
+        borderColor: primary.withValues(alpha: 0.25),
       ),
       elevatedButtonTheme: _elevatedButtonTheme(foreground: Colors.white),
       outlinedButtonTheme: _outlinedButtonTheme(

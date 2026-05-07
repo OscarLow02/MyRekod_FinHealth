@@ -94,7 +94,7 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final borderColor = AppTheme.secondaryDark; // #B6A4F3
+
     final selectedItem = items.any((i) => i.value == value)
         ? items.firstWhere((i) => i.value == value)
         : null;
@@ -140,9 +140,11 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
                     color: state.hasError
                         ? theme.colorScheme.error
                         : (isEditMode
-                            ? borderColor.withValues(alpha: 0.5)
+                            ? (theme.brightness == Brightness.dark
+                                ? AppTheme.primaryContainer.withValues(alpha: 0.3)
+                                : AppTheme.primary.withValues(alpha: 0.25))
                             : Colors.transparent),
-                    width: 1.2,
+                    width: 0.5,
                   ),
                 ),
                 child: Row(

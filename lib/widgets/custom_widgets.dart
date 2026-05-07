@@ -120,7 +120,7 @@ class AppTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final borderColor = AppTheme.secondaryDark; // #B6A4F3
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,27 +157,12 @@ class AppTextField extends StatelessWidget {
           ),
           decoration: InputDecoration(
             hintText: hintText,
-            // labelText removed here to avoid overlap when label is on top
             suffixIcon: suffixIcon,
             prefixIcon: prefixIcon,
             filled: true,
-            fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: BorderSide(color: Colors.transparent),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: BorderSide(color: borderColor, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: BorderSide(color: theme.colorScheme.error, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5),
-            ),
+            fillColor:
+                theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            // Borders now inherited from Theme.inputDecorationTheme
           ),
         ),
       ],
@@ -203,7 +188,7 @@ class AppDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = AppTheme.secondaryDark; // #B6A4F3
+
 
     return DropdownButtonFormField<T>(
       value: value,
@@ -212,14 +197,7 @@ class AppDropdown<T> extends StatelessWidget {
       validator: validator,
       decoration: InputDecoration(
         hintText: hintText,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          borderSide: BorderSide(color: borderColor.withValues(alpha: 0.5), width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          borderSide: BorderSide(color: borderColor, width: 1.5),
-        ),
+        // Borders now inherited from Theme.inputDecorationTheme
       ),
     );
   }

@@ -871,31 +871,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                 : theme.colorScheme.surfaceContainerHighest,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: _isEditMode
-                  ? BorderSide(
-                      color: AppTheme.primary.withValues(alpha: 0.3),
-                      width: 1,
-                    )
-                  : BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: _isEditMode
-                  ? BorderSide(
-                      color: AppTheme.primary.withValues(alpha: 0.3),
-                      width: 1,
-                    )
-                  : BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              borderSide: const BorderSide(
-                color: AppTheme.primary,
-                width: 1.5,
-              ),
-            ),
+            // Borders inherited from Theme.inputDecorationTheme
           ),
         ),
       ],
