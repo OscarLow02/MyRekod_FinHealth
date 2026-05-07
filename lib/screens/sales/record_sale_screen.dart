@@ -979,37 +979,74 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, -5))],
+        color: const Color(0xFF1A1C1E),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 24,
+            offset: const Offset(0, -8),
+          )
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('Total Payable', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              Text('RM ${calc.totalPayable.toStringAsFixed(2)}', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
+              Text(
+                'Total Payable', 
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white70,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              Text(
+                'RM ${calc.totalPayable.toStringAsFixed(2)}', 
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900, 
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           InkWell(
             onTap: (_isSaving || !calc.canSubmit) ? null : _showPreviewSheet,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+            borderRadius: BorderRadius.circular(20),
             child: Container(
-              height: 56,
+              height: 64,
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [AppTheme.primaryContainer, AppTheme.primary], begin: Alignment.centerLeft, end: Alignment.centerRight),
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                boxShadow: [BoxShadow(color: AppTheme.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF8B8FFF), Color(0xFF6B70FF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6B70FF).withValues(alpha: 0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  )
+                ],
               ),
               child: Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Review Sale', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                    Text(
+                      'Review Sale', 
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white, 
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 22),
                   ],
                 ),
               ),
@@ -1099,10 +1136,18 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
+                    isExpanded: true,
                     value: provider.paymentMode,
                     dropdownColor: AppTheme.darkSurfaceContainerHigh,
                     decoration: const InputDecoration(labelText: 'Payment Mode', filled: true, fillColor: AppTheme.darkSurface),
-                    items: LhdnConstants.paymentModes.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, style: const TextStyle(color: Colors.white)))).toList(),
+                    items: LhdnConstants.paymentModes.entries.map((e) => DropdownMenuItem(
+                      value: e.key, 
+                      child: Text(
+                        e.value, 
+                        style: const TextStyle(color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )).toList(),
                     onChanged: (val) {
                       if (val != null) provider.setPaymentMode(val);
                     },
@@ -1117,7 +1162,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     },
                     child: InputDecorator(
                       decoration: const InputDecoration(labelText: 'Sale Date', filled: true, fillColor: AppTheme.darkSurface),
-                      child: Text(DateFormat('yyyy-MM-dd').format(provider.saleDate), style: const TextStyle(color: Colors.white)),
+                      child: Text(
+                        DateFormat('yyyy-MM-dd').format(provider.saleDate), 
+                        style: const TextStyle(color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
@@ -1173,7 +1222,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     },
                     child: InputDecorator(
                       decoration: const InputDecoration(labelText: 'Date', filled: true, fillColor: AppTheme.darkSurface),
-                      child: Text(_prepaymentDate != null ? DateFormat('yyyy-MM-dd').format(_prepaymentDate!) : 'Select Date', style: const TextStyle(color: Colors.white)),
+                      child: Text(
+                        _prepaymentDate != null ? DateFormat('yyyy-MM-dd').format(_prepaymentDate!) : 'Select Date', 
+                        style: const TextStyle(color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
@@ -1192,10 +1245,18 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
+                    isExpanded: true,
                     value: _billingFrequency,
                     dropdownColor: AppTheme.darkSurfaceContainerHigh,
                     decoration: const InputDecoration(labelText: 'Frequency', filled: true, fillColor: AppTheme.darkSurface),
-                    items: ['Daily', 'Weekly', 'Monthly', 'Yearly'].map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white)))).toList(),
+                    items: ['Daily', 'Weekly', 'Monthly', 'Yearly'].map((e) => DropdownMenuItem(
+                      value: e, 
+                      child: Text(
+                        e, 
+                        style: const TextStyle(color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )).toList(),
                     onChanged: (val) => setState(() => _billingFrequency = val),
                   ),
                 ),
