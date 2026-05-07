@@ -283,7 +283,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('e-Invoice', style: theme.textTheme.labelSmall?.copyWith(color: Colors.white54)),
-                              Text('INV-0001', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+                              Text(calc.previewInvoiceNumber ?? 'INV-....', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
                             ],
                           ),
                         ),
@@ -1014,7 +1014,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           ),
           const SizedBox(height: 24),
           InkWell(
-            onTap: (_isSaving || !calc.canSubmit) ? null : _showPreviewSheet,
+            onTap: (_isSaving || !calc.canSubmit) 
+              ? null 
+              : () async {
+                  setState(() => _isSaving = true);
+                  await calc.fetchPreviewInvoiceNumber();
+                  setState(() => _isSaving = false);
+                  _showPreviewSheet();
+                },
             borderRadius: BorderRadius.circular(20),
             child: Container(
               height: 64,
@@ -1034,21 +1041,23 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 ],
               ),
               child: Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Review Sale', 
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white, 
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
-                      ),
+                child: _isSaving 
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Review Sale', 
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white, 
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 22),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 22),
-                  ],
-                ),
               ),
             ),
           ),

@@ -165,6 +165,7 @@ class SaleRecord {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  // --- Mandatory LHDN Fields ---
   const SaleRecord({
     required this.id,
     required this.invoiceNumber,

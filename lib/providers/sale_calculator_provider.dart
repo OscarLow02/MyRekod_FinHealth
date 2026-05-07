@@ -61,6 +61,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
   String _taxType = '06'; // Default: Not Applicable
   double _taxRate = 0.0;
   bool _submitToLhdnNow = true;
+  String? _previewInvoiceNumber;
 
   // ── Form State Getters ─────────────────────────────────────────────────
 
@@ -74,6 +75,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
   String get taxType => _taxType;
   double get taxRate => _taxRate;
   bool get submitToLhdnNow => _submitToLhdnNow;
+  String? get previewInvoiceNumber => _previewInvoiceNumber;
 
   // Legacy getters for compatibility with single-item logic if needed
   SaleItem? get selectedItem => _lineItems.isNotEmpty ? _lineItems.first.item : null;
@@ -396,12 +398,14 @@ class SaleCalculatorProvider extends ChangeNotifier {
       );
 
       // Step 3: Build finalized record
-      var record = buildSaleRecord(
+      final initialRecord = buildSaleRecord(
         invoiceNumber: invoiceNumber,
         statusOverride: statusOverride,
         submitToLhdnOverride: submitToLhdnOverride,
       );
-      if (record == null) return null;
+      if (initialRecord == null) return null;
+      
+      var record = initialRecord;
 
       // Step 4: MANDATORY: Always generate the LHDN JSON payload
       final profile = await _firestoreService.getBusinessProfile(_currentUserId!);
@@ -411,6 +415,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
           sellerProfile: profile,
         );
         final payloadJson = jsonEncode(payloadMap);
+        // Explicitly assigning the generated LHDN payload string
         record = record.copyWith(lastGeneratedPayload: payloadJson);
         debugPrint('LHDN Payload generated for ${record.invoiceNumber}');
       }
@@ -451,6 +456,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
     _notes = '';
     _saleDate = DateTime.now();
     _submitToLhdnNow = true;
+    _previewInvoiceNumber = null;
     // Restore tax defaults from config
     _taxType = _taxConfig.defaultTaxType;
     _taxRate = _taxConfig.taxRate ?? 0.0;
@@ -523,5 +529,17 @@ class SaleCalculatorProvider extends ChangeNotifier {
     _itemsSub?.cancel();
     _customersSub?.cancel();
     super.dispose();
+  }
+
+  /// Pre-fetches the next invoice number for the preview sheet.
+  Future<void> fetchPreviewInvoiceNumber() async {
+    if (_currentUserId == null) return;
+    try {
+      final nextInv = await _firestoreService.generateNextInvoiceNumber(_currentUserId!);
+      _previewInvoiceNumber = nextInv;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching preview invoice number: $e');
+    }
   }
 }
