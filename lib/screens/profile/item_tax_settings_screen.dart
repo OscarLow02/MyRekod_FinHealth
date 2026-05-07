@@ -417,16 +417,7 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
                             hintText: 'e.g., Certificate Number',
                             filled: true,
                             fillColor: theme.scaffoldBackgroundColor,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppTheme.radiusMedium,
-                              ),
-                              borderSide: BorderSide.none,
-                            ),
+                            // Border inherited from global theme
                           ),
                         ),
                       ],
@@ -715,34 +706,22 @@ class _ItemTaxSettingsScreenState extends State<ItemTaxSettingsScreen> {
     required String hintText,
     required ThemeData theme,
   }) {
-    return Container(
-      height: AppTheme.minTouchTarget,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
+    return TextFormField(
+      controller: controller,
+      enabled: enabled,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      textAlign: TextAlign.center,
+      style: theme.textTheme.bodyLarge?.copyWith(
         color: enabled
+            ? null
+            : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+      ),
+      decoration: InputDecoration(
+        hintText: hintText,
+        fillColor: enabled
             ? theme.scaffoldBackgroundColor
             : theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-      ),
-      child: TextField(
-        controller: controller,
-        enabled: enabled,
-        keyboardType: TextInputType.number,
-        textAlign: TextAlign.center,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: enabled
-              ? null
-              : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-            fontSize: 14,
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-        ),
+        // Border inherited from global theme
       ),
     );
   }

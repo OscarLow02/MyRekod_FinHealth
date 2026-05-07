@@ -168,13 +168,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                       hintText: 'e.g., Burger Ayam',
                       filled: true,
                       fillColor: theme.colorScheme.surfaceContainerHighest,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radiusMedium),
-                        borderSide: BorderSide.none,
-                      ),
+                      // Border inherited from global theme
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -196,13 +190,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                       hintText: '0.00',
                       filled: true,
                       fillColor: theme.colorScheme.surfaceContainerHighest,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radiusMedium),
-                        borderSide: BorderSide.none,
-                      ),
+                      // Border inherited from global theme
                     ),
                   ),
                   const SizedBox(height: 20),
