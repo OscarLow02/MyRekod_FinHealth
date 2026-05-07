@@ -8,6 +8,8 @@ import '../models/sale_record.dart';
 import '../models/tax_config.dart';
 import '../models/sale_line_item.dart';
 import '../services/firestore_service.dart';
+import '../services/lhdn_serializer.dart';
+import 'dart:convert';
 
 /// The real-time calculation engine for the Record Sale form.
 ///
@@ -317,10 +319,15 @@ class SaleCalculatorProvider extends ChangeNotifier {
   /// [FirestoreService.generateNextInvoiceNumber].
   ///
   /// Returns null if the form is not ready for submission.
-  SaleRecord? buildSaleRecord({required String invoiceNumber}) {
+  SaleRecord? buildSaleRecord({
+    required String invoiceNumber,
+    CommercialStatus? statusOverride,
+    bool? submitToLhdnOverride,
+  }) {
     if (!canSubmit) return null;
 
     final customer = _selectedCustomer!;
+    final finalSubmitToLhdn = submitToLhdnOverride ?? _submitToLhdnNow;
 
     return SaleRecord(
       id: '', // Will be assigned by Firestore
@@ -348,10 +355,10 @@ class SaleCalculatorProvider extends ChangeNotifier {
       // Payment
       paymentMode: _paymentMode,
       // Status defaults
-      commercialStatus: CommercialStatus.pendingPayment,
+      commercialStatus: statusOverride ?? CommercialStatus.pendingPayment,
       complianceStatus: customer.id == 'walk-in'
           ? ComplianceStatus.pendingConsolidation
-          : (_submitToLhdnNow ? ComplianceStatus.valid : ComplianceStatus.pendingSubmission),
+          : (finalSubmitToLhdn ? ComplianceStatus.valid : ComplianceStatus.pendingSubmission),
       // Notes
       notes: _notes,
     );
@@ -365,10 +372,15 @@ class SaleCalculatorProvider extends ChangeNotifier {
   /// 4. Persists to Firestore (Fire and Forget)
   ///
   /// Returns the saved [SaleRecord] or null on failure.
-  Future<SaleRecord?> submitSale({bool saveNewCustomer = false}) async {
+  Future<SaleRecord?> submitSale({
+    bool saveNewCustomer = false,
+    CommercialStatus? statusOverride,
+    bool? submitToLhdnOverride,
+  }) async {
     if (_currentUserId == null || !canSubmit) return null;
 
     try {
+      _error = null;
       // Step 1: Save new customer if requested
       if (saveNewCustomer && _selectedCustomer?.id == 'temp-new') {
         final savedCustomer = await _firestoreService.addCustomer(
@@ -384,25 +396,37 @@ class SaleCalculatorProvider extends ChangeNotifier {
       );
 
       // Step 3: Build finalized record
-      var record = buildSaleRecord(invoiceNumber: invoiceNumber);
+      var record = buildSaleRecord(
+        invoiceNumber: invoiceNumber,
+        statusOverride: statusOverride,
+        submitToLhdnOverride: submitToLhdnOverride,
+      );
       if (record == null) return null;
 
-      // Step 3.5: Simulate LHDN Submission if applicable
+      // Step 4: MANDATORY: Always generate the LHDN JSON payload
+      final profile = await _firestoreService.getBusinessProfile(_currentUserId!);
+      if (profile != null) {
+        final payloadMap = LhdnPayloadBuilder.buildInvoicePayload(
+          record: record,
+          sellerProfile: profile,
+        );
+        final payloadJson = jsonEncode(payloadMap);
+        record = record.copyWith(lastGeneratedPayload: payloadJson);
+        debugPrint('LHDN Payload generated for ${record.invoiceNumber}');
+      }
+
+      // Step 5: Simulate LHDN Submission if applicable
       if (record.complianceStatus == ComplianceStatus.valid) {
-        // We simulate the generation of the 55-field JSON payload
-        // You can uncomment the serialization below if LhdnSerializer is updated to handle this
-        // final payload = LhdnSerializer.serializeSaleRecord(record);
-        // debugPrint('Generated LHDN Payload: $payload');
-        
-        // Simulate a successful response
+        // Here we would normally call the LHDN API
+        // For now, we simulate a successful UUID response
         record = record.copyWith(
-          lhdnUuid: 'SIMULATED-UUID-${DateTime.now().millisecondsSinceEpoch}',
+          lhdnUuid: 'LHDN-${math.Random().nextInt(999999).toString().padLeft(6, '0')}',
           lhdnLongId: 'LHDN-LONG-${DateTime.now().millisecondsSinceEpoch}',
           lhdnValidatedAt: DateTime.now(),
         );
       }
 
-      // Step 4: Persist
+      // Step 6: Persist
       final saved = await _firestoreService.addSaleRecord(
         _currentUserId!,
         record,

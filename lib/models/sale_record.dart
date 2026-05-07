@@ -152,6 +152,9 @@ class SaleRecord {
 
   /// ISO 8601 timestamp of LHDN validation.
   final DateTime? lhdnValidatedAt;
+  
+  /// The raw LHDN JSON payload generated for this record.
+  final String? lastGeneratedPayload;
 
   // ── Notes ──────────────────────────────────────────────────────────────
 
@@ -194,6 +197,7 @@ class SaleRecord {
     this.lhdnUuid,
     this.lhdnLongId,
     this.lhdnValidatedAt,
+    this.lastGeneratedPayload,
     // Notes
     this.notes = '',
     // Timestamps
@@ -243,6 +247,7 @@ class SaleRecord {
       'lhdnValidatedAt': lhdnValidatedAt != null
           ? Timestamp.fromDate(lhdnValidatedAt!)
           : null,
+      'lastGeneratedPayload': lastGeneratedPayload,
       // Notes
       'notes': notes,
       // Timestamps
@@ -308,6 +313,7 @@ class SaleRecord {
       lhdnUuid: data['lhdnUuid'] as String?,
       lhdnLongId: data['lhdnLongId'] as String?,
       lhdnValidatedAt: (data['lhdnValidatedAt'] as Timestamp?)?.toDate(),
+      lastGeneratedPayload: data['lastGeneratedPayload'] as String?,
       // Notes
       notes: data['notes'] as String? ?? '',
       // Timestamps
@@ -343,6 +349,7 @@ class SaleRecord {
     String? lhdnUuid,
     String? lhdnLongId,
     DateTime? lhdnValidatedAt,
+    String? lastGeneratedPayload,
     String? notes,
   }) {
     return SaleRecord(
@@ -371,6 +378,7 @@ class SaleRecord {
       lhdnUuid: lhdnUuid ?? this.lhdnUuid,
       lhdnLongId: lhdnLongId ?? this.lhdnLongId,
       lhdnValidatedAt: lhdnValidatedAt ?? this.lhdnValidatedAt,
+      lastGeneratedPayload: lastGeneratedPayload ?? this.lastGeneratedPayload,
       notes: notes ?? this.notes,
       createdAt: createdAt,
       updatedAt: updatedAt,

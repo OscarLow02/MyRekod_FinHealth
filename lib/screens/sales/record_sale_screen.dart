@@ -13,6 +13,7 @@ import '../../widgets/app_dialogs.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/sale_item.dart';
+import '../../models/sale_record.dart';
 import '../profile/widgets/add_item_bottom_sheet.dart';
 
 /// Redesigned Record Sale form following the A-B-C hierarchy.
@@ -39,9 +40,23 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
   SaleCustomerType _selectedType = SaleCustomerType.individual;
   bool _isWalkIn = false;
-  bool _showAdvanced = false;
   bool _isSaving = false;
   final _fs = FirestoreService();
+
+  // --- New Additional Details Controllers ---
+  final _discountRateCtrl = TextEditingController();
+  final _feeRateCtrl = TextEditingController();
+  final _feeAmountCtrl = TextEditingController();
+  final _paymentTermsCtrl = TextEditingController();
+  final _billRefCtrl = TextEditingController();
+  final _prepayAmountCtrl = TextEditingController();
+  final _prepayRefCtrl = TextEditingController();
+  final _taxExemptCtrl = TextEditingController();
+  
+  String? _billingFrequency;
+  DateTime? _billingStartDate;
+  DateTime? _billingEndDate;
+  DateTime? _prepaymentDate;
 
   Future<void> _openAddItemSheet(SaleCalculatorProvider calc) async {
     final user = FirebaseAuth.instance.currentUser;
@@ -109,6 +124,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     _discountDescController.dispose();
     _notesController.dispose();
     _taxRateController.dispose();
+    _discountRateCtrl.dispose();
+    _feeRateCtrl.dispose();
+    _feeAmountCtrl.dispose();
+    _paymentTermsCtrl.dispose();
+    _billRefCtrl.dispose();
+    _prepayAmountCtrl.dispose();
+    _prepayRefCtrl.dispose();
+    _taxExemptCtrl.dispose();
     super.dispose();
   }
 
@@ -151,45 +174,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
   // ── Submission Logic ──────────────────────────────────────────────────
 
-  Future<void> _submitSale() async {
-    final calc = context.read<SaleCalculatorProvider>();
-    if (!calc.canSubmit) return;
 
-    setState(() => _isSaving = true);
-
-    try {
-      final record = await calc.submitSale(saveNewCustomer: false);
-
-      if (!mounted) return;
-      setState(() => _isSaving = false);
-
-      if (record != null) {
-        _showSuccessReview(record.invoiceNumber, record.totalPayable);
-      } else {
-        AppDialogs.showActionModal(
-          context,
-          title: 'Submission Failed',
-          body: calc.error ?? 'Could not save the sale. Please try again.',
-          primaryButtonText: 'OK',
-          onPrimaryPressed: () {},
-          icon: Icons.error_outline_rounded,
-          iconColor: Colors.redAccent,
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isSaving = false);
-      AppDialogs.showActionModal(
-        context,
-        title: 'Error',
-        body: 'An unexpected error occurred.\n\n$e',
-        primaryButtonText: 'OK',
-        onPrimaryPressed: () {},
-        icon: Icons.error_outline_rounded,
-        iconColor: Colors.redAccent,
-      );
-    }
-  }
 
   void _showSuccessReview(String invoiceNumber, double total) {
     final theme = Theme.of(context);
@@ -205,17 +190,25 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         _discountDescController.clear();
         _notesController.clear();
         _taxRateController.clear();
-        setState(() {
-          _showAdvanced = false;
-        });
+        _discountRateCtrl.clear();
+        _feeRateCtrl.clear();
+        _feeAmountCtrl.clear();
+        _paymentTermsCtrl.clear();
+        _billRefCtrl.clear();
+        _prepayAmountCtrl.clear();
+        _prepayRefCtrl.clear();
+        _taxExemptCtrl.clear();
+        _billingFrequency = null;
+        _billingStartDate = null;
+        _billingEndDate = null;
+        _prepaymentDate = null;
+        setState(() {});
         _selectWalkIn(context.read<SaleCalculatorProvider>());
       },
       secondaryButtonText: 'Done',
       onSecondaryPressed: () => Navigator.pop(context),
       icon: Icons.check_circle_outline_rounded,
-      iconColor: theme.brightness == Brightness.dark
-          ? AppTheme.neonGreenDark
-          : AppTheme.neonGreenLight,
+      iconColor: theme.brightness == Brightness.dark ? AppTheme.neonGreenDark : AppTheme.neonGreenLight,
       primaryButtonColor: AppTheme.primary,
     );
   }
@@ -232,100 +225,209 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
       final theme = Theme.of(context);
 
-    AppDialogs.showTransactionReviewSheet(
-      context,
-      title: 'Review Sale',
-      primaryIcon: Icons.receipt_long_rounded,
-      primaryButtonText: 'Confirm & Submit',
-      onPrimaryPressed: _submitSale,
-      secondaryButtonText: 'Edit Details',
-      overviewCard: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ...calc.lineItems.map((line) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _reviewRow('Item', line.item.name, theme),
-                _reviewRow(
-                  'Qty × Price',
-                  '${line.quantity.toStringAsFixed(line.quantity == line.quantity.roundToDouble() ? 0 : 2)} × RM ${line.unitPrice.toStringAsFixed(2)}',
-                  theme,
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1C1E),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Review & Submit', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Text('Verify details before LHDN submission', style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70)),
+                    ],
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.white54),
+                    style: IconButton.styleFrom(backgroundColor: Colors.white10),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // Summary Card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF242629),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                 ),
-                const SizedBox(height: 4),
-              ],
-            )),
-            _reviewRow('Customer', calc.selectedCustomer?.name ?? '-', theme),
-            _reviewDivider(theme),
-            _reviewRow('Subtotal', 'RM ${calc.subtotal.toStringAsFixed(2)}', theme),
-            if (calc.discountAmount > 0)
-              _reviewRow('Discount', '- RM ${calc.discountAmount.toStringAsFixed(2)}', theme, valueColor: Colors.orange),
-            if (calc.taxAmount > 0)
-              _reviewRow('Tax (${calc.taxRate.toStringAsFixed(1)}%)', '+ RM ${calc.taxAmount.toStringAsFixed(2)}', theme),
-            if (calc.roundingAmount != 0)
-              _reviewRow('Rounding', '${calc.roundingAmount >= 0 ? '+' : ''} RM ${calc.roundingAmount.toStringAsFixed(2)}', theme, valueColor: theme.colorScheme.onSurfaceVariant),
-            _reviewDivider(theme),
-            _reviewRow(
-              'Total Payable',
-              'RM ${calc.totalPayable.toStringAsFixed(2)}',
-              theme,
-              isBold: true,
-              valueColor: theme.brightness == Brightness.dark ? AppTheme.neonGreenDark : AppTheme.neonGreenLight,
-            ),
-          ],
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                          child: Icon(Icons.receipt_long_rounded, color: AppTheme.primary, size: 24),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('e-Invoice', style: theme.textTheme.labelSmall?.copyWith(color: Colors.white54)),
+                              Text('INV-0001', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              children: [
+                                _buildBadge('V 1.0'),
+                                const SizedBox(width: 6),
+                                _buildBadge('T 01'),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text('Standard Invoice', style: theme.textTheme.labelSmall?.copyWith(color: Colors.white54)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Divider(color: Colors.white10, height: 1),
+                    ),
+                    _buildSummaryRow('Subtotal', 'RM ${calc.subtotal.toStringAsFixed(2)}', theme),
+                    const SizedBox(height: 12),
+                    _buildSummaryRow('Tax Amount (0%)', 'RM ${calc.taxAmount.toStringAsFixed(2)}', theme),
+                    const SizedBox(height: 12),
+                    _buildSummaryRow('Rounding Adjustment', '${calc.roundingAmount >= 0 ? '+' : '-'}RM ${calc.roundingAmount.abs().toStringAsFixed(2)}', theme, isNegative: calc.roundingAmount < 0),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Divider(color: Colors.white10, height: 1),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Total Payable', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white70)),
+                        Text('RM ${calc.totalPayable.toStringAsFixed(2)}', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, color: const Color(0xFF8B8FFF))),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // Actions
+              Container(
+                width: double.infinity,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFF8B8FFF), Color(0xFF6B70FF)]),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _submitSaleWithParams(calc, CommercialStatus.paid, true);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                      const SizedBox(width: 10),
+                      Text('Confirm Payment & Submit', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _submitSaleWithParams(calc, CommercialStatus.pendingPayment, true);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF242629),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.cloud_upload, color: Colors.white70, size: 20),
+                      const SizedBox(width: 10),
+                      Text('Submit to LHDN Only', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white70)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _submitSaleWithParams(calc, CommercialStatus.pendingPayment, false);
+                  },
+                  icon: const Icon(Icons.save_rounded, color: Colors.white54, size: 18),
+                  label: Text('Save as Pending', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white54)),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  } catch (e) {
-      debugPrint('Preview sheet error: $e');
-      AppDialogs.showActionModal(
-        context,
-        title: 'Review Error',
-        body: 'Could not open the review sheet. Please ensure all items are selected correctly.\n\nDetails: $e',
-        primaryButtonText: 'OK',
-        onPrimaryPressed: () {},
-        icon: Icons.error_outline_rounded,
-        iconColor: Colors.redAccent,
       );
+    } catch (e) {
+      debugPrint('Error showing review sheet: $e');
     }
   }
 
-  Widget _reviewRow(String label, String value, ThemeData theme, {bool isBold = false, Color? valueColor}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          Flexible(
-            child: Text(
-              value,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-                color: valueColor,
-                fontSize: isBold ? 18 : null,
-              ),
-              textAlign: TextAlign.end,
-            ),
-          ),
-        ],
-      ),
+  Widget _buildBadge(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(6)),
+      child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 
-  Widget _reviewDivider(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Container(height: 1, color: theme.colorScheme.surfaceContainerHighest),
+  Widget _buildSummaryRow(String label, String value, ThemeData theme, {bool isNegative = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white54)),
+        Text(value, style: theme.textTheme.bodyMedium?.copyWith(color: isNegative ? const Color(0xFFFF8B8B) : Colors.white, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 
+  Future<void> _submitSaleWithParams(SaleCalculatorProvider calc, CommercialStatus status, bool submitToLhdn) async {
+    setState(() => _isSaving = true);
+    final result = await calc.submitSale(
+      statusOverride: status,
+      submitToLhdnOverride: submitToLhdn,
+    );
+    if (mounted) {
+      setState(() => _isSaving = false);
+      if (result != null) {
+        _showSuccessReview(result.invoiceNumber, result.totalPayable);
+      } else if (calc.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(calc.error!)));
+      }
+    }
+  }
   // ── Build ─────────────────────────────────────────────────────────────
 
   @override
@@ -368,49 +470,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                           _buildItemDetailsSection(calc, theme),
                           const SizedBox(height: 28),
 
-                          Text('Additional Details', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 20),
-
-                          Row(
-                            children: [
-                              Expanded(
-                                child: CustomPremiumDropdown<String>(
-                                  label: 'Payment Mode',
-                                  value: calc.paymentMode,
-                                  items: CustomDropdownBuilder.fromMap(LhdnConstants.paymentModes, icon: Icons.payment_rounded),
-                                  onChanged: (val) => val != null ? calc.setPaymentMode(val) : null,
-                                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(child: _buildDateField(calc, theme)),
-                            ],
-                          ),
-                          if (!_isWalkIn) ...[
-                            const SizedBox(height: 24),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                                border: Border.all(color: theme.colorScheme.surfaceContainerHighest),
-                              ),
-                              child: SwitchListTile(
-                                title: Text('Submit to LHDN Now', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                                subtitle: Text('Generate JSON payload & validate e-Invoice', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                                value: calc.submitToLhdnNow,
-                                onChanged: (val) => calc.setSubmitToLhdnNow(val),
-                                activeColor: AppTheme.primary,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 24),
-
-                          _buildAdvancedToggle(theme),
-                          if (_showAdvanced) ...[
-                            const SizedBox(height: 20),
-                            _buildAdvancedSection(calc, theme),
-                          ],
+                          _buildAdditionalDetails(calc, theme),
                           const SizedBox(height: 32),
                         ],
                       ),
@@ -960,103 +1020,226 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  Widget _buildDateField(SaleCalculatorProvider calc, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [Icon(Icons.calendar_month_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant), const SizedBox(width: 8), Text('Date', style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant))]),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () async {
-            final picked = await showDatePicker(context: context, initialDate: calc.saleDate, firstDate: DateTime(2020), lastDate: DateTime(2100));
-            if (picked != null) calc.setSaleDate(picked);
-          },
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
-            child: Text(DateFormat('yyyy-MM-dd').format(calc.saleDate), style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAdvancedToggle(ThemeData theme) {
-    return GestureDetector(
-      onTap: () => setState(() => _showAdvanced = !_showAdvanced),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(AppTheme.radiusMedium), border: Border.all(color: theme.colorScheme.surfaceContainerHighest)),
-        child: Row(
-          children: [
-            Icon(Icons.tune_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(width: 12),
-            Expanded(child: Text('Discount, Tax & Notes', style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600))),
-            AnimatedRotation(turns: _showAdvanced ? 0.5 : 0.0, duration: const Duration(milliseconds: 200), child: Icon(Icons.keyboard_arrow_down_rounded, color: theme.colorScheme.onSurfaceVariant)),
-          ],
-        ),
+  Widget _buildSubHeader(String title, IconData icon, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, color: AppTheme.neonGreenDark, size: 18),
+          const SizedBox(width: 8),
+          Text(title, style: theme.textTheme.labelLarge?.copyWith(color: AppTheme.neonGreenDark, fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }
 
-  Widget _buildAdvancedSection(SaleCalculatorProvider calc, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildAdditionalDetails(SaleCalculatorProvider provider, ThemeData theme) {
+    return Card(
+      color: AppTheme.darkSurfaceContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          title: Text('Additional Details (Optional)', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white)),
+          iconColor: AppTheme.neonGreenDark,
+          collapsedIconColor: theme.colorScheme.onSurfaceVariant,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           children: [
-            Expanded(
-              child: AppTextField(
-                label: 'Discount (RM)',
-                icon: Icons.discount_rounded,
-                controller: _discountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                onChanged: (val) => calc.setDiscountAmount(double.tryParse(val) ?? 0.0),
+            // --- 1. DISCOUNTS & CHARGES ---
+            _buildSubHeader('Discounts & Charges', Icons.local_offer, theme),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _discountRateCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Discount Rate (%)', filled: true, fillColor: AppTheme.darkSurface),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _discountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Discount Amt (RM)', filled: true, fillColor: AppTheme.darkSurface),
+                    onChanged: (val) => provider.setDiscountAmount(double.tryParse(val) ?? 0.0),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _feeRateCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Fee/Charge Rate (%)', filled: true, fillColor: AppTheme.darkSurface),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _feeAmountCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Fee Amt (RM)', filled: true, fillColor: AppTheme.darkSurface),
+                  ),
+                ),
+              ],
+            ),
+
+            // --- 2. PAYMENT INFORMATION ---
+            _buildSubHeader('Payment Information', Icons.payment, theme),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: provider.paymentMode,
+                    dropdownColor: AppTheme.darkSurfaceContainerHigh,
+                    decoration: const InputDecoration(labelText: 'Payment Mode', filled: true, fillColor: AppTheme.darkSurface),
+                    items: LhdnConstants.paymentModes.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, style: const TextStyle(color: Colors.white)))).toList(),
+                    onChanged: (val) {
+                      if (val != null) provider.setPaymentMode(val);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InkWell(
+                    onTap: () async {
+                      DateTime? picked = await showDatePicker(context: context, initialDate: provider.saleDate, firstDate: DateTime(2000), lastDate: DateTime(2100));
+                      if (picked != null) provider.setSaleDate(picked);
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(labelText: 'Sale Date', filled: true, fillColor: AppTheme.darkSurface),
+                      child: Text(DateFormat('yyyy-MM-dd').format(provider.saleDate), style: const TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            // Conditional Bank Account Field
+            if (provider.paymentMode == '03' || provider.paymentMode == '02') ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: "Supplier's Bank Account", filled: true, fillColor: AppTheme.darkSurface),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _paymentTermsCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Payment Terms', filled: true, fillColor: AppTheme.darkSurface),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _billRefCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Bill Reference', filled: true, fillColor: AppTheme.darkSurface),
+                  ),
+                ),
+              ],
+            ),
+
+            // --- 3. PREPAYMENT DETAILS ---
+            _buildSubHeader('Prepayment Details', Icons.account_balance_wallet, theme),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _prepayAmountCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Amount (RM)', filled: true, fillColor: AppTheme.darkSurface),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InkWell(
+                    onTap: () async {
+                      DateTime? picked = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
+                      if (picked != null) setState(() => _prepaymentDate = picked);
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(labelText: 'Date', filled: true, fillColor: AppTheme.darkSurface),
+                      child: Text(_prepaymentDate != null ? DateFormat('yyyy-MM-dd').format(_prepaymentDate!) : 'Select Date', style: const TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _prepayRefCtrl,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(labelText: 'Prepayment Reference No.', filled: true, fillColor: AppTheme.darkSurface),
+            ),
+
+            // --- 4. BILLING & TAX EXEMPTION ---
+            _buildSubHeader('Billing & Exemption', Icons.receipt_long, theme),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _billingFrequency,
+                    dropdownColor: AppTheme.darkSurfaceContainerHigh,
+                    decoration: const InputDecoration(labelText: 'Frequency', filled: true, fillColor: AppTheme.darkSurface),
+                    items: ['Daily', 'Weekly', 'Monthly', 'Yearly'].map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white)))).toList(),
+                    onChanged: (val) => setState(() => _billingFrequency = val),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _taxExemptCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: 'Tax Exempt Amt (RM)', filled: true, fillColor: AppTheme.darkSurface),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () async {
+                DateTimeRange? picked = await showDateRangePicker(context: context, firstDate: DateTime(2000), lastDate: DateTime(2100));
+                if (picked != null) {
+                  setState(() {
+                    _billingStartDate = picked.start;
+                    _billingEndDate = picked.end;
+                  });
+                }
+              },
+              child: InputDecorator(
+                decoration: const InputDecoration(labelText: 'Billing Period', filled: true, fillColor: AppTheme.darkSurface, suffixIcon: Icon(Icons.calendar_month, color: Colors.grey)),
+                child: Text(
+                  _billingStartDate != null && _billingEndDate != null ? "${DateFormat('yyyy-MM-dd').format(_billingStartDate!)} to ${DateFormat('yyyy-MM-dd').format(_billingEndDate!)}" : 'Select Start & End Date',
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(child: AppTextField(label: 'Reason', icon: Icons.description_rounded, controller: _discountDescController, onChanged: (val) => calc.setDiscountDescription(val))),
+            const SizedBox(height: 24),
+            TextFormField(
+              controller: _notesController,
+              maxLines: 3,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(labelText: 'Additional Notes', icon: Icon(Icons.notes_rounded), filled: true, fillColor: AppTheme.darkSurface),
+              onChanged: (val) => provider.setNotes(val),
+            ),
           ],
         ),
-        const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: CustomPremiumDropdown<String>(
-                label: 'Tax Type',
-                value: calc.taxType,
-                items: CustomDropdownBuilder.fromMap(LhdnConstants.taxTypes, icon: Icons.account_balance_rounded),
-                onChanged: (val) {
-                  if (val != null) {
-                    calc.setTaxType(val);
-                    if (val == '06' || val == 'E') _taxRateController.clear();
-                  }
-                },
-                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: AppTextField(
-                label: 'Rate (%)',
-                icon: Icons.percent_rounded,
-                controller: _taxRateController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                enabled: calc.taxType != '06' && calc.taxType != 'E',
-                onChanged: (val) => calc.setTaxRate(double.tryParse(val) ?? 0.0),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        AppTextField(label: 'Notes', icon: Icons.notes_rounded, controller: _notesController, maxLines: 3, onChanged: (val) => calc.setNotes(val)),
-      ],
+      ),
     );
   }
 }
