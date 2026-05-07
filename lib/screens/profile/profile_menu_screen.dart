@@ -6,7 +6,8 @@ import '../../services/firestore_service.dart';
 import '../../models/business_profile.dart';
 import '../auth/auth_wrapper.dart';
 import 'business_profile_screen.dart';
-import 'item_tax_settings_screen.dart';
+import 'item_settings_screen.dart';
+import 'tax_settings_screen.dart';
 import '../../widgets/app_dialogs.dart';
 
 /// Main Profile menu screen — matches the "Luminescent Vault" design.
@@ -110,11 +111,22 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
           const SizedBox(height: 12),
           _buildMenuTile(
             theme,
-            icon: Icons.receipt_long_outlined,
-            title: 'Item & Tax Settings',
+            icon: Icons.inventory_2_outlined,
+            title: 'Item Settings',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => const ItemTaxSettingsScreen(),
+                builder: (_) => const ItemSettingsScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildMenuTile(
+            theme,
+            icon: Icons.account_balance_outlined,
+            title: 'Tax Settings',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const TaxSettingsScreen(),
               ),
             ),
           ),
