@@ -53,7 +53,7 @@ class AppTheme {
   static const double radiusXLarge = 24.0;
 
   // Minimum touch target (Fitts's Law — DESIGN.md §4)
-  static const double minTouchTarget = 48.0;
+  static const double minTouchTarget = 56.0; // Upgraded for Radical Accessibility
 
   // ──────────────────────────────────────────────
   // Typography (Inter — DESIGN.md §3)
@@ -311,7 +311,7 @@ class AppTheme {
       scaffoldBackgroundColor: lightSurface,
       textTheme: _buildTextTheme(base.textTheme, lightOnSurface, lightOnSurfaceVariant),
       inputDecorationTheme: _inputDecorationTheme(
-        fillColor: lightSurfaceContainerHigh,
+        fillColor: lightSurfaceContainer,
         hintColor: lightOnSurfaceVariant,
         focusedBorderColor: primary,
       ),
@@ -322,13 +322,14 @@ class AppTheme {
       ),
       cardTheme: _cardTheme(color: lightSurfaceContainer),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: lightSurface,
+        foregroundColor: lightOnSurface,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: GoogleFonts.inter(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: lightOnSurface,
         ),
         iconTheme: const IconThemeData(color: lightOnSurface),

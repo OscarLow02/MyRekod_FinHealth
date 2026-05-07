@@ -52,6 +52,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   final _prepayAmountCtrl = TextEditingController();
   final _prepayRefCtrl = TextEditingController();
   final _taxExemptCtrl = TextEditingController();
+  final _bankAccountCtrl = TextEditingController();
   
   String? _billingFrequency;
   DateTime? _billingStartDate;
@@ -132,6 +133,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     _prepayAmountCtrl.dispose();
     _prepayRefCtrl.dispose();
     _taxExemptCtrl.dispose();
+    _bankAccountCtrl.dispose();
     super.dispose();
   }
 
@@ -230,9 +232,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (context) => Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF1A1C1E),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 20),
           child: Column(
@@ -246,15 +248,15 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Review & Submit', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+                      Text('Review & Submit', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                       const SizedBox(height: 4),
-                      Text('Verify details before LHDN submission', style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70)),
+                      Text('Verify details before LHDN submission', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white54),
-                    style: IconButton.styleFrom(backgroundColor: Colors.white10),
+                    icon: Icon(Icons.close, color: theme.colorScheme.onSurfaceVariant),
+                    style: IconButton.styleFrom(backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
                   ),
                 ],
               ),
@@ -264,9 +266,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF242629),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.05)),
                 ),
                 child: Column(
                   children: [
@@ -282,8 +284,8 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('e-Invoice', style: theme.textTheme.labelSmall?.copyWith(color: Colors.white54)),
-                              Text(calc.previewInvoiceNumber ?? 'INV-....', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+                              Text('e-Invoice', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                              Text(calc.previewInvoiceNumber ?? 'INV-....', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                             ],
                           ),
                         ),
@@ -292,35 +294,35 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                           children: [
                             Row(
                               children: [
-                                _buildBadge('V 1.0'),
+                                _buildBadge(theme, 'V 1.0'),
                                 const SizedBox(width: 6),
-                                _buildBadge('T 01'),
+                                _buildBadge(theme, 'T 01'),
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Text('Standard Invoice', style: theme.textTheme.labelSmall?.copyWith(color: Colors.white54)),
+                            Text('Standard Invoice', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                           ],
                         ),
                       ],
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Divider(color: Colors.white10, height: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.1), height: 1),
                     ),
                     _buildSummaryRow('Subtotal', 'RM ${calc.subtotal.toStringAsFixed(2)}', theme),
                     const SizedBox(height: 12),
                     _buildSummaryRow('Tax Amount (0%)', 'RM ${calc.taxAmount.toStringAsFixed(2)}', theme),
                     const SizedBox(height: 12),
                     _buildSummaryRow('Rounding Adjustment', '${calc.roundingAmount >= 0 ? '+' : '-'}RM ${calc.roundingAmount.abs().toStringAsFixed(2)}', theme, isNegative: calc.roundingAmount < 0),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Divider(color: Colors.white10, height: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.1), height: 1),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Total Payable', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white70)),
-                        Text('RM ${calc.totalPayable.toStringAsFixed(2)}', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, color: const Color(0xFF8B8FFF))),
+                        Text('Total Payable', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                        Text('RM ${calc.totalPayable.toStringAsFixed(2)}', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, color: theme.colorScheme.primary)),
                       ],
                     ),
                   ],
@@ -362,15 +364,15 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     _submitSaleWithParams(calc, CommercialStatus.pendingPayment, true);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF242629),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.1))),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.cloud_upload, color: Colors.white70, size: 20),
+                      Icon(Icons.cloud_upload, color: theme.colorScheme.onSurfaceVariant, size: 20),
                       const SizedBox(width: 10),
-                      Text('Submit to LHDN Only', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white70)),
+                      Text('Submit to LHDN Only', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -382,8 +384,8 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     Navigator.pop(context);
                     _submitSaleWithParams(calc, CommercialStatus.pendingPayment, false);
                   },
-                  icon: const Icon(Icons.save_rounded, color: Colors.white54, size: 18),
-                  label: Text('Save as Pending', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white54)),
+                  icon: Icon(Icons.save_rounded, color: theme.colorScheme.onSurfaceVariant, size: 18),
+                  label: Text('Save as Pending', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                 ),
               ),
             ],
@@ -395,11 +397,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     }
   }
 
-  Widget _buildBadge(String label) {
+  Widget _buildBadge(ThemeData theme, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(6)),
-      child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(label, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -407,8 +412,8 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white54)),
-        Text(value, style: theme.textTheme.bodyMedium?.copyWith(color: isNegative ? const Color(0xFFFF8B8B) : Colors.white, fontWeight: FontWeight.w600)),
+        Text(label, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        Text(value, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: isNegative ? Colors.redAccent : theme.colorScheme.onSurface)),
       ],
     );
   }
@@ -979,10 +984,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1C1E),
+        color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
+            color: theme.brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.05),
             blurRadius: 24,
             offset: const Offset(0, -8),
           )
@@ -998,7 +1003,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               Text(
                 'Total Payable', 
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white70,
+                  color: theme.colorScheme.onSurfaceVariant,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -1006,7 +1011,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 'RM ${calc.totalPayable.toStringAsFixed(2)}', 
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w900, 
-                  color: Colors.white,
+                  color: theme.colorScheme.onSurface,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -1071,9 +1076,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
       padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
       child: Row(
         children: [
-          Icon(icon, color: AppTheme.neonGreenDark, size: 18),
+          Icon(icon, color: theme.colorScheme.primary, size: 18),
           const SizedBox(width: 8),
-          Text(title, style: theme.textTheme.labelLarge?.copyWith(color: AppTheme.neonGreenDark, fontWeight: FontWeight.bold)),
+          Text(title, style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -1086,94 +1091,96 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
       child: Theme(
         data: theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          title: Text('Additional Details (Optional)', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white)),
+          title: Text('Additional Details (Optional)', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface)),
           iconColor: AppTheme.neonGreenDark,
           collapsedIconColor: theme.colorScheme.onSurfaceVariant,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           children: [
-            // --- 1. DISCOUNTS & CHARGES ---
-            _buildSubHeader('Discounts & Charges', Icons.local_offer, theme),
+            _buildSubHeader('Discounts & Charges', Icons.local_offer_rounded, theme),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: _discountRateCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: 'Discount Rate (%)', filled: true, fillColor: AppTheme.darkSurface),
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: const InputDecoration(labelText: 'Discount Rate (%)'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
                     controller: _discountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: 'Discount Amt (RM)', filled: true, fillColor: AppTheme.darkSurface),
-                    onChanged: (val) => provider.setDiscountAmount(double.tryParse(val) ?? 0.0),
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    onChanged: (val) {
+                      final amt = double.tryParse(val) ?? 0.0;
+                      provider.setDiscountAmount(amt);
+                    },
+                    decoration: const InputDecoration(labelText: 'Discount Amt (RM)'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: _feeRateCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: 'Fee/Charge Rate (%)', filled: true, fillColor: AppTheme.darkSurface),
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: const InputDecoration(labelText: 'Fee/Charge Rate (%)'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
                     controller: _feeAmountCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: 'Fee Amt (RM)', filled: true, fillColor: AppTheme.darkSurface),
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: const InputDecoration(labelText: 'Fee Amt (RM)'),
                   ),
                 ),
               ],
             ),
-
-            // --- 2. PAYMENT INFORMATION ---
-            _buildSubHeader('Payment Information', Icons.payment, theme),
+            const SizedBox(height: 24),
+            _buildSubHeader('Payment Information', Icons.payment_rounded, theme),
             Row(
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    isExpanded: true,
                     value: provider.paymentMode,
-                    dropdownColor: AppTheme.darkSurfaceContainerHigh,
-                    decoration: const InputDecoration(labelText: 'Payment Mode', filled: true, fillColor: AppTheme.darkSurface),
-                    items: LhdnConstants.paymentModes.entries.map((e) => DropdownMenuItem(
-                      value: e.key, 
-                      child: Text(
-                        e.value, 
-                        style: const TextStyle(color: Colors.white),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    )).toList(),
-                    onChanged: (val) {
-                      if (val != null) provider.setPaymentMode(val);
-                    },
+                    dropdownColor: theme.colorScheme.surfaceContainerHighest,
+                    items: LhdnConstants.paymentModes.entries.map((e) {
+                      return DropdownMenuItem(
+                        value: e.key, 
+                        child: Text(e.value, style: TextStyle(color: theme.colorScheme.onSurface), overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (val) => provider.setPaymentMode(val ?? '01'),
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Payment Mode'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: InkWell(
                     onTap: () async {
-                      DateTime? picked = await showDatePicker(context: context, initialDate: provider.saleDate, firstDate: DateTime(2000), lastDate: DateTime(2100));
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: provider.saleDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
                       if (picked != null) provider.setSaleDate(picked);
                     },
                     child: InputDecorator(
-                      decoration: const InputDecoration(labelText: 'Sale Date', filled: true, fillColor: AppTheme.darkSurface),
+                      decoration: const InputDecoration(labelText: 'Sale Date'),
                       child: Text(
                         DateFormat('yyyy-MM-dd').format(provider.saleDate), 
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: theme.colorScheme.onSurface),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1181,59 +1188,61 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 ),
               ],
             ),
-            // Conditional Bank Account Field
-            if (provider.paymentMode == '03' || provider.paymentMode == '02') ...[
-              const SizedBox(height: 12),
-              TextFormField(
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: "Supplier's Bank Account", filled: true, fillColor: AppTheme.darkSurface),
-              ),
-            ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _bankAccountCtrl,
+              style: TextStyle(color: theme.colorScheme.onSurface),
+              decoration: const InputDecoration(labelText: "Supplier's Bank Account"),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: _paymentTermsCtrl,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: 'Payment Terms', filled: true, fillColor: AppTheme.darkSurface),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: const InputDecoration(labelText: 'Payment Terms'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
                     controller: _billRefCtrl,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: 'Bill Reference', filled: true, fillColor: AppTheme.darkSurface),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: const InputDecoration(labelText: 'Bill Reference'),
                   ),
                 ),
               ],
             ),
-
-            // --- 3. PREPAYMENT DETAILS ---
-            _buildSubHeader('Prepayment Details', Icons.account_balance_wallet, theme),
+            const SizedBox(height: 24),
+            _buildSubHeader('Prepayment Details', Icons.account_balance_wallet_rounded, theme),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: _prepayAmountCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: 'Amount (RM)', filled: true, fillColor: AppTheme.darkSurface),
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: const InputDecoration(labelText: 'Amount (RM)'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: InkWell(
                     onTap: () async {
-                      DateTime? picked = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _prepaymentDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
                       if (picked != null) setState(() => _prepaymentDate = picked);
                     },
                     child: InputDecorator(
-                      decoration: const InputDecoration(labelText: 'Date', filled: true, fillColor: AppTheme.darkSurface),
+                      decoration: const InputDecoration(labelText: 'Date'),
                       child: Text(
                         _prepaymentDate != null ? DateFormat('yyyy-MM-dd').format(_prepaymentDate!) : 'Select Date', 
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: theme.colorScheme.onSurface),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1241,49 +1250,53 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _prepayRefCtrl,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: 'Prepayment Reference No.', filled: true, fillColor: AppTheme.darkSurface),
+              style: TextStyle(color: theme.colorScheme.onSurface),
+              decoration: const InputDecoration(labelText: 'Prepayment Reference No.'),
             ),
-
-            // --- 4. BILLING & TAX EXEMPTION ---
-            _buildSubHeader('Billing & Exemption', Icons.receipt_long, theme),
+            const SizedBox(height: 24),
+            _buildSubHeader('Billing & Exemption', Icons.receipt_rounded, theme),
             Row(
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    isExpanded: true,
                     value: _billingFrequency,
-                    dropdownColor: AppTheme.darkSurfaceContainerHigh,
-                    decoration: const InputDecoration(labelText: 'Frequency', filled: true, fillColor: AppTheme.darkSurface),
-                    items: ['Daily', 'Weekly', 'Monthly', 'Yearly'].map((e) => DropdownMenuItem(
-                      value: e, 
-                      child: Text(
-                        e, 
-                        style: const TextStyle(color: Colors.white),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    )).toList(),
+                    dropdownColor: theme.colorScheme.surfaceContainerHighest,
+                    items: ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Annually'].map((f) {
+                      return DropdownMenuItem(
+                        value: f, 
+                        child: Text(f, style: TextStyle(color: theme.colorScheme.onSurface), overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
                     onChanged: (val) => setState(() => _billingFrequency = val),
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Frequency'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
                     controller: _taxExemptCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(labelText: 'Tax Exempt Amt (RM)', filled: true, fillColor: AppTheme.darkSurface),
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: const InputDecoration(labelText: 'Tax Exempt Amt (RM)'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             InkWell(
               onTap: () async {
-                DateTimeRange? picked = await showDateRangePicker(context: context, firstDate: DateTime(2000), lastDate: DateTime(2100));
+                final picked = await showDateRangePicker(
+                  context: context,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                  initialDateRange: (_billingStartDate != null && _billingEndDate != null) 
+                    ? DateTimeRange(start: _billingStartDate!, end: _billingEndDate!) 
+                    : null,
+                );
                 if (picked != null) {
                   setState(() {
                     _billingStartDate = picked.start;
@@ -1292,20 +1305,22 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 }
               },
               child: InputDecorator(
-                decoration: const InputDecoration(labelText: 'Billing Period', filled: true, fillColor: AppTheme.darkSurface, suffixIcon: Icon(Icons.calendar_month, color: Colors.grey)),
+                decoration: const InputDecoration(labelText: 'Billing Period', suffixIcon: Icon(Icons.calendar_month, color: Colors.grey)),
                 child: Text(
-                  _billingStartDate != null && _billingEndDate != null ? "${DateFormat('yyyy-MM-dd').format(_billingStartDate!)} to ${DateFormat('yyyy-MM-dd').format(_billingEndDate!)}" : 'Select Start & End Date',
-                  style: const TextStyle(color: Colors.white),
+                  (_billingStartDate != null && _billingEndDate != null)
+                      ? "${DateFormat('yyyy-MM-dd').format(_billingStartDate!)} to ${DateFormat('yyyy-MM-dd').format(_billingEndDate!)}"
+                      : 'Select Period',
+                  style: TextStyle(color: theme.colorScheme.onSurface),
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _notesController,
               maxLines: 3,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: 'Additional Notes', icon: Icon(Icons.notes_rounded), filled: true, fillColor: AppTheme.darkSurface),
+              style: TextStyle(color: theme.colorScheme.onSurface),
               onChanged: (val) => provider.setNotes(val),
+              decoration: const InputDecoration(labelText: 'Additional Notes', icon: Icon(Icons.notes_rounded)),
             ),
           ],
         ),
