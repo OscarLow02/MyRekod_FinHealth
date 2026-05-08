@@ -63,13 +63,33 @@ class SaleCalculatorProvider extends ChangeNotifier {
   String _paymentMode = '01'; // Default: Cash
   String _notes = '';
   DateTime _saleDate = DateTime.now();
+  bool _submitToLhdnNow = true;
+  String? _previewInvoiceNumber;
+
+  // --- Section Toggles ---
+  bool _enableDiscountCharges = false;
+  bool _enablePaymentInfo = false;
+  bool _enablePrepayment = false;
+  bool _enableBillingExemption = false;
 
   String _taxType = '06'; // Default: Not Applicable
   double _taxRate = 0.0;
   double? _numUnits;    // Unit-based: number of units
   double? _ratePerUnit; // Unit-based: rate per unit
-  bool _submitToLhdnNow = true;
-  String? _previewInvoiceNumber;
+
+  // -- Additional LHDN Details --
+  String _paymentTerms = '';
+  String _supplierBankAccount = '';
+  String _billReference = '';
+  
+  double _prepaymentAmount = 0.0;
+  DateTime? _prepaymentDate;
+  String _prepaymentReference = '';
+
+  String _billingFrequency = ''; // e.g., Monthly, Yearly
+  double _taxExemptionAmount = 0.0;
+  DateTime? _billingStartDate;
+  DateTime? _billingEndDate;
 
   // ── Form State Getters ─────────────────────────────────────────────────
 
@@ -90,6 +110,26 @@ class SaleCalculatorProvider extends ChangeNotifier {
   double get taxRate => _taxRate;
   bool get submitToLhdnNow => _submitToLhdnNow;
   String? get previewInvoiceNumber => _previewInvoiceNumber;
+
+  // --- Section Toggles ---
+  bool get enableDiscountCharges => _enableDiscountCharges;
+  bool get enablePaymentInfo => _enablePaymentInfo;
+  bool get enablePrepayment => _enablePrepayment;
+  bool get enableBillingExemption => _enableBillingExemption;
+
+  // -- Additional LHDN Getters --
+  String get paymentTerms => _paymentTerms;
+  String get supplierBankAccount => _supplierBankAccount;
+  String get billReference => _billReference;
+  
+  double get prepaymentAmount => _prepaymentAmount;
+  DateTime? get prepaymentDate => _prepaymentDate;
+  String get prepaymentReference => _prepaymentReference;
+
+  String get billingFrequency => _billingFrequency;
+  double get taxExemptionAmount => _taxExemptionAmount;
+  DateTime? get billingStartDate => _billingStartDate;
+  DateTime? get billingEndDate => _billingEndDate;
 
   // Legacy getters for compatibility with single-item logic if needed
   SaleItem? get selectedItem => _lineItems.isNotEmpty ? _lineItems.first.item : null;
@@ -332,7 +372,6 @@ class SaleCalculatorProvider extends ChangeNotifier {
   /// Update discount description text.
   void setDiscountDescription(String value) {
     _discountDescription = value;
-    // No notifyListeners needed — no computed values depend on this.
   }
 
   /// Update tax type code (from LhdnConstants.taxTypes).
@@ -365,12 +404,79 @@ class SaleCalculatorProvider extends ChangeNotifier {
   /// Update notes.
   void setNotes(String value) {
     _notes = value;
-    // No notifyListeners needed — no computed values depend on this.
   }
 
   /// Update sale date.
   void setSaleDate(DateTime date) {
     _saleDate = date;
+    notifyListeners();
+  }
+
+  void setEnableDiscountCharges(bool val) {
+    _enableDiscountCharges = val;
+    notifyListeners();
+  }
+
+  void setEnablePaymentInfo(bool val) {
+    _enablePaymentInfo = val;
+    notifyListeners();
+  }
+
+  void setEnablePrepayment(bool val) {
+    _enablePrepayment = val;
+    notifyListeners();
+  }
+
+  void setEnableBillingExemption(bool val) {
+    _enableBillingExemption = val;
+    notifyListeners();
+  }
+
+  // -- Additional LHDN Setters --
+  
+  void setPaymentTerms(String value) {
+    _paymentTerms = value;
+    notifyListeners();
+  }
+
+  void setSupplierBankAccount(String value) {
+    _supplierBankAccount = value;
+    notifyListeners();
+  }
+
+  void setBillReference(String value) {
+    _billReference = value;
+    notifyListeners();
+  }
+
+  void setPrepaymentAmount(double value) {
+    _prepaymentAmount = math.max(0.0, value);
+    notifyListeners();
+  }
+
+  void setPrepaymentDate(DateTime? value) {
+    _prepaymentDate = value;
+    notifyListeners();
+  }
+
+  void setPrepaymentReference(String value) {
+    _prepaymentReference = value;
+    notifyListeners();
+  }
+
+  void setBillingFrequency(String value) {
+    _billingFrequency = value;
+    notifyListeners();
+  }
+
+  void setTaxExemptionAmount(double value) {
+    _taxExemptionAmount = math.max(0.0, value);
+    notifyListeners();
+  }
+
+  void setBillingPeriod(DateTime? start, DateTime? end) {
+    _billingStartDate = start;
+    _billingEndDate = end;
     notifyListeners();
   }
 
@@ -406,22 +512,22 @@ class SaleCalculatorProvider extends ChangeNotifier {
       customerIdNumber: customer.idNumber,
       customerIdScheme: customer.idScheme,
       customerSstRegistrationNumber: customer.sstRegistrationNumber,
-      // Item details (Note: Simplified for legacy; adjust model if supporting multi-item records)
+      // Item details
       lineItems: _lineItems,
       // Pricing (all computed)
       subtotal: subtotal,
-      discountAmount: actualDiscountAmount,
-      discountRate: _discountRate,
-      feeAmount: actualFeeAmount,
-      feeRate: _feeRate,
-      discountDescription: _discountDescription,
+      discountAmount: _enableDiscountCharges ? actualDiscountAmount : null,
+      discountRate: _enableDiscountCharges ? _discountRate : null,
+      feeAmount: _enableDiscountCharges ? actualFeeAmount : null,
+      feeRate: _enableDiscountCharges ? _feeRate : null,
+      discountDescription: _enableDiscountCharges ? _discountDescription : null,
       taxType: _taxType,
       taxRate: _taxRate,
       taxAmount: taxAmount,
       totalPayable: totalPayable,
       roundingAmount: roundingAmount,
       // Payment
-      paymentMode: _paymentMode,
+      paymentMode: _enablePaymentInfo ? _paymentMode : null,
       // Status defaults
       commercialStatus: statusOverride ?? CommercialStatus.pendingPayment,
       complianceStatus: customer.id == 'walk-in'
@@ -429,6 +535,17 @@ class SaleCalculatorProvider extends ChangeNotifier {
           : (finalSubmitToLhdn ? ComplianceStatus.valid : ComplianceStatus.pendingSubmission),
       // Notes
       notes: _notes,
+      // Additional LHDN Details
+      paymentTerms: _enablePaymentInfo ? _paymentTerms : null,
+      supplierBankAccount: _enablePaymentInfo ? _supplierBankAccount : null,
+      billReference: _enableBillingExemption ? _billReference : null,
+      prepaymentAmount: _enablePrepayment ? _prepaymentAmount : null,
+      prepaymentDate: _enablePrepayment ? _prepaymentDate : null,
+      prepaymentReference: _enablePrepayment ? _prepaymentReference : null,
+      billingFrequency: _enableBillingExemption ? _billingFrequency : null,
+      taxExemptionAmount: _enableBillingExemption ? _taxExemptionAmount : null,
+      billingStartDate: _enableBillingExemption ? _billingStartDate : null,
+      billingEndDate: _enableBillingExemption ? _billingEndDate : null,
     );
   }
 
@@ -516,6 +633,12 @@ class SaleCalculatorProvider extends ChangeNotifier {
   void resetForm() {
     _lineItems.clear();
     _selectedCustomer = null;
+    // Reset flags
+    _enableDiscountCharges = false;
+    _enablePaymentInfo = false;
+    _enablePrepayment = false;
+    _enableBillingExemption = false;
+
     _discountAmount = 0.0;
     _discountRate = 0.0;
     _feeAmount = 0.0;
@@ -531,6 +654,19 @@ class SaleCalculatorProvider extends ChangeNotifier {
     _taxRate = _taxConfig.taxRate ?? 0.0;
     _numUnits = _taxConfig.numUnits;
     _ratePerUnit = _taxConfig.ratePerUnit;
+
+    // Reset additional LHDN fields
+    _paymentTerms = '';
+    _supplierBankAccount = '';
+    _billReference = '';
+    _prepaymentAmount = 0.0;
+    _prepaymentDate = null;
+    _prepaymentReference = '';
+    _billingFrequency = '';
+    _taxExemptionAmount = 0.0;
+    _billingStartDate = null;
+    _billingEndDate = null;
+
     notifyListeners();
   }
 

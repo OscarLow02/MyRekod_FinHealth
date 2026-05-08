@@ -22,7 +22,8 @@ class Customer {
   final String tinNumber;
   final String idNumber; // BRN for business, MyKad/Passport for person
   final String idScheme; // 'BRN', 'NRIC', 'PASSPORT', 'ARMY'
-  final String sstRegistrationNumber; // Optional SST Number
+  final String tourismTaxNumber; // Default to "NA" if not applicable
+  final String sstRegistrationNumber;
 
   // Contact
   final String phoneNumber;
@@ -46,15 +47,16 @@ class Customer {
     this.tinNumber = '',
     this.idNumber = '',
     this.idScheme = 'BRN',
-    this.sstRegistrationNumber = '',
-    this.phoneNumber = '',
-    this.email = '',
-    this.addressLine1 = '',
+    this.sstRegistrationNumber = 'NA',
+    this.tourismTaxNumber = 'NA',
+    this.phoneNumber = 'NA',
+    this.email = 'NA',
+    this.addressLine1 = 'NA',
     this.addressLine2 = '',
     this.addressLine3 = '',
-    this.city = '',
+    this.city = 'NA',
     this.stateCode = '17', // Default: Not Applicable
-    this.postalCode = '',
+    this.postalCode = '00000',
     this.createdAt,
     this.updatedAt,
   });
@@ -69,6 +71,7 @@ class Customer {
     idNumber: 'NA',
     idScheme: 'BRN',
     sstRegistrationNumber: 'NA',
+    tourismTaxNumber: 'NA',
     phoneNumber: 'NA',
     email: 'NA',
     addressLine1: 'NA',
@@ -79,26 +82,32 @@ class Customer {
 
   /// Converts to a Firestore-compatible map.
   Map<String, dynamic> toFirestore() {
-    return {
+    final Map<String, dynamic> data = {
       'name': name,
-      'customerType': customerType.name, // 'b2b' or 'b2c'
+      'customerType': customerType.name,
       'tinNumber': tinNumber,
       'idNumber': idNumber,
       'idScheme': idScheme,
-      'sstRegistrationNumber': sstRegistrationNumber,
-      'phoneNumber': phoneNumber,
-      'email': email,
-      'addressLine1': addressLine1,
+      'sstRegistrationNumber': sstRegistrationNumber.isEmpty ? 'NA' : sstRegistrationNumber,
+      'tourismTaxNumber': tourismTaxNumber.isEmpty ? 'NA' : tourismTaxNumber,
+      'phoneNumber': phoneNumber.isEmpty ? 'NA' : phoneNumber,
+      'email': email.isEmpty ? 'NA' : email,
+      'addressLine1': addressLine1.isEmpty ? 'NA' : addressLine1,
       'addressLine2': addressLine2,
       'addressLine3': addressLine3,
-      'city': city,
+      'city': city.isEmpty ? 'NA' : city,
       'stateCode': stateCode,
-      'postalCode': postalCode,
-      'createdAt': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'postalCode': postalCode.isEmpty ? '00000' : postalCode,
     };
+
+    if (createdAt != null) {
+      data['createdAt'] = Timestamp.fromDate(createdAt!);
+    } else {
+      data['createdAt'] = FieldValue.serverTimestamp();
+    }
+    data['updatedAt'] = FieldValue.serverTimestamp();
+
+    return data;
   }
 
   /// Constructs a [Customer] from a Firestore document snapshot.
@@ -113,15 +122,16 @@ class Customer {
       tinNumber: data['tinNumber'] as String? ?? '',
       idNumber: data['idNumber'] as String? ?? '',
       idScheme: data['idScheme'] as String? ?? 'BRN',
-      sstRegistrationNumber: data['sstRegistrationNumber'] as String? ?? '',
-      phoneNumber: data['phoneNumber'] as String? ?? '',
-      email: data['email'] as String? ?? '',
-      addressLine1: data['addressLine1'] as String? ?? '',
+      sstRegistrationNumber: data['sstRegistrationNumber'] as String? ?? 'NA',
+      tourismTaxNumber: data['tourismTaxNumber'] as String? ?? 'NA',
+      phoneNumber: data['phoneNumber'] as String? ?? 'NA',
+      email: data['email'] as String? ?? 'NA',
+      addressLine1: data['addressLine1'] as String? ?? 'NA',
       addressLine2: data['addressLine2'] as String? ?? '',
       addressLine3: data['addressLine3'] as String? ?? '',
-      city: data['city'] as String? ?? '',
+      city: data['city'] as String? ?? 'NA',
       stateCode: data['stateCode'] as String? ?? '17',
-      postalCode: data['postalCode'] as String? ?? '',
+      postalCode: data['postalCode'] as String? ?? '00000',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
     );
@@ -141,6 +151,7 @@ class Customer {
     String? idNumber,
     String? idScheme,
     String? sstRegistrationNumber,
+    String? tourismTaxNumber,
     String? phoneNumber,
     String? email,
     String? addressLine1,
@@ -158,6 +169,7 @@ class Customer {
       idNumber: idNumber ?? this.idNumber,
       idScheme: idScheme ?? this.idScheme,
       sstRegistrationNumber: sstRegistrationNumber ?? this.sstRegistrationNumber,
+      tourismTaxNumber: tourismTaxNumber ?? this.tourismTaxNumber,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
       addressLine1: addressLine1 ?? this.addressLine1,

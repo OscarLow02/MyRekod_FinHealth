@@ -14,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/sale_item.dart';
 import '../../models/sale_record.dart';
+import '../../core/validators.dart';
 import '../profile/widgets/add_item_bottom_sheet.dart';
 
 /// Redesigned Record Sale form following the A-B-C hierarchy.
@@ -59,6 +60,12 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   DateTime? _billingEndDate;
   DateTime? _prepaymentDate;
   bool _isDiscountRate = true; // Added for Rate/Amount toggle
+
+  // Checkboxes for Additional Details sections
+  bool _enableDiscountCharges = false;
+  bool _enablePaymentInfo = false;
+  bool _enablePrepayment = false;
+  bool _enableBillingExemption = false;
 
   Future<void> _openAddItemSheet(SaleCalculatorProvider calc) async {
     final user = FirebaseAuth.instance.currentUser;
@@ -220,10 +227,23 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
   void _showPreviewSheet() {
     try {
-      final formState = _formKey.currentState;
-      if (formState != null && !formState.validate()) return;
-
       final calc = context.read<SaleCalculatorProvider>();
+      
+      // 1. Sync all fields from controllers to provider
+      _syncAllFields(calc);
+
+      // 2. Form Validation
+      final formState = _formKey.currentState;
+      if (formState != null && !formState.validate()) {
+        AppDialogs.showSystemAlert(
+          context, 
+          title: 'Incomplete Form', 
+          body: 'Please correct the errors in the form before proceeding.',
+          icon: Icons.warning_amber_rounded,
+        );
+        return;
+      }
+
       if (!calc.canSubmit) return;
 
       final theme = Theme.of(context);
@@ -475,8 +495,25 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
+  /// Synchronizes all UI controller values to the provider state.
+  void _syncAllFields(SaleCalculatorProvider calc) {
+    calc.setPaymentTerms(_paymentTermsCtrl.text);
+    calc.setSupplierBankAccount(_bankAccountCtrl.text);
+    calc.setBillReference(_billRefCtrl.text);
+    calc.setPrepaymentAmount(double.tryParse(_prepayAmountCtrl.text) ?? 0.0);
+    calc.setPrepaymentDate(_prepaymentDate);
+    calc.setPrepaymentReference(_prepayRefCtrl.text);
+    calc.setBillingFrequency(_billingFrequency ?? '');
+    calc.setTaxExemptionAmount(double.tryParse(_taxExemptCtrl.text) ?? 0.0);
+    calc.setBillingPeriod(_billingStartDate, _billingEndDate);
+  }
+
   Future<void> _submitSaleWithParams(SaleCalculatorProvider calc, CommercialStatus status, bool submitToLhdn) async {
     setState(() => _isSaving = true);
+    
+    // Ensure everything is synced one last time
+    _syncAllFields(calc);
+
     final result = await calc.submitSale(
       statusOverride: status,
       submitToLhdnOverride: submitToLhdn,
@@ -587,6 +624,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 calc.selectCustomer(customer);
               }
             },
+            validator: (v) => AppValidators.requiredField(v, 'Customer'),
             fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           ),
         if (_selectedType == SaleCustomerType.individual && !_isWalkIn) ...[
@@ -1079,6 +1117,18 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             onTap: (_isSaving || !calc.canSubmit) 
               ? null 
               : () async {
+                  // Validate before showing loader/fetching invoice
+                  _syncAllFields(calc);
+                  if (!_formKey.currentState!.validate()) {
+                    AppDialogs.showSystemAlert(
+                      context, 
+                      title: 'Incomplete Form', 
+                      body: 'Please correct the errors in the form before proceeding.',
+                      icon: Icons.warning_amber_rounded,
+                    );
+                    return;
+                  }
+
                   setState(() => _isSaving = true);
                   await calc.fetchPreviewInvoiceNumber();
                   setState(() => _isSaving = false);
@@ -1128,11 +1178,20 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  Widget _buildSubHeader(String title, IconData icon, ThemeData theme) {
+  Widget _buildSubHeader(String title, IconData icon, ThemeData theme, {bool? isChecked, ValueChanged<bool?>? onChanged}) {
     return Padding(
       padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
       child: Row(
         children: [
+          if (isChecked != null && onChanged != null)
+            Checkbox(
+              value: isChecked,
+              onChanged: onChanged,
+              activeColor: theme.colorScheme.primary,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          if (isChecked != null && onChanged != null) const SizedBox(width: 8),
           Icon(icon, color: theme.colorScheme.primary, size: 18),
           const SizedBox(width: 8),
           Text(title, style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
@@ -1162,300 +1221,421 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           children: [
             // 1. Discounts & Charges
-            _buildSubHeader('Discounts & Charges', Icons.local_offer_rounded, theme),
-            const SizedBox(height: 8),
-            // Rate / Amount Toggle
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
-              ),
-              child: Row(
-                children: [
-                  _buildSegmentTab(
-                    theme,
-                    label: 'Rate (%)',
-                    isActive: _isDiscountRate,
-                    onTap: () {
-                      setState(() => _isDiscountRate = true);
-                      provider.setDiscountRateMode(true);
-                    },
-                  ),
-                  _buildSegmentTab(
-                    theme,
-                    label: 'Amount (RM)',
-                    isActive: !_isDiscountRate,
-                    onTap: () {
-                      setState(() => _isDiscountRate = false);
-                      provider.setDiscountRateMode(false);
-                    },
-                  ),
-                ],
-              ),
+            _buildSubHeader(
+              'Discounts & Charges', 
+              Icons.local_offer_rounded, 
+              theme,
+              isChecked: _enableDiscountCharges,
+              onChanged: (val) {
+                setState(() => _enableDiscountCharges = val ?? false);
+                if (!_enableDiscountCharges) {
+                  _discountRateCtrl.clear();
+                  _feeRateCtrl.clear();
+                  _discountController.clear();
+                  _feeAmountCtrl.clear();
+                  provider.setDiscountRate(0.0);
+                  provider.setFeeRate(0.0);
+                  provider.setDiscountAmount(0.0);
+                  provider.setFeeAmount(0.0);
+                }
+              },
             ),
-            const SizedBox(height: 20),
-            if (_isDiscountRate) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildLabeledField(
-                      'Discount Rate',
-                      TextFormField(
-                        controller: _discountRateCtrl,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        textAlign: TextAlign.end,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                        onChanged: (val) {
-                          final rate = double.tryParse(val) ?? 0.0;
-                          provider.setDiscountRate(rate);
-                        },
-                        decoration: const InputDecoration(suffixText: '%', hintText: '0.00'),
-                      ),
+            const SizedBox(height: 8),
+            if (_enableDiscountCharges) ...[
+              // Rate / Amount Toggle
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+                ),
+                child: Row(
+                  children: [
+                    _buildSegmentTab(
                       theme,
+                      label: 'Rate (%)',
+                      isActive: _isDiscountRate,
+                      onTap: () {
+                        setState(() => _isDiscountRate = true);
+                        provider.setDiscountRateMode(true);
+                      },
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildLabeledField(
-                      'Fee/Charge Rate',
-                      TextFormField(
-                        controller: _feeRateCtrl,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        textAlign: TextAlign.end,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                        onChanged: (val) {
-                          final rate = double.tryParse(val) ?? 0.0;
-                          provider.setFeeRate(rate);
-                        },
-                        decoration: const InputDecoration(suffixText: '%', hintText: '0.00'),
-                      ),
+                    _buildSegmentTab(
                       theme,
+                      label: 'Amount (RM)',
+                      isActive: !_isDiscountRate,
+                      onTap: () {
+                        setState(() => _isDiscountRate = false);
+                        provider.setDiscountRateMode(false);
+                      },
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ] else ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildLabeledField(
-                      'Discount Amount',
-                      TextFormField(
-                        controller: _discountController,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        textAlign: TextAlign.end,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                        onChanged: (val) {
-                          final amt = double.tryParse(val) ?? 0.0;
-                          provider.setDiscountAmount(amt);
-                        },
-                        decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
+              const SizedBox(height: 20),
+              if (_isDiscountRate) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildLabeledField(
+                        'Discount Rate',
+                        TextFormField(
+                          controller: _discountRateCtrl,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          textAlign: TextAlign.end,
+                          style: TextStyle(color: theme.colorScheme.onSurface),
+                          onChanged: (val) {
+                            final rate = double.tryParse(val) ?? 0.0;
+                            provider.setDiscountRate(rate);
+                          },
+                          decoration: const InputDecoration(suffixText: '%', hintText: '0.00'),
+                        ),
+                        theme,
                       ),
-                      theme,
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildLabeledField(
-                      'Fee/Charge Amount',
-                      TextFormField(
-                        controller: _feeAmountCtrl,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        textAlign: TextAlign.end,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                        onChanged: (val) {
-                          final amt = double.tryParse(val) ?? 0.0;
-                          provider.setFeeAmount(amt);
-                        },
-                        decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildLabeledField(
+                        'Fee/Charge Rate',
+                        TextFormField(
+                          controller: _feeRateCtrl,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          textAlign: TextAlign.end,
+                          style: TextStyle(color: theme.colorScheme.onSurface),
+                          onChanged: (val) {
+                            final rate = double.tryParse(val) ?? 0.0;
+                            provider.setFeeRate(rate);
+                          },
+                          decoration: const InputDecoration(suffixText: '%', hintText: '0.00'),
+                        ),
+                        theme,
                       ),
-                      theme,
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildLabeledField(
+                        'Discount Amount',
+                        TextFormField(
+                          controller: _discountController,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          textAlign: TextAlign.end,
+                          style: TextStyle(color: theme.colorScheme.onSurface),
+                          onChanged: (val) {
+                            final amt = double.tryParse(val) ?? 0.0;
+                            provider.setDiscountAmount(amt);
+                          },
+                          decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
+                        ),
+                        theme,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildLabeledField(
+                        'Fee/Charge Amount',
+                        TextFormField(
+                          controller: _feeAmountCtrl,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          textAlign: TextAlign.end,
+                          style: TextStyle(color: theme.colorScheme.onSurface),
+                          onChanged: (val) {
+                            final amt = double.tryParse(val) ?? 0.0;
+                            provider.setFeeAmount(amt);
+                          },
+                          decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
+                        ),
+                        theme,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 24),
             ],
-
-            const SizedBox(height: 24),
             // 2. Payment Information
-            _buildSubHeader('Payment Information', Icons.payment_rounded, theme),
-            const SizedBox(height: 8),
-            CustomPremiumDropdown<String>(
-              label: 'Payment Mode',
-              value: provider.paymentMode,
-              items: CustomDropdownBuilder.fromMap(
-                LhdnConstants.paymentModes,
-                icon: Icons.payment_outlined,
-              ),
-              onChanged: (val) => provider.setPaymentMode(val ?? '01'),
-              fillColor: theme.colorScheme.surface,
+            _buildSubHeader(
+              'Payment Information', 
+              Icons.payment_rounded, 
+              theme,
+              isChecked: _enablePaymentInfo,
+              onChanged: (val) {
+                setState(() => _enablePaymentInfo = val ?? false);
+                if (!_enablePaymentInfo) {
+                  _bankAccountCtrl.clear();
+                  _paymentTermsCtrl.clear();
+                  _billRefCtrl.clear();
+                  provider.setPaymentMode('01'); // Default back to Cash or clear? We leave '01' as default but maybe we should clear it. Wait, the user said "Otherwise, the field just set as null in firestore." So if unchecked, we probably need a way to say no payment mode, but LHDN requires it if there's payment info? We will handle omitting it in provider later.
+                  provider.setSupplierBankAccount('');
+                  provider.setPaymentTerms('');
+                  provider.setBillReference('');
+                }
+              },
             ),
-            
-            // Conditional: Supplier Bank Account (only if Bank selected)
-            if (provider.paymentMode == '03') ...[
+            const SizedBox(height: 8),
+            if (_enablePaymentInfo) ...[
+              CustomPremiumDropdown<String>(
+                label: 'Payment Mode',
+                value: provider.paymentMode,
+                items: CustomDropdownBuilder.fromMap(
+                  LhdnConstants.paymentModes,
+                  icon: Icons.payment_outlined,
+                ),
+                onChanged: (val) => provider.setPaymentMode(val ?? '01'),
+                validator: (v) => AppValidators.requiredField(v, 'Payment Mode'),
+                fillColor: theme.colorScheme.surface,
+              ),
+              
+              // Conditional: Supplier Bank Account (only if Bank selected)
+              if (provider.paymentMode == '03') ...[
+                const SizedBox(height: 16),
+                _buildLabeledField(
+                  "Supplier's Bank Account Number",
+                  TextFormField(
+                    controller: _bankAccountCtrl,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    onChanged: (val) => provider.setSupplierBankAccount(val),
+                    validator: (v) => AppValidators.numeric(v, 'Account Number'),
+                    decoration: const InputDecoration(hintText: 'Account Number'),
+                  ),
+                  theme,
+                ),
+              ],
+
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildLabeledField(
+                      'Payment Terms',
+                      TextFormField(
+                        controller: _paymentTermsCtrl,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        onChanged: (val) => provider.setPaymentTerms(val),
+                        decoration: const InputDecoration(hintText: 'e.g. Net 30'),
+                      ),
+                      theme,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildLabeledField(
+                      'Bill Reference',
+                      TextFormField(
+                        controller: _billRefCtrl,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        onChanged: (val) => provider.setBillReference(val),
+                        decoration: const InputDecoration(hintText: 'Reference No.'),
+                      ),
+                      theme,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+            // 3. Prepayment Details
+            _buildSubHeader(
+              'Prepayment Details', 
+              Icons.account_balance_wallet_rounded, 
+              theme,
+              isChecked: _enablePrepayment,
+              onChanged: (val) {
+                setState(() => _enablePrepayment = val ?? false);
+                if (!_enablePrepayment) {
+                  _prepayAmountCtrl.clear();
+                  _prepayRefCtrl.clear();
+                  setState(() => _prepaymentDate = null);
+                  provider.setPrepaymentAmount(0.0);
+                  provider.setPrepaymentDate(null);
+                  provider.setPrepaymentReference('');
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            if (_enablePrepayment) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildLabeledField(
+                      'Amount (RM)',
+                      TextFormField(
+                        controller: _prepayAmountCtrl,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        textAlign: TextAlign.end,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        onChanged: (val) => provider.setPrepaymentAmount(double.tryParse(val) ?? 0.0),
+                        validator: (v) => AppValidators.positiveNumber(v, 'Prepayment Amount'),
+                        decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
+                      ),
+                      theme,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildLabeledField(
+                      'Date',
+                      FormField<DateTime>(
+                        initialValue: _prepaymentDate,
+                        validator: (v) => v == null ? 'Please select a date' : null,
+                        builder: (state) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            InkWell(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _prepaymentDate ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2100),
+                                );
+                                if (picked != null) {
+                                  setState(() => _prepaymentDate = picked);
+                                  provider.setPrepaymentDate(picked);
+                                  state.didChange(picked);
+                                }
+                              },
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  suffixIcon: const Icon(Icons.calendar_today_rounded, size: 18),
+                                  errorText: state.hasError ? state.errorText : null,
+                                  border: state.hasError ? OutlineInputBorder(borderSide: BorderSide(color: theme.colorScheme.error)) : null,
+                                ),
+                                child: Text(
+                                  _prepaymentDate != null ? DateFormat('yyyy-MM-dd').format(_prepaymentDate!) : 'Select Date', 
+                                  style: TextStyle(color: theme.colorScheme.onSurface),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      theme,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
               _buildLabeledField(
-                "Supplier's Bank Account Number",
+                'Prepayment Reference No.',
                 TextFormField(
-                  controller: _bankAccountCtrl,
+                  controller: _prepayRefCtrl,
                   style: TextStyle(color: theme.colorScheme.onSurface),
-                  decoration: const InputDecoration(hintText: 'Account Number'),
+                  onChanged: (val) => provider.setPrepaymentReference(val),
+                  decoration: const InputDecoration(hintText: 'Reference No.'),
+                ),
+                theme,
+              ),
+              const SizedBox(height: 24),
+            ],
+            // 4. Billing & Exemption
+            _buildSubHeader(
+              'Billing & Exemption', 
+              Icons.receipt_rounded, 
+              theme,
+              isChecked: _enableBillingExemption,
+              onChanged: (val) {
+                setState(() => _enableBillingExemption = val ?? false);
+                if (!_enableBillingExemption) {
+                  _taxExemptCtrl.clear();
+                  setState(() {
+                    _billingFrequency = null;
+                    _billingStartDate = null;
+                    _billingEndDate = null;
+                  });
+                  provider.setBillingFrequency('');
+                  provider.setTaxExemptionAmount(0.0);
+                  provider.setBillingPeriod(null, null);
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            if (_enableBillingExemption) ...[
+              CustomPremiumDropdown<String>(
+                label: 'Frequency',
+                value: _billingFrequency,
+                items: CustomDropdownBuilder.fromList(
+                  ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Annually'],
+                  icon: Icons.repeat_rounded,
+                ),
+                onChanged: (val) {
+                  setState(() => _billingFrequency = val);
+                  provider.setBillingFrequency(val ?? '');
+                },
+                validator: (v) => AppValidators.requiredField(v, 'Frequency'),
+                fillColor: theme.colorScheme.surface,
+              ),
+              const SizedBox(height: 16),
+              _buildLabeledField(
+                'Tax Exemption Amount',
+                TextFormField(
+                  controller: _taxExemptCtrl,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(color: theme.colorScheme.onSurface),
+                  onChanged: (val) => provider.setTaxExemptionAmount(double.tryParse(val) ?? 0.0),
+                  validator: (v) => AppValidators.positiveNumber(v, 'Tax Exemption Amount'),
+                  decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
+                ),
+                theme,
+              ),
+              const SizedBox(height: 16),
+              _buildLabeledField(
+                'Billing Period',
+                FormField<DateTimeRange>(
+                  initialValue: (_billingStartDate != null && _billingEndDate != null) 
+                    ? DateTimeRange(start: _billingStartDate!, end: _billingEndDate!) 
+                    : null,
+                  validator: (v) => v == null ? 'Please select a billing period' : null,
+                  builder: (state) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showDateRangePicker(
+                            context: context,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                            initialDateRange: state.value,
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _billingStartDate = picked.start;
+                              _billingEndDate = picked.end;
+                            });
+                            provider.setBillingPeriod(picked.start, picked.end);
+                            state.didChange(picked);
+                          }
+                        },
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            suffixIcon: const Icon(Icons.date_range_rounded, size: 18),
+                            errorText: state.hasError ? state.errorText : null,
+                            border: state.hasError ? OutlineInputBorder(borderSide: BorderSide(color: theme.colorScheme.error)) : null,
+                          ),
+                          child: Text(
+                            (_billingStartDate != null && _billingEndDate != null)
+                                ? "${DateFormat('yyyy-MM-dd').format(_billingStartDate!)} to ${DateFormat('yyyy-MM-dd').format(_billingEndDate!)}"
+                                : 'Select Period',
+                            style: TextStyle(color: theme.colorScheme.onSurface),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 theme,
               ),
             ],
-
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildLabeledField(
-                    'Payment Terms',
-                    TextFormField(
-                      controller: _paymentTermsCtrl,
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                      decoration: const InputDecoration(hintText: 'e.g. Net 30'),
-                    ),
-                    theme,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildLabeledField(
-                    'Bill Reference',
-                    TextFormField(
-                      controller: _billRefCtrl,
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                      decoration: const InputDecoration(hintText: 'Reference No.'),
-                    ),
-                    theme,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-            // 3. Prepayment Details
-            _buildSubHeader('Prepayment Details', Icons.account_balance_wallet_rounded, theme),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildLabeledField(
-                    'Amount (RM)',
-                    TextFormField(
-                      controller: _prepayAmountCtrl,
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.done,
-                      textAlign: TextAlign.end,
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                      decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
-                    ),
-                    theme,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildLabeledField(
-                    'Date',
-                    InkWell(
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _prepaymentDate ?? DateTime.now(),
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null) setState(() => _prepaymentDate = picked);
-                      },
-                      child: InputDecorator(
-                        decoration: const InputDecoration(suffixIcon: Icon(Icons.calendar_today_rounded, size: 18)),
-                        child: Text(
-                          _prepaymentDate != null ? DateFormat('yyyy-MM-dd').format(_prepaymentDate!) : 'Select Date', 
-                          style: TextStyle(color: theme.colorScheme.onSurface),
-                        ),
-                      ),
-                    ),
-                    theme,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildLabeledField(
-              'Prepayment Reference No.',
-              TextFormField(
-                controller: _prepayRefCtrl,
-                style: TextStyle(color: theme.colorScheme.onSurface),
-                decoration: const InputDecoration(hintText: 'Reference No.'),
-              ),
-              theme,
-            ),
-
-            const SizedBox(height: 24),
-            // 4. Billing & Exemption
-            _buildSubHeader('Billing & Exemption', Icons.receipt_rounded, theme),
-            const SizedBox(height: 8),
-            CustomPremiumDropdown<String>(
-              label: 'Frequency',
-              value: _billingFrequency,
-              items: CustomDropdownBuilder.fromList(
-                ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Annually'],
-                icon: Icons.repeat_rounded,
-              ),
-              onChanged: (val) => setState(() => _billingFrequency = val),
-              fillColor: theme.colorScheme.surface,
-            ),
-            const SizedBox(height: 16),
-            _buildLabeledField(
-              'Tax Exemption Amount',
-              TextFormField(
-                controller: _taxExemptCtrl,
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.done,
-                textAlign: TextAlign.end,
-                style: TextStyle(color: theme.colorScheme.onSurface),
-                decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
-              ),
-              theme,
-            ),
-            const SizedBox(height: 16),
-            _buildLabeledField(
-              'Billing Period',
-              InkWell(
-                onTap: () async {
-                  final picked = await showDateRangePicker(
-                    context: context,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2100),
-                    initialDateRange: (_billingStartDate != null && _billingEndDate != null) 
-                      ? DateTimeRange(start: _billingStartDate!, end: _billingEndDate!) 
-                      : null,
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _billingStartDate = picked.start;
-                      _billingEndDate = picked.end;
-                    });
-                  }
-                },
-                child: InputDecorator(
-                  decoration: const InputDecoration(suffixIcon: Icon(Icons.date_range_rounded, size: 18)),
-                  child: Text(
-                    (_billingStartDate != null && _billingEndDate != null)
-                        ? "${DateFormat('yyyy-MM-dd').format(_billingStartDate!)} to ${DateFormat('yyyy-MM-dd').format(_billingEndDate!)}"
-                        : 'Select Period',
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                  ),
-                ),
-              ),
-              theme,
-            ),
           ],
         ),
       ),

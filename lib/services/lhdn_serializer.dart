@@ -38,6 +38,13 @@ class LhdnPayloadBuilder {
     final saleDateStr = dateFormat.format(record.saleDate);
     final saleTimeStr = '${timeFormat.format(record.saleDate)}Z';
 
+    // Calculate line-level proportional distributions to ensure rounding accuracy.
+    // This solves the "disproportionate distribution" issue where charges were
+    // previously only applied to the first item.
+    final lineDiscounts = _distribute(record.discountAmount ?? 0.0, record.lineItems, record.subtotal);
+    final lineCharges = _distribute(record.feeAmount ?? 0.0, record.lineItems, record.subtotal);
+    final lineTaxes = _distribute(record.taxAmount, record.lineItems, record.subtotal);
+
     return {
       // ── Document-Level Fields (Fields 1–20) ──────────────────────
       "_D": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
@@ -57,14 +64,27 @@ class LhdnPayloadBuilder {
           ],
           // Field 5: Document Currency Code
           "DocumentCurrencyCode": [{"_": _currencyCode}],
-          // Field 6: Invoice Period (frequency of billing)
-          "InvoicePeriod": [
-            {
-              "StartDate": [{"_": saleDateStr}],
-              "EndDate": [{"_": saleDateStr}],
-              "Description": [{"_": "Monthly"}]
-            }
-          ],
+          // Field 6: Invoice Period (Optional frequency of billing)
+          if (record.billingStartDate != null || record.billingEndDate != null || (record.billingFrequency?.isNotEmpty ?? false))
+            "InvoicePeriod": [
+              {
+                if (record.billingStartDate != null)
+                  "StartDate": [{"_": dateFormat.format(record.billingStartDate!)}],
+                if (record.billingEndDate != null)
+                  "EndDate": [{"_": dateFormat.format(record.billingEndDate!)}],
+                if (record.billingFrequency?.isNotEmpty ?? false)
+                  "Description": [{"_": record.billingFrequency!}]
+              }
+            ],
+
+          // Field 5.1: Billing Reference (Additional Document Reference)
+          if (record.billReference?.isNotEmpty ?? false)
+            "AdditionalDocumentReference": [
+              {
+                "ID": [{"_": record.billReference!}],
+                "DocumentTypeCode": [{"_": "Reference"}]
+              }
+            ],
 
           // ── Parties ──────────────────────────────────────────────────
           // Field 7–20 (Supplier)
@@ -76,17 +96,54 @@ class LhdnPayloadBuilder {
           // Field 35: Payment Mode
           "PaymentMeans": [
             {
-              "PaymentMeansCode": [{"_": record.paymentMode}],
-              // Payment account (if available)
-              if (sellerProfile.bankAccountNumber != null &&
-                  sellerProfile.bankAccountNumber!.trim().isNotEmpty)
+              "PaymentMeansCode": [{"_": record.paymentMode ?? '01'}],
+              // Payment account (Priority: Sale Record override > Seller Profile default)
+              if ((record.supplierBankAccount?.trim().isNotEmpty ?? false) || 
+                  (sellerProfile.bankAccountNumber != null && sellerProfile.bankAccountNumber!.trim().isNotEmpty))
                 "PayeeFinancialAccount": [
                   {
-                    "ID": [{"_": sellerProfile.bankAccountNumber!.trim()}]
+                    "ID": [{
+                      "_": (record.supplierBankAccount?.trim().isNotEmpty ?? false) 
+                          ? record.supplierBankAccount!.trim() 
+                          : sellerProfile.bankAccountNumber!.trim()
+                    }]
                   }
                 ]
             }
           ],
+
+          // Field 35.1: Payment Terms
+          if (record.paymentTerms?.isNotEmpty ?? false)
+            "PaymentTerms": [
+              {
+                "Note": [{"_": record.paymentTerms!}]
+              }
+            ],
+
+          // Field 35.2: Prepayment
+          if ((record.prepaymentAmount ?? 0) > 0)
+            "PrepaidPayment": [
+              {
+                "ID": [{
+                  "_": (record.prepaymentReference?.isNotEmpty ?? false) 
+                      ? record.prepaymentReference! 
+                      : "${record.invoiceNumber}-PRE"
+                }],
+                "PaidAmount": [{"_": _fmt(record.prepaymentAmount!), "currencyID": _currencyCode}],
+                "ReceivedDate": [{"_": record.prepaymentDate != null ? dateFormat.format(record.prepaymentDate!) : saleDateStr}]
+              }
+            ],
+
+          // Field 35.3: Tax Exemption (Document Level AllowanceCharge)
+          // Note: discountAmount and feeAmount are handled at the line level (distributed).
+          if ((record.taxExemptionAmount ?? 0) > 0)
+            "AllowanceCharge": [
+              {
+                "ChargeIndicator": [{"_": false}],
+                "AllowanceChargeReason": [{"_": "Tax Exemption"}],
+                "Amount": [{"_": _fmt(record.taxExemptionAmount!), "currencyID": _currencyCode}]
+              }
+            ],
 
           // ── Tax Total ────────────────────────────────────────────────
           // Fields 36–40
@@ -98,7 +155,17 @@ class LhdnPayloadBuilder {
 
           // ── Invoice Lines ────────────────────────────────────────────
           // Fields 48–55
-          "InvoiceLine": record.lineItems.asMap().entries.map((entry) => _buildInvoiceLine(entry.value, record, entry.key + 1)).toList(),
+          "InvoiceLine": record.lineItems.asMap().entries.map((entry) {
+            final i = entry.key;
+            return _buildInvoiceLine(
+              entry.value, 
+              record, 
+              i + 1,
+              lineDiscounts[i],
+              lineCharges[i],
+              lineTaxes[i],
+            );
+          }).toList(),
         }
       ]
     };
@@ -285,7 +352,7 @@ class LhdnPayloadBuilder {
       "TaxSubtotal": [
         {
           "TaxableAmount": [
-            {"_": _fmt(record.subtotal - record.discountAmount + record.feeAmount), "currencyID": _currencyCode}
+            {"_": _fmt(record.subtotal - (record.discountAmount ?? 0.0) + (record.feeAmount ?? 0.0)), "currencyID": _currencyCode}
           ],
           "TaxAmount": [
             {"_": _fmt(record.taxAmount), "currencyID": _currencyCode}
@@ -313,10 +380,15 @@ class LhdnPayloadBuilder {
   // ══════════════════════════════════════════════════════════════════════════
 
   static Map<String, dynamic> _buildMonetaryTotal(SaleRecord record) {
-    // feeAmount adds to the net, discountAmount subtracts from the net
-    final netAmount = record.subtotal - record.discountAmount + record.feeAmount;
-    final taxExclusiveAmount = netAmount;
-    final taxInclusiveAmount = netAmount + record.taxAmount;
+    // Note on Logic:
+    // 1. discountAmount and feeAmount are distributed to lines (line-level).
+    // 2. taxExemptionAmount is a document-level allowance.
+    // 3. LineExtensionAmount is the sum of (qty * price) for all lines.
+    // 4. TaxExclusiveAmount = Sum(LineExtension - LineDiscount + LineCharge) - DocumentAllowances.
+    
+    final netLineAmount = record.subtotal - (record.discountAmount ?? 0.0) + (record.feeAmount ?? 0.0);
+    final taxExclusiveAmount = netLineAmount - (record.taxExemptionAmount ?? 0.0);
+    final taxInclusiveAmount = taxExclusiveAmount + record.taxAmount;
 
     return {
       // Sum of line amounts (before discount/tax)
@@ -331,13 +403,13 @@ class LhdnPayloadBuilder {
       "TaxInclusiveAmount": [
         {"_": _fmt(taxInclusiveAmount), "currencyID": _currencyCode}
       ],
-      // Allowance (discount) total
+      // Allowance (document-level exemption) total
       "AllowanceTotalAmount": [
-        {"_": _fmt(record.discountAmount), "currencyID": _currencyCode}
+        {"_": _fmt(record.taxExemptionAmount ?? 0.0), "currencyID": _currencyCode}
       ],
-      // Charge (fee) total
+      // Charge total (0 because fees are at line level)
       "ChargeTotalAmount": [
-        {"_": _fmt(record.feeAmount), "currencyID": _currencyCode}
+        {"_": _fmt(0.0), "currencyID": _currencyCode}
       ],
       // Payable rounding
       "PayableRoundingAmount": [
@@ -354,15 +426,42 @@ class LhdnPayloadBuilder {
   //  INVOICE LINE (Fields 48–55)
   // ══════════════════════════════════════════════════════════════════════════
 
-  static Map<String, dynamic> _buildInvoiceLine(SaleLineItem lineItem, SaleRecord record, int index) {
-    final lineExtension = lineItem.unitPrice * lineItem.quantity;
+  static Map<String, dynamic> _buildInvoiceLine(
+    SaleLineItem lineItem, 
+    SaleRecord record, 
+    int index,
+    double itemDiscount,
+    double itemCharge,
+    double itemTax,
+  ) {
+    final lineExtension = _round(lineItem.unitPrice * lineItem.quantity);
 
-    // For transaction-wide discounts/taxes, we apply them proportionally or just to the first line?
-    // LHDN expects them per line. For now, if it's transaction-wide in the app, 
-    // we'll apply the rate to each line.
-    final itemDiscount = index == 1 ? record.discountAmount : 0.0;
-    final itemCharge = index == 1 ? record.feeAmount : 0.0;
-    final itemTax = (lineExtension - itemDiscount + itemCharge) * (record.taxRate / 100);
+    // Build AllowanceCharge array for this line
+    final List<Map<String, dynamic>> allowanceCharges = [];
+    if (itemDiscount > 0) {
+      allowanceCharges.add({
+        "ChargeIndicator": [{"_": false}],
+        "MultiplierFactorNumeric": [{"_": 0}],
+        "Amount": [
+          {"_": _fmt(itemDiscount), "currencyID": _currencyCode}
+        ],
+        "AllowanceChargeReason": [
+          {"_": (record.discountDescription?.isNotEmpty ?? false) ? record.discountDescription! : "Discount"}
+        ],
+      });
+    }
+    if (itemCharge > 0) {
+      allowanceCharges.add({
+        "ChargeIndicator": [{"_": true}],
+        "MultiplierFactorNumeric": [{"_": 0}],
+        "Amount": [
+          {"_": _fmt(itemCharge), "currencyID": _currencyCode}
+        ],
+        "AllowanceChargeReason": [
+          {"_": "Fee/Charge"}
+        ],
+      });
+    }
 
     return {
       "ID": [{"_": index.toString()}],
@@ -372,34 +471,10 @@ class LhdnPayloadBuilder {
       "LineExtensionAmount": [
         {"_": _fmt(lineExtension), "currencyID": _currencyCode}
       ],
-      // Discount (Allowance)
-      if (itemDiscount > 0)
-        "AllowanceCharge": [
-          {
-            "ChargeIndicator": [{"_": false}],
-            "MultiplierFactorNumeric": [{"_": 0}],
-            "Amount": [
-              {"_": _fmt(itemDiscount), "currencyID": _currencyCode}
-            ],
-            "AllowanceChargeReason": [
-              {"_": record.discountDescription.isNotEmpty ? record.discountDescription : "Discount"}
-            ],
-          }
-        ],
-      // Fee (Charge)
-      if (itemCharge > 0)
-        "AllowanceCharge": [
-          {
-            "ChargeIndicator": [{"_": true}],
-            "MultiplierFactorNumeric": [{"_": 0}],
-            "Amount": [
-              {"_": _fmt(itemCharge), "currencyID": _currencyCode}
-            ],
-            "AllowanceChargeReason": [
-              {"_": "Fee/Charge"}
-            ],
-          }
-        ],
+      
+      if (allowanceCharges.isNotEmpty)
+        "AllowanceCharge": allowanceCharges,
+
       "TaxTotal": [
         {
           "TaxAmount": [
@@ -465,6 +540,36 @@ class LhdnPayloadBuilder {
   // ══════════════════════════════════════════════════════════════════════════
   //  UTILITY
   // ══════════════════════════════════════════════════════════════════════════
+
+  /// Distributes a total document-level amount proportionally across line items.
+  /// Uses the remainder method on the last item to ensure the sum matches exactly.
+  static List<double> _distribute(double total, List<SaleLineItem> items, double subtotal) {
+    if (total == 0 || items.isEmpty) return List.filled(items.length, 0.0);
+    
+    if (subtotal <= 0) {
+      // Avoid division by zero, distribute equally
+      final share = _round(total / items.length);
+      final result = List.filled(items.length, share);
+      double sum = share * (items.length - 1);
+      result[items.length - 1] = _round(total - sum);
+      return result;
+    }
+
+    final result = <double>[];
+    double runningSum = 0.0;
+    for (int i = 0; i < items.length - 1; i++) {
+      final ext = items[i].unitPrice * items[i].quantity;
+      final share = _round(total * (ext / subtotal));
+      result.add(share);
+      runningSum += share;
+    }
+    // Last item gets the remainder
+    result.add(_round(total - runningSum));
+    return result;
+  }
+
+  /// Helper for 2dp rounding to avoid floating point drift.
+  static double _round(double val) => (val * 100).roundToDouble() / 100;
 
   /// Formats a double to 2 decimal places as a string for JSON output.
   static String _fmt(double value) => value.toStringAsFixed(2);

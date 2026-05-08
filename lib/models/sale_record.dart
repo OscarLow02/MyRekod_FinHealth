@@ -100,6 +100,7 @@ class SaleRecord {
   final String customerIdNumber;
   final String customerIdScheme;
   final String customerSstRegistrationNumber;
+  final String customerTourismTaxNumber;
 
   // ── Item Details ───────────────────────────────────────────────────────
 
@@ -111,19 +112,19 @@ class SaleRecord {
   final double subtotal;
 
   /// Discount amount applied (absolute, not percentage).
-  final double discountAmount;
+  final double? discountAmount;
 
   /// Discount rate applied (if any).
-  final double discountRate;
+  final double? discountRate;
 
   /// Fee/Charge amount applied (absolute, not percentage).
-  final double feeAmount;
+  final double? feeAmount;
 
   /// Fee/Charge rate applied (if any).
-  final double feeRate;
+  final double? feeRate;
 
   /// Discount description (optional, for LHDN payload).
-  final String discountDescription;
+  final String? discountDescription;
 
   /// Tax type code from LhdnConstants.taxTypes (e.g., '06' = Not Applicable).
   final String taxType;
@@ -144,7 +145,36 @@ class SaleRecord {
   // ── Payment ────────────────────────────────────────────────────────────
 
   /// Payment mode code from LhdnConstants.paymentModes.
-  final String paymentMode;
+  final String? paymentMode;
+
+  /// Payment terms (optional, e.g. "Net 30").
+  final String? paymentTerms;
+
+  /// Supplier's bank account number (optional override for this sale).
+  final String? supplierBankAccount;
+
+  // ── Prepayment Details ──────────────────────────────────────────────────
+
+  final double? prepaymentAmount;
+  final DateTime? prepaymentDate;
+  final String? prepaymentReference;
+
+  // ── Billing & Exemption ────────────────────────────────────────────────
+
+  /// Internal reference for the bill (optional).
+  final String? billReference;
+
+  /// Billing frequency (e.g., 'Daily', 'Weekly', 'Monthly').
+  final String? billingFrequency;
+
+  /// Tax exemption amount applied (optional).
+  final double? taxExemptionAmount;
+
+  /// Billing period start date (optional).
+  final DateTime? billingStartDate;
+
+  /// Billing period end date (optional).
+  final DateTime? billingEndDate;
 
   // ── Status Tracking ────────────────────────────────────────────────────
 
@@ -186,23 +216,36 @@ class SaleRecord {
     this.customerTin = '',
     this.customerIdNumber = '',
     this.customerIdScheme = 'BRN',
-    this.customerSstRegistrationNumber = '',
+    this.customerSstRegistrationNumber = 'NA',
+    this.customerTourismTaxNumber = 'NA',
     // Item
     required this.lineItems,
     // Pricing
     required this.subtotal,
-    this.discountAmount = 0.0,
-    this.discountRate = 0.0,
-    this.feeAmount = 0.0,
-    this.feeRate = 0.0,
-    this.discountDescription = '',
+    this.discountAmount,
+    this.discountRate,
+    this.feeAmount,
+    this.feeRate,
+    this.discountDescription,
     this.taxType = '06',
     this.taxRate = 0.0,
     this.taxAmount = 0.0,
     required this.totalPayable,
     this.roundingAmount = 0.0,
     // Payment
-    this.paymentMode = '01', // Default: Cash
+    this.paymentMode,
+    this.paymentTerms,
+    this.supplierBankAccount,
+    // Prepayment
+    this.prepaymentAmount,
+    this.prepaymentDate,
+    this.prepaymentReference,
+    // Billing
+    this.billReference,
+    this.billingFrequency,
+    this.taxExemptionAmount,
+    this.billingStartDate,
+    this.billingEndDate,
     // Status
     this.commercialStatus = CommercialStatus.pendingPayment,
     this.complianceStatus = ComplianceStatus.pendingConsolidation,
@@ -220,7 +263,7 @@ class SaleRecord {
 
   /// Converts to a Firestore-compatible map.
   Map<String, dynamic> toFirestore() {
-    return {
+    final Map<String, dynamic> data = {
       'invoiceNumber': invoiceNumber,
       'saleDate': Timestamp.fromDate(saleDate),
       // Customer snapshot
@@ -230,7 +273,8 @@ class SaleRecord {
       'customerTin': customerTin,
       'customerIdNumber': customerIdNumber,
       'customerIdScheme': customerIdScheme,
-      'customerSstRegistrationNumber': customerSstRegistrationNumber,
+      'customerSstRegistrationNumber': customerSstRegistrationNumber.isEmpty ? 'NA' : customerSstRegistrationNumber,
+      'customerTourismTaxNumber': customerTourismTaxNumber.isEmpty ? 'NA' : customerTourismTaxNumber,
       // Items
       'lineItems': lineItems.map((l) => {
         'itemId': l.item.id,
@@ -242,36 +286,52 @@ class SaleRecord {
       }).toList(),
       // Pricing
       'subtotal': subtotal,
-      'discountAmount': discountAmount,
-      'discountRate': discountRate,
-      'feeAmount': feeAmount,
-      'feeRate': feeRate,
-      'discountDescription': discountDescription,
       'taxType': taxType,
       'taxRate': taxRate,
       'taxAmount': taxAmount,
       'totalPayable': totalPayable,
       'roundingAmount': roundingAmount,
-      // Payment
-      'paymentMode': paymentMode,
       // Status
       'commercialStatus': commercialStatus.firestoreValue,
       'complianceStatus': complianceStatus.firestoreValue,
-      // LHDN
-      'lhdnUuid': lhdnUuid,
-      'lhdnLongId': lhdnLongId,
-      'lhdnValidatedAt': lhdnValidatedAt != null
-          ? Timestamp.fromDate(lhdnValidatedAt!)
-          : null,
-      'lastGeneratedPayload': lastGeneratedPayload,
       // Notes
       'notes': notes,
-      // Timestamps
-      'createdAt': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
     };
+
+    // Optional Fields - Exclude if null per requirement
+    if (discountAmount != null) data['discountAmount'] = discountAmount;
+    if (discountRate != null) data['discountRate'] = discountRate;
+    if (feeAmount != null) data['feeAmount'] = feeAmount;
+    if (feeRate != null) data['feeRate'] = feeRate;
+    if (discountDescription != null) data['discountDescription'] = discountDescription;
+    
+    if (paymentMode != null) data['paymentMode'] = paymentMode;
+    if (paymentTerms != null) data['paymentTerms'] = paymentTerms;
+    if (supplierBankAccount != null) data['supplierBankAccount'] = supplierBankAccount;
+    
+    if (prepaymentAmount != null) data['prepaymentAmount'] = prepaymentAmount;
+    if (prepaymentDate != null) data['prepaymentDate'] = Timestamp.fromDate(prepaymentDate!);
+    if (prepaymentReference != null) data['prepaymentReference'] = prepaymentReference;
+    
+    if (billReference != null) data['billReference'] = billReference;
+    if (billingFrequency != null) data['billingFrequency'] = billingFrequency;
+    if (taxExemptionAmount != null) data['taxExemptionAmount'] = taxExemptionAmount;
+    if (billingStartDate != null) data['billingStartDate'] = Timestamp.fromDate(billingStartDate!);
+    if (billingEndDate != null) data['billingEndDate'] = Timestamp.fromDate(billingEndDate!);
+    
+    if (lhdnUuid != null) data['lhdnUuid'] = lhdnUuid;
+    if (lhdnLongId != null) data['lhdnLongId'] = lhdnLongId;
+    if (lhdnValidatedAt != null) data['lhdnValidatedAt'] = Timestamp.fromDate(lhdnValidatedAt!);
+    if (lastGeneratedPayload != null) data['lastGeneratedPayload'] = lastGeneratedPayload;
+
+    if (createdAt != null) {
+      data['createdAt'] = Timestamp.fromDate(createdAt!);
+    } else {
+      data['createdAt'] = FieldValue.serverTimestamp();
+    }
+    data['updatedAt'] = FieldValue.serverTimestamp();
+
+    return data;
   }
 
   /// Constructs a [SaleRecord] from a Firestore document snapshot.
@@ -306,23 +366,35 @@ class SaleRecord {
             classificationCode: itemMap['classificationCode'] ?? '022',
           ),
           quantity: (itemMap['quantity'] as num?)?.toDouble() ?? 1.0,
-          customPrice: null, // Custom price is usually not persisted separately in the record snapshot
+          customPrice: null,
         );
       }).toList(),
       // Pricing
       subtotal: (data['subtotal'] as num?)?.toDouble() ?? 0.0,
-      discountAmount: (data['discountAmount'] as num?)?.toDouble() ?? 0.0,
-      discountRate: (data['discountRate'] as num?)?.toDouble() ?? 0.0,
-      feeAmount: (data['feeAmount'] as num?)?.toDouble() ?? 0.0,
-      feeRate: (data['feeRate'] as num?)?.toDouble() ?? 0.0,
-      discountDescription: data['discountDescription'] as String? ?? '',
+      discountAmount: (data['discountAmount'] as num?)?.toDouble(),
+      discountRate: (data['discountRate'] as num?)?.toDouble(),
+      feeAmount: (data['feeAmount'] as num?)?.toDouble(),
+      feeRate: (data['feeRate'] as num?)?.toDouble(),
+      discountDescription: data['discountDescription'] as String?,
       taxType: data['taxType'] as String? ?? '06',
       taxRate: (data['taxRate'] as num?)?.toDouble() ?? 0.0,
       taxAmount: (data['taxAmount'] as num?)?.toDouble() ?? 0.0,
       totalPayable: (data['totalPayable'] as num?)?.toDouble() ?? 0.0,
       roundingAmount: (data['roundingAmount'] as num?)?.toDouble() ?? 0.0,
       // Payment
-      paymentMode: data['paymentMode'] as String? ?? '01',
+      paymentMode: data['paymentMode'] as String?,
+      paymentTerms: data['paymentTerms'] as String?,
+      supplierBankAccount: data['supplierBankAccount'] as String?,
+      // Prepayment
+      prepaymentAmount: (data['prepaymentAmount'] as num?)?.toDouble(),
+      prepaymentDate: (data['prepaymentDate'] as Timestamp?)?.toDate(),
+      prepaymentReference: data['prepaymentReference'] as String?,
+      // Billing
+      billReference: data['billReference'] as String?,
+      billingFrequency: data['billingFrequency'] as String?,
+      taxExemptionAmount: (data['taxExemptionAmount'] as num?)?.toDouble(),
+      billingStartDate: (data['billingStartDate'] as Timestamp?)?.toDate(),
+      billingEndDate: (data['billingEndDate'] as Timestamp?)?.toDate(),
       // Status
       commercialStatus:
           CommercialStatus.fromString(data['commercialStatus'] as String?),
@@ -366,6 +438,16 @@ class SaleRecord {
     double? totalPayable,
     double? roundingAmount,
     String? paymentMode,
+    String? paymentTerms,
+    String? supplierBankAccount,
+    double? prepaymentAmount,
+    DateTime? prepaymentDate,
+    String? prepaymentReference,
+    String? billReference,
+    String? billingFrequency,
+    double? taxExemptionAmount,
+    DateTime? billingStartDate,
+    DateTime? billingEndDate,
     CommercialStatus? commercialStatus,
     ComplianceStatus? complianceStatus,
     String? lhdnUuid,
@@ -398,6 +480,16 @@ class SaleRecord {
       totalPayable: totalPayable ?? this.totalPayable,
       roundingAmount: roundingAmount ?? this.roundingAmount,
       paymentMode: paymentMode ?? this.paymentMode,
+      paymentTerms: paymentTerms ?? this.paymentTerms,
+      supplierBankAccount: supplierBankAccount ?? this.supplierBankAccount,
+      prepaymentAmount: prepaymentAmount ?? this.prepaymentAmount,
+      prepaymentDate: prepaymentDate ?? this.prepaymentDate,
+      prepaymentReference: prepaymentReference ?? this.prepaymentReference,
+      billReference: billReference ?? this.billReference,
+      billingFrequency: billingFrequency ?? this.billingFrequency,
+      taxExemptionAmount: taxExemptionAmount ?? this.taxExemptionAmount,
+      billingStartDate: billingStartDate ?? this.billingStartDate,
+      billingEndDate: billingEndDate ?? this.billingEndDate,
       commercialStatus: commercialStatus ?? this.commercialStatus,
       complianceStatus: complianceStatus ?? this.complianceStatus,
       lhdnUuid: lhdnUuid ?? this.lhdnUuid,

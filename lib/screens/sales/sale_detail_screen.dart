@@ -328,11 +328,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           _currentSale.lineItems.fold<double>(0, (sum, l) => sum + l.quantity).toString(),
           _currentSale.lineItems.isEmpty ? '0.00' : _currentSale.lineItems.first.unitPrice.toStringAsFixed(2),
           _currentSale.subtotal.toStringAsFixed(2),
-          _currentSale.discountAmount.toStringAsFixed(2),
+          (_currentSale.discountAmount ?? 0).toStringAsFixed(2),
           _currentSale.taxAmount.toStringAsFixed(2),
           _currentSale.totalPayable.toStringAsFixed(2),
           LhdnConstants.paymentModes[_currentSale.paymentMode] ??
-              _currentSale.paymentMode,
+              _currentSale.paymentMode ?? '01',
           _currentSale.complianceStatus.label,
           _currentSale.lhdnUuid ?? 'N/A',
         ],
@@ -645,7 +645,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 label: 'Payment Method',
                 value:
                     LhdnConstants.paymentModes[_currentSale.paymentMode] ??
-                        _currentSale.paymentMode),
+                        _currentSale.paymentMode ?? '01'),
             const SizedBox(height: 24),
 
             // TODO: Implement i18n
@@ -666,21 +666,21 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             const SizedBox(height: 12),
             _buildPricingRow(theme, 'Subtotal',
                 'RM ${_currentSale.subtotal.toStringAsFixed(2)}'),
-            if (_currentSale.discountAmount > 0)
+            if ((_currentSale.discountAmount ?? 0) > 0)
               _buildPricingRow(
                   theme,
-                  _currentSale.discountRate > 0
-                      ? 'Discount (${_currentSale.discountRate.toStringAsFixed(0)}%)'
+                  (_currentSale.discountRate ?? 0) > 0
+                      ? 'Discount (${(_currentSale.discountRate ?? 0).toStringAsFixed(0)}%)'
                       : 'Discount',
-                  '- RM ${_currentSale.discountAmount.toStringAsFixed(2)}',
+                  '- RM ${(_currentSale.discountAmount ?? 0).toStringAsFixed(2)}',
                   isNegative: true),
-            if (_currentSale.feeAmount > 0)
+            if ((_currentSale.feeAmount ?? 0) > 0)
               _buildPricingRow(
                   theme,
-                  _currentSale.feeRate > 0
-                      ? 'Fee/Charge (${_currentSale.feeRate.toStringAsFixed(0)}%)'
+                  (_currentSale.feeRate ?? 0) > 0
+                      ? 'Fee/Charge (${(_currentSale.feeRate ?? 0).toStringAsFixed(0)}%)'
                       : 'Fee/Charge',
-                  '+ RM ${_currentSale.feeAmount.toStringAsFixed(2)}'),
+                  '+ RM ${(_currentSale.feeAmount ?? 0).toStringAsFixed(2)}'),
             _buildPricingRow(theme, 'Tax (${_currentSale.taxRate.toStringAsFixed(0)}%)',
                 'RM ${_currentSale.taxAmount.toStringAsFixed(2)}'),
             if (_currentSale.roundingAmount != 0)

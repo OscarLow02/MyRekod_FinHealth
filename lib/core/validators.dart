@@ -84,4 +84,13 @@ class AppValidators {
     }
     return null;
   }
+
+  /// Positive Number check
+  static String? positiveNumber(String? value, [String? fieldName]) {
+    if (value == null || value.trim().isEmpty) return null;
+    final numValue = double.tryParse(value);
+    if (numValue == null) return 'Invalid number format';
+    if (numValue < 0) return fieldName != null ? '$fieldName cannot be negative' : 'Value cannot be negative';
+    return null;
+  }
 }
