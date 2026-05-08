@@ -355,63 +355,96 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               const SizedBox(height: 40),
 
               // Actions
-              Container(
-                width: double.infinity,
-                height: 60,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFF8B8FFF), Color(0xFF6B70FF)]),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _submitSaleWithParams(calc, CommercialStatus.paid, true);
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                      const SizedBox(width: 10),
-                      Text('Confirm Payment & Submit', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ],
+              if (_isWalkIn || calc.selectedCustomer?.isWalkIn == true)
+                Container(
+                  width: double.infinity,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFFB55CFF), Color(0xFF8E24FA)]),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _submitSaleWithParams(calc, CommercialStatus.paid, false);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Record Receipt (For Consolidation)',
+                          style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else ...[
+                Container(
+                  width: double.infinity,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF8B8FFF), Color(0xFF6B70FF)]),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _submitSaleWithParams(calc, CommercialStatus.paid, true);
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                        const SizedBox(width: 10),
+                        Text('Confirm Payment & Submit', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _submitSaleWithParams(calc, CommercialStatus.pendingPayment, true);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.1))),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.cloud_upload, color: theme.colorScheme.onSurfaceVariant, size: 20),
-                      const SizedBox(width: 10),
-                      Text('Submit to LHDN Only', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                    ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _submitSaleWithParams(calc, CommercialStatus.pendingPayment, true);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.1))),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.cloud_upload, color: theme.colorScheme.onSurfaceVariant, size: 20),
+                        const SizedBox(width: 10),
+                        Text('Submit to LHDN Only', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: TextButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _submitSaleWithParams(calc, CommercialStatus.pendingPayment, false);
-                  },
-                  icon: Icon(Icons.save_rounded, color: theme.colorScheme.onSurfaceVariant, size: 18),
-                  label: Text('Save as Pending', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                const SizedBox(height: 24),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _submitSaleWithParams(calc, CommercialStatus.pendingPayment, false);
+                    },
+                    icon: Icon(Icons.save_rounded, color: theme.colorScheme.onSurfaceVariant, size: 18),
+                    label: Text('Save as Pending', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
