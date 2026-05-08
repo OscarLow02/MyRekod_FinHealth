@@ -52,7 +52,13 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   final List<SaleLineItem> _lineItems = [];
   Customer? _selectedCustomer;
+  
+  bool _isDiscountRateMode = true; // true = Rate (%), false = Amount (RM)
   double _discountAmount = 0.0;
+  double _discountRate = 0.0;
+  double _feeAmount = 0.0;
+  double _feeRate = 0.0;
+  
   String _discountDescription = '';
   String _paymentMode = '01'; // Default: Cash
   String _notes = '';
@@ -69,7 +75,13 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   List<SaleLineItem> get lineItems => _lineItems;
   Customer? get selectedCustomer => _selectedCustomer;
+  
+  bool get isDiscountRateMode => _isDiscountRateMode;
   double get discountAmount => _discountAmount;
+  double get discountRate => _discountRate;
+  double get feeAmount => _feeAmount;
+  double get feeRate => _feeRate;
+  
   String get discountDescription => _discountDescription;
   String get paymentMode => _paymentMode;
   String get notes => _notes;
@@ -98,11 +110,21 @@ class SaleCalculatorProvider extends ChangeNotifier {
     return _round2dp(total);
   }
 
-  /// Net amount after discount, before tax.
-  /// Formula: subtotal - discountAmount
+  /// Computed actual discount amount (Rate % + Fixed Amount RM).
+  double get actualDiscountAmount {
+    return _round2dp(subtotal * (_discountRate / 100.0) + _discountAmount);
+  }
+
+  /// Computed actual fee amount (Rate % + Fixed Amount RM).
+  double get actualFeeAmount {
+    return _round2dp(subtotal * (_feeRate / 100.0) + _feeAmount);
+  }
+
+  /// Net amount after discount and fees, before tax.
+  /// Formula: subtotal - actualDiscountAmount + actualFeeAmount
   /// Clamped at 0 to prevent negative values.
   double get netAmount {
-    final net = subtotal - _discountAmount;
+    final net = subtotal - actualDiscountAmount + actualFeeAmount;
     return _round2dp(math.max(0.0, net));
   }
 
@@ -277,9 +299,33 @@ class SaleCalculatorProvider extends ChangeNotifier {
     }
   }
 
+  /// Toggle between Rate (%) and Amount (RM) modes.
+  void setDiscountRateMode(bool isRate) {
+    _isDiscountRateMode = isRate;
+    notifyListeners();
+  }
+
   /// Update discount amount. Clamped at 0.
   void setDiscountAmount(double value) {
     _discountAmount = math.max(0.0, value);
+    notifyListeners();
+  }
+
+  /// Update discount rate. Clamped at 0.
+  void setDiscountRate(double value) {
+    _discountRate = math.max(0.0, value);
+    notifyListeners();
+  }
+
+  /// Update fee amount. Clamped at 0.
+  void setFeeAmount(double value) {
+    _feeAmount = math.max(0.0, value);
+    notifyListeners();
+  }
+
+  /// Update fee rate. Clamped at 0.
+  void setFeeRate(double value) {
+    _feeRate = math.max(0.0, value);
     notifyListeners();
   }
 
@@ -364,7 +410,10 @@ class SaleCalculatorProvider extends ChangeNotifier {
       lineItems: _lineItems,
       // Pricing (all computed)
       subtotal: subtotal,
-      discountAmount: _discountAmount,
+      discountAmount: actualDiscountAmount,
+      discountRate: _discountRate,
+      feeAmount: actualFeeAmount,
+      feeRate: _feeRate,
       discountDescription: _discountDescription,
       taxType: _taxType,
       taxRate: _taxRate,
@@ -468,6 +517,9 @@ class SaleCalculatorProvider extends ChangeNotifier {
     _lineItems.clear();
     _selectedCustomer = null;
     _discountAmount = 0.0;
+    _discountRate = 0.0;
+    _feeAmount = 0.0;
+    _feeRate = 0.0;
     _discountDescription = '';
     _paymentMode = '01';
     _notes = '';

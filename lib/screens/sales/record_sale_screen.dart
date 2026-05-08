@@ -311,6 +311,23 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       child: Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.1), height: 1),
                     ),
                     _buildSummaryRow('Subtotal', 'RM ${calc.subtotal.toStringAsFixed(2)}', theme),
+                    if (calc.actualDiscountAmount > 0) ...[
+                      const SizedBox(height: 12),
+                      _buildSummaryRow(
+                        calc.discountRate > 0 ? 'Discount (${calc.discountRate.toStringAsFixed(0)}%)' : 'Discount',
+                        '-RM ${calc.actualDiscountAmount.toStringAsFixed(2)}', 
+                        theme, 
+                        isNegative: true,
+                      ),
+                    ],
+                    if (calc.actualFeeAmount > 0) ...[
+                      const SizedBox(height: 12),
+                      _buildSummaryRow(
+                        calc.feeRate > 0 ? 'Fee/Charge (${calc.feeRate.toStringAsFixed(0)}%)' : 'Fee/Charge',
+                        '+RM ${calc.actualFeeAmount.toStringAsFixed(2)}', 
+                        theme,
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     _buildSummaryRow(
                       calc.taxConfig.numUnits != null && calc.taxConfig.ratePerUnit != null
@@ -1127,13 +1144,19 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     theme,
                     label: 'Rate (%)',
                     isActive: _isDiscountRate,
-                    onTap: () => setState(() => _isDiscountRate = true),
+                    onTap: () {
+                      setState(() => _isDiscountRate = true);
+                      provider.setDiscountRateMode(true);
+                    },
                   ),
                   _buildSegmentTab(
                     theme,
                     label: 'Amount (RM)',
                     isActive: !_isDiscountRate,
-                    onTap: () => setState(() => _isDiscountRate = false),
+                    onTap: () {
+                      setState(() => _isDiscountRate = false);
+                      provider.setDiscountRateMode(false);
+                    },
                   ),
                 ],
               ),
@@ -1151,6 +1174,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                         textInputAction: TextInputAction.done,
                         textAlign: TextAlign.end,
                         style: TextStyle(color: theme.colorScheme.onSurface),
+                        onChanged: (val) {
+                          final rate = double.tryParse(val) ?? 0.0;
+                          provider.setDiscountRate(rate);
+                        },
                         decoration: const InputDecoration(suffixText: '%', hintText: '0.00'),
                       ),
                       theme,
@@ -1166,6 +1193,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                         textInputAction: TextInputAction.done,
                         textAlign: TextAlign.end,
                         style: TextStyle(color: theme.colorScheme.onSurface),
+                        onChanged: (val) {
+                          final rate = double.tryParse(val) ?? 0.0;
+                          provider.setFeeRate(rate);
+                        },
                         decoration: const InputDecoration(suffixText: '%', hintText: '0.00'),
                       ),
                       theme,
@@ -1204,6 +1235,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                         textInputAction: TextInputAction.done,
                         textAlign: TextAlign.end,
                         style: TextStyle(color: theme.colorScheme.onSurface),
+                        onChanged: (val) {
+                          final amt = double.tryParse(val) ?? 0.0;
+                          provider.setFeeAmount(amt);
+                        },
                         decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
                       ),
                       theme,

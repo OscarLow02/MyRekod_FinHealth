@@ -285,7 +285,7 @@ class LhdnPayloadBuilder {
       "TaxSubtotal": [
         {
           "TaxableAmount": [
-            {"_": _fmt(record.subtotal - record.discountAmount), "currencyID": _currencyCode}
+            {"_": _fmt(record.subtotal - record.discountAmount + record.feeAmount), "currencyID": _currencyCode}
           ],
           "TaxAmount": [
             {"_": _fmt(record.taxAmount), "currencyID": _currencyCode}
@@ -313,7 +313,8 @@ class LhdnPayloadBuilder {
   // ══════════════════════════════════════════════════════════════════════════
 
   static Map<String, dynamic> _buildMonetaryTotal(SaleRecord record) {
-    final netAmount = record.subtotal - record.discountAmount;
+    // feeAmount adds to the net, discountAmount subtracts from the net
+    final netAmount = record.subtotal - record.discountAmount + record.feeAmount;
     final taxExclusiveAmount = netAmount;
     final taxInclusiveAmount = netAmount + record.taxAmount;
 
@@ -333,6 +334,10 @@ class LhdnPayloadBuilder {
       // Allowance (discount) total
       "AllowanceTotalAmount": [
         {"_": _fmt(record.discountAmount), "currencyID": _currencyCode}
+      ],
+      // Charge (fee) total
+      "ChargeTotalAmount": [
+        {"_": _fmt(record.feeAmount), "currencyID": _currencyCode}
       ],
       // Payable rounding
       "PayableRoundingAmount": [
@@ -356,7 +361,8 @@ class LhdnPayloadBuilder {
     // LHDN expects them per line. For now, if it's transaction-wide in the app, 
     // we'll apply the rate to each line.
     final itemDiscount = index == 1 ? record.discountAmount : 0.0;
-    final itemTax = (lineExtension - itemDiscount) * (record.taxRate / 100);
+    final itemCharge = index == 1 ? record.feeAmount : 0.0;
+    final itemTax = (lineExtension - itemDiscount + itemCharge) * (record.taxRate / 100);
 
     return {
       "ID": [{"_": index.toString()}],
@@ -366,7 +372,7 @@ class LhdnPayloadBuilder {
       "LineExtensionAmount": [
         {"_": _fmt(lineExtension), "currencyID": _currencyCode}
       ],
-      // Discount (Allowance/Charge)
+      // Discount (Allowance)
       if (itemDiscount > 0)
         "AllowanceCharge": [
           {
@@ -380,6 +386,20 @@ class LhdnPayloadBuilder {
             ],
           }
         ],
+      // Fee (Charge)
+      if (itemCharge > 0)
+        "AllowanceCharge": [
+          {
+            "ChargeIndicator": [{"_": true}],
+            "MultiplierFactorNumeric": [{"_": 0}],
+            "Amount": [
+              {"_": _fmt(itemCharge), "currencyID": _currencyCode}
+            ],
+            "AllowanceChargeReason": [
+              {"_": "Fee/Charge"}
+            ],
+          }
+        ],
       "TaxTotal": [
         {
           "TaxAmount": [
@@ -388,7 +408,7 @@ class LhdnPayloadBuilder {
           "TaxSubtotal": [
             {
               "TaxableAmount": [
-                {"_": _fmt(lineExtension - itemDiscount), "currencyID": _currencyCode}
+                {"_": _fmt(lineExtension - itemDiscount + itemCharge), "currencyID": _currencyCode}
               ],
               "TaxAmount": [
                 {"_": _fmt(itemTax), "currencyID": _currencyCode}

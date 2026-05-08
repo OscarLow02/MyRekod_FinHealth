@@ -113,6 +113,15 @@ class SaleRecord {
   /// Discount amount applied (absolute, not percentage).
   final double discountAmount;
 
+  /// Discount rate applied (if any).
+  final double discountRate;
+
+  /// Fee/Charge amount applied (absolute, not percentage).
+  final double feeAmount;
+
+  /// Fee/Charge rate applied (if any).
+  final double feeRate;
+
   /// Discount description (optional, for LHDN payload).
   final String discountDescription;
 
@@ -183,6 +192,9 @@ class SaleRecord {
     // Pricing
     required this.subtotal,
     this.discountAmount = 0.0,
+    this.discountRate = 0.0,
+    this.feeAmount = 0.0,
+    this.feeRate = 0.0,
     this.discountDescription = '',
     this.taxType = '06',
     this.taxRate = 0.0,
@@ -231,6 +243,9 @@ class SaleRecord {
       // Pricing
       'subtotal': subtotal,
       'discountAmount': discountAmount,
+      'discountRate': discountRate,
+      'feeAmount': feeAmount,
+      'feeRate': feeRate,
       'discountDescription': discountDescription,
       'taxType': taxType,
       'taxRate': taxRate,
@@ -297,6 +312,9 @@ class SaleRecord {
       // Pricing
       subtotal: (data['subtotal'] as num?)?.toDouble() ?? 0.0,
       discountAmount: (data['discountAmount'] as num?)?.toDouble() ?? 0.0,
+      discountRate: (data['discountRate'] as num?)?.toDouble() ?? 0.0,
+      feeAmount: (data['feeAmount'] as num?)?.toDouble() ?? 0.0,
+      feeRate: (data['feeRate'] as num?)?.toDouble() ?? 0.0,
       discountDescription: data['discountDescription'] as String? ?? '',
       taxType: data['taxType'] as String? ?? '06',
       taxRate: (data['taxRate'] as num?)?.toDouble() ?? 0.0,
@@ -338,6 +356,9 @@ class SaleRecord {
     List<SaleLineItem>? lineItems,
     double? subtotal,
     double? discountAmount,
+    double? discountRate,
+    double? feeAmount,
+    double? feeRate,
     String? discountDescription,
     String? taxType,
     double? taxRate,
@@ -367,6 +388,9 @@ class SaleRecord {
       lineItems: lineItems ?? this.lineItems,
       subtotal: subtotal ?? this.subtotal,
       discountAmount: discountAmount ?? this.discountAmount,
+      discountRate: discountRate ?? this.discountRate,
+      feeAmount: feeAmount ?? this.feeAmount,
+      feeRate: feeRate ?? this.feeRate,
       discountDescription: discountDescription ?? this.discountDescription,
       taxType: taxType ?? this.taxType,
       taxRate: taxRate ?? this.taxRate,

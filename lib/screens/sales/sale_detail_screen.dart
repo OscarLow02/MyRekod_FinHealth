@@ -667,10 +667,21 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             _buildPricingRow(theme, 'Subtotal',
                 'RM ${_currentSale.subtotal.toStringAsFixed(2)}'),
             if (_currentSale.discountAmount > 0)
-              _buildPricingRow(theme, 'Discount',
+              _buildPricingRow(
+                  theme,
+                  _currentSale.discountRate > 0
+                      ? 'Discount (${_currentSale.discountRate.toStringAsFixed(0)}%)'
+                      : 'Discount',
                   '- RM ${_currentSale.discountAmount.toStringAsFixed(2)}',
                   isNegative: true),
-            _buildPricingRow(theme, 'Tax (${_currentSale.taxRate}%)',
+            if (_currentSale.feeAmount > 0)
+              _buildPricingRow(
+                  theme,
+                  _currentSale.feeRate > 0
+                      ? 'Fee/Charge (${_currentSale.feeRate.toStringAsFixed(0)}%)'
+                      : 'Fee/Charge',
+                  '+ RM ${_currentSale.feeAmount.toStringAsFixed(2)}'),
+            _buildPricingRow(theme, 'Tax (${_currentSale.taxRate.toStringAsFixed(0)}%)',
                 'RM ${_currentSale.taxAmount.toStringAsFixed(2)}'),
             if (_currentSale.roundingAmount != 0)
               _buildPricingRow(
