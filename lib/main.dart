@@ -32,11 +32,17 @@ class MyRekodApp extends StatelessWidget {
       child: MaterialApp(
         title: 'MyRekod',
         debugShowCheckedModeBanner: false,
-        // Follow system theme (DESIGN.md §2 — Adaptive Themes)
         themeMode: ThemeMode.system,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
-        // Show Splash strictly
+        builder: (context, child) {
+          return GestureDetector(
+            onTap: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+            },
+            child: child,
+          );
+        },
         home: const SplashScreen(),
       ),
     );

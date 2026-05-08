@@ -115,7 +115,10 @@ class AppTextField extends StatelessWidget {
     this.maxLines = 1,
     this.label,
     this.icon,
+    this.textInputAction = TextInputAction.done,
   });
+
+  final TextInputAction textInputAction;
 
   @override
   Widget build(BuildContext context) {
@@ -150,6 +153,7 @@ class AppTextField extends StatelessWidget {
           validator: validator,
           enabled: enabled,
           textCapitalization: textCapitalization,
+          textInputAction: textInputAction,
           onChanged: onChanged,
           maxLines: maxLines,
           style: theme.textTheme.bodyLarge?.copyWith(

@@ -1148,6 +1148,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       TextFormField(
                         controller: _discountRateCtrl,
                         keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
                         textAlign: TextAlign.end,
                         style: TextStyle(color: theme.colorScheme.onSurface),
                         decoration: const InputDecoration(suffixText: '%', hintText: '0.00'),
@@ -1162,6 +1163,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       TextFormField(
                         controller: _feeRateCtrl,
                         keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
                         textAlign: TextAlign.end,
                         style: TextStyle(color: theme.colorScheme.onSurface),
                         decoration: const InputDecoration(suffixText: '%', hintText: '0.00'),
@@ -1180,6 +1182,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       TextFormField(
                         controller: _discountController,
                         keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
                         textAlign: TextAlign.end,
                         style: TextStyle(color: theme.colorScheme.onSurface),
                         onChanged: (val) {
@@ -1198,6 +1201,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       TextFormField(
                         controller: _feeAmountCtrl,
                         keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
                         textAlign: TextAlign.end,
                         style: TextStyle(color: theme.colorScheme.onSurface),
                         decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
@@ -1279,6 +1283,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     TextFormField(
                       controller: _prepayAmountCtrl,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
                       textAlign: TextAlign.end,
                       style: TextStyle(color: theme.colorScheme.onSurface),
                       decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
@@ -1344,6 +1349,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               TextFormField(
                 controller: _taxExemptCtrl,
                 keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
                 textAlign: TextAlign.end,
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
