@@ -176,6 +176,9 @@ class SaleRecord {
   /// Billing period end date (optional).
   final DateTime? billingEndDate;
 
+  /// Tax exemption reason (optional, for LHDN payload).
+  final String? taxExemptionReason;
+
   // ── Status Tracking ────────────────────────────────────────────────────
 
   final CommercialStatus commercialStatus;
@@ -246,6 +249,7 @@ class SaleRecord {
     this.taxExemptionAmount,
     this.billingStartDate,
     this.billingEndDate,
+    this.taxExemptionReason,
     // Status
     this.commercialStatus = CommercialStatus.pendingPayment,
     this.complianceStatus = ComplianceStatus.pendingConsolidation,
@@ -318,6 +322,7 @@ class SaleRecord {
     if (taxExemptionAmount != null) data['taxExemptionAmount'] = taxExemptionAmount;
     if (billingStartDate != null) data['billingStartDate'] = Timestamp.fromDate(billingStartDate!);
     if (billingEndDate != null) data['billingEndDate'] = Timestamp.fromDate(billingEndDate!);
+    if (taxExemptionReason != null) data['taxExemptionReason'] = taxExemptionReason;
     
     if (lhdnUuid != null) data['lhdnUuid'] = lhdnUuid;
     if (lhdnLongId != null) data['lhdnLongId'] = lhdnLongId;
@@ -395,6 +400,7 @@ class SaleRecord {
       taxExemptionAmount: (data['taxExemptionAmount'] as num?)?.toDouble(),
       billingStartDate: (data['billingStartDate'] as Timestamp?)?.toDate(),
       billingEndDate: (data['billingEndDate'] as Timestamp?)?.toDate(),
+      taxExemptionReason: data['taxExemptionReason'] as String?,
       // Status
       commercialStatus:
           CommercialStatus.fromString(data['commercialStatus'] as String?),
@@ -448,6 +454,7 @@ class SaleRecord {
     double? taxExemptionAmount,
     DateTime? billingStartDate,
     DateTime? billingEndDate,
+    String? taxExemptionReason,
     CommercialStatus? commercialStatus,
     ComplianceStatus? complianceStatus,
     String? lhdnUuid,
@@ -490,6 +497,7 @@ class SaleRecord {
       taxExemptionAmount: taxExemptionAmount ?? this.taxExemptionAmount,
       billingStartDate: billingStartDate ?? this.billingStartDate,
       billingEndDate: billingEndDate ?? this.billingEndDate,
+      taxExemptionReason: taxExemptionReason ?? this.taxExemptionReason,
       commercialStatus: commercialStatus ?? this.commercialStatus,
       complianceStatus: complianceStatus ?? this.complianceStatus,
       lhdnUuid: lhdnUuid ?? this.lhdnUuid,

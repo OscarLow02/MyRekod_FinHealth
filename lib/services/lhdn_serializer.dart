@@ -79,10 +79,13 @@ class LhdnPayloadBuilder {
 
           // Field 5.1: Billing Reference (Additional Document Reference)
           if (record.billReference?.isNotEmpty ?? false)
-            "AdditionalDocumentReference": [
+            "BillingReference": [
               {
-                "ID": [{"_": record.billReference!}],
-                "DocumentTypeCode": [{"_": "Reference"}]
+                "AdditionalDocumentReference": [
+                  {
+                    "ID": [{"_": record.billReference!}],
+                  }
+                ]
               }
             ],
 
@@ -130,20 +133,12 @@ class LhdnPayloadBuilder {
                       : "${record.invoiceNumber}-PRE"
                 }],
                 "PaidAmount": [{"_": _fmt(record.prepaymentAmount!), "currencyID": _currencyCode}],
-                "ReceivedDate": [{"_": record.prepaymentDate != null ? dateFormat.format(record.prepaymentDate!) : saleDateStr}]
+                "PaidDate": [{"_": record.prepaymentDate != null ? dateFormat.format(record.prepaymentDate!) : saleDateStr}]
               }
             ],
 
-          // Field 35.3: Tax Exemption (Document Level AllowanceCharge)
+          // Field 35.3: Tax Exemption (Document Level AllowanceCharge) - MOVED TO TaxTotal per Fix 3
           // Note: discountAmount and feeAmount are handled at the line level (distributed).
-          if ((record.taxExemptionAmount ?? 0) > 0)
-            "AllowanceCharge": [
-              {
-                "ChargeIndicator": [{"_": false}],
-                "AllowanceChargeReason": [{"_": "Tax Exemption"}],
-                "Amount": [{"_": _fmt(record.taxExemptionAmount!), "currencyID": _currencyCode}]
-              }
-            ],
 
           // ── Tax Total ────────────────────────────────────────────────
           // Fields 36–40
@@ -345,29 +340,32 @@ class LhdnPayloadBuilder {
   // ══════════════════════════════════════════════════════════════════════════
 
   static Map<String, dynamic> _buildTaxTotal(SaleRecord record) {
+    final bool isExempt = record.taxType == 'E';
+    final netAmount = record.subtotal - (record.discountAmount ?? 0.0) + (record.feeAmount ?? 0.0);
+    
     return {
       "TaxAmount": [
-        {"_": _fmt(record.taxAmount), "currencyID": _currencyCode}
+        {"_": _fmt(isExempt ? 0.0 : record.taxAmount), "currencyID": _currencyCode}
       ],
       "TaxSubtotal": [
         {
           "TaxableAmount": [
-            {"_": _fmt(record.subtotal - (record.discountAmount ?? 0.0) + (record.feeAmount ?? 0.0)), "currencyID": _currencyCode}
+            {"_": _fmt(isExempt ? (record.taxExemptionAmount ?? netAmount) : netAmount), "currencyID": _currencyCode}
           ],
           "TaxAmount": [
-            {"_": _fmt(record.taxAmount), "currencyID": _currencyCode}
+            {"_": _fmt(isExempt ? 0.0 : record.taxAmount), "currencyID": _currencyCode}
           ],
           "TaxCategory": [
             {
-              "ID": [{"_": record.taxType}],
-              "Percent": [{"_": record.taxRate}],
-              "TaxScheme": [
-                {
-                  "ID": [
-                    {"_": "OTH", "schemeID": "UN/ECE 5153", "schemeAgencyID": "6"}
-                  ]
-                }
-              ]
+              "ID": [{"_": isExempt ? "E" : record.taxType}],
+              if (!isExempt) "Percent": [{"_": record.taxRate}],
+              if (isExempt && (record.taxExemptionReason?.isNotEmpty ?? false))
+                "TaxExemptionReason": [{"_": record.taxExemptionReason!}],
+              "TaxScheme": {
+                "ID": [
+                  {"_": "OTH", "schemeID": "UN/ECE 5153", "schemeAgencyID": "6"}
+                ]
+              }
             }
           ]
         }
@@ -403,9 +401,9 @@ class LhdnPayloadBuilder {
       "TaxInclusiveAmount": [
         {"_": _fmt(taxInclusiveAmount), "currencyID": _currencyCode}
       ],
-      // Allowance (document-level exemption) total
+      // Allowance (document-level exemption) total - Removed per Fix 3 (moved to TaxTotal)
       "AllowanceTotalAmount": [
-        {"_": _fmt(record.taxExemptionAmount ?? 0.0), "currencyID": _currencyCode}
+        {"_": _fmt(0.0), "currencyID": _currencyCode}
       ],
       // Charge total (0 because fees are at line level)
       "ChargeTotalAmount": [
@@ -492,13 +490,11 @@ class LhdnPayloadBuilder {
               "TaxCategory": [
                 {
                   "ID": [{"_": record.taxType}],
-                  "TaxScheme": [
-                    {
-                      "ID": [
-                        {"_": "OTH", "schemeID": "UN/ECE 5153", "schemeAgencyID": "6"}
-                      ]
-                    }
-                  ]
+                  "TaxScheme": {
+                    "ID": [
+                      {"_": "OTH", "schemeID": "UN/ECE 5153", "schemeAgencyID": "6"}
+                    ]
+                  }
                 }
               ]
             }

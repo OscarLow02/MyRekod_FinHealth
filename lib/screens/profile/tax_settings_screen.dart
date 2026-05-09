@@ -35,7 +35,6 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
 
   // ── UI Redesign State ──
   bool _isUnitBased = false;
-  bool _isExemptionEnabled = false;
 
   void _onFieldChange() {
     setState(() {}); // trigger rebuild to update enabled states
@@ -68,7 +67,6 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
 
           // Infer UI state from data
           _isUnitBased = taxConfig.numUnits != null || taxConfig.ratePerUnit != null;
-          _isExemptionEnabled = taxConfig.taxExemptionDetails != null;
 
           _isLoading = false;
         });
@@ -109,7 +107,7 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
         ratePerUnit: !isNA && _isUnitBased && _ratePerUnitCtrl.text.isNotEmpty
             ? double.tryParse(_ratePerUnitCtrl.text)
             : null,
-        taxExemptionDetails: (!isNA && _isExemptionEnabled && _taxExemptionCtrl.text.trim().isNotEmpty)
+        taxExemptionDetails: (_defaultTaxType == 'E' && _taxExemptionCtrl.text.trim().isNotEmpty)
             ? _taxExemptionCtrl.text.trim()
             : null,
       );
@@ -357,66 +355,46 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
                   // ═══════════════════════════════
                   // Section 3: Tax Exemption
                   // ═══════════════════════════════
-                  _buildCardSection(
-                    theme,
-                    title: 'TAX EXEMPTION',
-                    child: isTaxNotApplicable
-                        ? _buildDisabledState(
-                            theme,
-                            'Exemption criteria disabled',
-                            Icons.lock_outline_rounded,
-                          )
-                        : Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Tax Exemption',
-                                          style: theme.textTheme.titleMedium?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Enable criteria for tax-free items',
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: theme.colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Switch(
-                                    value: _isExemptionEnabled,
-                                    onChanged: (val) => setState(() => _isExemptionEnabled = val),
-                                    activeColor: AppTheme.primary,
-                                  ),
-                                ],
-                              ),
-                              if (_isExemptionEnabled) ...[
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _taxExemptionCtrl,
-                                  style: theme.textTheme.bodyLarge,
-                                  decoration: InputDecoration(
-                                    prefixIcon: Icon(
-                                      Icons.description_outlined,
-                                      size: 20,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                    hintText: 'e.g., Certificate Number',
-                                    filled: true,
-                                    fillColor: theme.scaffoldBackgroundColor,
-                                  ),
-                                ),
-                              ],
-                            ],
+                  if (_defaultTaxType == 'E') ...[
+                    _buildCardSection(
+                      theme,
+                      title: 'TAX EXEMPTION REASON',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Exemption Details',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                  ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Enter the reason or certificate number for tax-free items.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _taxExemptionCtrl,
+                            style: theme.textTheme.bodyLarge,
+                            decoration: InputDecoration(
+                              prefixIcon: Icon(
+                                Icons.description_outlined,
+                                size: 20,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              hintText: 'e.g., Certificate Number',
+                              filled: true,
+                              fillColor: theme.scaffoldBackgroundColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   const SizedBox(height: 32),
 
                   // Save Tax Config Button

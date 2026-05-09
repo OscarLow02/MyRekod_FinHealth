@@ -1589,21 +1589,23 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 fillColor: theme.colorScheme.surface,
               ),
               const SizedBox(height: 16),
-              _buildLabeledField(
-                'Tax Exemption Amount',
-                TextFormField(
-                  controller: _taxExemptCtrl,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  textAlign: TextAlign.end,
-                  style: TextStyle(color: theme.colorScheme.onSurface),
-                  onChanged: (val) => provider.setTaxExemptionAmount(double.tryParse(val) ?? 0.0),
-                  validator: (v) => AppValidators.positiveNumber(v, 'Tax Exemption Amount'),
-                  decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
+              if (provider.taxType == 'E') ...[
+                _buildLabeledField(
+                  'Tax Exemption Amount',
+                  TextFormField(
+                    controller: _taxExemptCtrl,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    textAlign: TextAlign.end,
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    onChanged: (val) => provider.setTaxExemptionAmount(double.tryParse(val) ?? 0.0),
+                    validator: (v) => AppValidators.positiveNumber(v, 'Tax Exemption Amount'),
+                    decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
+                  ),
+                  theme,
                 ),
-                theme,
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
               _buildLabeledField(
                 'Billing Period',
                 FormField<DateTimeRange>(

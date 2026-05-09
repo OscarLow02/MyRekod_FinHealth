@@ -560,6 +560,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
       taxExemptionAmount: _enableBillingExemption ? _taxExemptionAmount : null,
       billingStartDate: _enableBillingExemption ? _billingStartDate : null,
       billingEndDate: _enableBillingExemption ? _billingEndDate : null,
+      taxExemptionReason: _taxType == 'E' ? _taxConfig.taxExemptionDetails : null,
     );
   }
 

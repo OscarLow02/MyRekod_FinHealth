@@ -646,6 +646,65 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 value:
                     LhdnConstants.paymentModes[_currentSale.paymentMode] ??
                         _currentSale.paymentMode ?? '01'),
+            if (_currentSale.paymentTerms != null && _currentSale.paymentTerms!.isNotEmpty)
+              _buildDetailCard(theme,
+                  icon: Icons.handshake_rounded,
+                  label: 'Payment Terms',
+                  value: _currentSale.paymentTerms!),
+            if (_currentSale.supplierBankAccount != null && _currentSale.supplierBankAccount!.isNotEmpty)
+              _buildDetailCard(theme,
+                  icon: Icons.account_balance_rounded,
+                  label: 'Supplier Bank Account',
+                  value: _currentSale.supplierBankAccount!),
+            if (_currentSale.billReference != null && _currentSale.billReference!.isNotEmpty)
+              _buildDetailCard(theme,
+                  icon: Icons.receipt_long_rounded,
+                  label: 'Bill Reference',
+                  value: _currentSale.billReference!),
+            
+            // Prepayment Details
+            if ((_currentSale.prepaymentAmount ?? 0) > 0) ...[
+              const SizedBox(height: 12),
+              _buildSectionHeader(theme, 'Prepayment Details'),
+              const SizedBox(height: 12),
+              _buildDetailCard(theme,
+                  icon: Icons.payments_rounded,
+                  label: 'Prepayment Amount',
+                  value: 'RM ${_currentSale.prepaymentAmount!.toStringAsFixed(2)}'),
+              if (_currentSale.prepaymentDate != null)
+                _buildDetailCard(theme,
+                    icon: Icons.event_available_rounded,
+                    label: 'Prepayment Date',
+                    value: DateFormat('dd MMM yyyy').format(_currentSale.prepaymentDate!)),
+              if (_currentSale.prepaymentReference != null && _currentSale.prepaymentReference!.isNotEmpty)
+                _buildDetailCard(theme,
+                    icon: Icons.tag_rounded,
+                    label: 'Prepayment Reference',
+                    value: _currentSale.prepaymentReference!),
+            ],
+
+            // Billing & Exemption
+            if (_currentSale.billingFrequency != null || (_currentSale.taxExemptionAmount ?? 0) > 0 || _currentSale.billingStartDate != null) ...[
+              const SizedBox(height: 12),
+              _buildSectionHeader(theme, 'Billing & Exemption'),
+              const SizedBox(height: 12),
+              if (_currentSale.billingFrequency != null && _currentSale.billingFrequency!.isNotEmpty)
+                _buildDetailCard(theme,
+                    icon: Icons.update_rounded,
+                    label: 'Billing Frequency',
+                    value: _currentSale.billingFrequency!),
+              if ((_currentSale.taxExemptionAmount ?? 0) > 0)
+                _buildDetailCard(theme,
+                    icon: Icons.money_off_rounded,
+                    label: 'Tax Exemption Amount',
+                    value: 'RM ${_currentSale.taxExemptionAmount!.toStringAsFixed(2)}'),
+              if (_currentSale.billingStartDate != null && _currentSale.billingEndDate != null)
+                _buildDetailCard(theme,
+                    icon: Icons.date_range_rounded,
+                    label: 'Billing Period',
+                    value: '${DateFormat('dd MMM yyyy').format(_currentSale.billingStartDate!)} - ${DateFormat('dd MMM yyyy').format(_currentSale.billingEndDate!)}'),
+            ],
+
             const SizedBox(height: 24),
 
             // TODO: Implement i18n
