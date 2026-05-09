@@ -58,8 +58,55 @@ class CsvExportService {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // 2. Expense - Export to CSV (Bulk) - To be Implemented
+  // 2. Expense - Export to CSV (Bulk)
   // ──────────────────────────────────────────────────────────────────────────
+  static Future<void> exportBulkExpensesToCSV(
+    BuildContext context,
+    List<ExpenseRecord> expenses,
+    String reportSuffix,
+  ) async {
+    try {
+      final rows = [
+        ['ID', 'Date', 'Vendor', 'Category', 'Amount', 'Notes', 'Receipt Path'],
+      ];
+
+      for (var expense in expenses) {
+        final dateStr = DateFormat('yyyy-MM-dd').format(expense.date);
+        rows.add([
+          expense.id,
+          dateStr,
+          expense.vendor,
+          expense.category,
+          expense.amount.toStringAsFixed(2),
+          expense.notes ?? '',
+          expense.imagePath ?? 'No Receipt',
+        ]);
+      }
+
+      final csvData = const ListToCsvConverter().convert(rows);
+      final directory = await getTemporaryDirectory();
+      final fileName = 'Expense_Report_$reportSuffix.csv';
+      final path = "${directory.path}/$fileName";
+      final file = File(path);
+      await file.writeAsString(csvData);
+
+      final box = context.findRenderObject() as RenderBox?;
+
+      await Share.shareXFiles(
+        [XFile(path)],
+        text: 'MyRekod Expense Report ($reportSuffix)',
+        sharePositionOrigin: box != null
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null,
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to export CSV: $e')));
+      }
+    }
+  }
 
   // ──────────────────────────────────────────────────────────────────────────
   // 3. Sale - Export to CSV (Single)

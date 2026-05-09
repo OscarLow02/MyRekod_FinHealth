@@ -3,10 +3,15 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../../providers/sales_provider.dart';
+import '../../../providers/expense_provider.dart';
 import '../../../services/csv_export_service.dart';
 
+enum ExportType { sales, expenses }
+
 class ExportFilterBottomSheet extends StatefulWidget {
-  const ExportFilterBottomSheet({super.key});
+  final ExportType exportType;
+
+  const ExportFilterBottomSheet({super.key, required this.exportType});
 
   @override
   State<ExportFilterBottomSheet> createState() => _ExportFilterBottomSheetState();
@@ -95,18 +100,6 @@ class _ExportFilterBottomSheetState extends State<ExportFilterBottomSheet> {
       return;
     }
 
-    final salesProvider = Provider.of<SalesProvider>(context, listen: false);
-    final allSales = salesProvider.saleRecords;
-
-    final filteredSales = allSales.where((s) => s.saleDate.isAfter(startDate!) && s.saleDate.isBefore(endDate!)).toList();
-
-    if (filteredSales.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No sales found for this period.')),
-      );
-      return;
-    }
-
     String reportSuffix;
     if (selectedFilter == 'Day') {
       reportSuffix = DateFormat('yyyy_MM_dd').format(startDate!);
@@ -118,7 +111,36 @@ class _ExportFilterBottomSheetState extends State<ExportFilterBottomSheet> {
       reportSuffix = "${DateFormat('yyyyMMdd').format(startDate!)}_to_${DateFormat('yyyyMMdd').format(endDate!)}";
     }
 
-    await CsvExportService.exportBulkSalesToCSV(context, filteredSales, reportSuffix);
+    if (widget.exportType == ExportType.sales) {
+      final salesProvider = Provider.of<SalesProvider>(context, listen: false);
+      final allSales = salesProvider.saleRecords;
+
+      final filteredSales = allSales.where((s) => s.saleDate.isAfter(startDate!) && s.saleDate.isBefore(endDate!)).toList();
+
+      if (filteredSales.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No sales found for this period.')),
+        );
+        return;
+      }
+
+      await CsvExportService.exportBulkSalesToCSV(context, filteredSales, reportSuffix);
+    } else {
+      final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
+      final allExpenses = expenseProvider.expenses;
+
+      final filteredExpenses = allExpenses.where((e) => e.date.isAfter(startDate!) && e.date.isBefore(endDate!)).toList();
+
+      if (filteredExpenses.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No expenses found for this period.')),
+        );
+        return;
+      }
+
+      await CsvExportService.exportBulkExpensesToCSV(context, filteredExpenses, reportSuffix);
+    }
+
     if (mounted) {
       Navigator.pop(context);
     }
@@ -141,7 +163,7 @@ class _ExportFilterBottomSheetState extends State<ExportFilterBottomSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Export Sales Ledger',
+              widget.exportType == ExportType.sales ? 'Export Sales Ledger' : 'Export Expenses Ledger',
               style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),

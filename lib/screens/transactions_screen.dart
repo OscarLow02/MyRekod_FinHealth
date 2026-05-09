@@ -1,16 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:csv/csv.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 import '../core/app_theme.dart';
 import '../models/expense_record.dart';
 import '../models/sale_record.dart';
 import '../providers/expense_provider.dart';
 import '../providers/sales_provider.dart';
-import '../widgets/app_dialogs.dart';
 import 'transactions/widgets/export_filter_bottom_sheet.dart';
 import 'expenses/expense_detail_screen.dart';
 import 'sales/sale_detail_screen.dart';
@@ -65,80 +60,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     return expenses.fold(0.0, (sum, item) => sum + item.amount);
   }
 
-  // ── CSV Export (Digital Shoebox) ─────────────────────────────────────────
 
-  Future<void> _exportToCSV(List<ExpenseRecord> expenses) async {
-    if (expenses.isEmpty) {
-      AppDialogs.showActionModal(
-        context,
-        title: 'No Data to Export',
-        body: 'There are no expense records to export. Add some expenses first.',
-        primaryButtonText: 'OK',
-        onPrimaryPressed: () {},
-        icon: Icons.info_outline_rounded,
-        iconColor: AppTheme.primary,
-        primaryButtonColor: AppTheme.primary,
-      );
-      return;
-    }
-
-    setState(() => _isExporting = true);
-
-    try {
-      // 1. Build CSV rows (Improved the 'Receipt Attached' column)
-      final List<List<dynamic>> rows = [
-        ['Date', 'Vendor', 'Category', 'Amount (RM)', 'Receipt Path'],
-        ...expenses.map((e) => [
-          '${e.date.year}-${e.date.month.toString().padLeft(2, '0')}-${e.date.day.toString().padLeft(2, '0')}',
-          e.vendor,
-          e.category,
-          e.amount.toStringAsFixed(2),
-          e.imagePath ?? 'No Receipt', // Outputs the actual path instead of just 'Yes'
-        ]),
-        [],
-        ['', '', 'TOTAL', _calculateTotal(expenses).toStringAsFixed(2), ''],
-        // Cleaned up the generation timestamp using standard ISO 8601
-        ['', '', 'Generated', DateTime.now().toIso8601String().split('T')[0], ''], 
-      ];
-
-      final csvString = const ListToCsvConverter().convert(rows);
-
-      // 2. Better File Naming (e.g., MyRekod_Expenses_2026-05-02.csv)
-      final appDir = await getApplicationDocumentsDirectory();
-      // Using a human-readable date format for the filename
-      final dateStr = DateTime.now().toIso8601String().split('T')[0]; 
-      final fileName = 'MyRekod_Expenses_$dateStr.csv';
-      final file = File('${appDir.path}/$fileName');
-      await file.writeAsString(csvString);
-
-      if (!mounted) return;
-      setState(() => _isExporting = false);
-
-      // 3. Fix the double-file export bug by removing the 'text:' parameter
-      final box = context.findRenderObject() as RenderBox?;
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'MyRekod Expense Report - $dateStr', // Used for email subject lines
-        sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isExporting = false);
-
-      AppDialogs.showActionModal(
-        context,
-        title: 'Export Failed',
-        body: 'Could not generate CSV file.\n\nError: $e',
-        primaryButtonText: 'OK',
-        onPrimaryPressed: () {},
-        icon: Icons.error_outline_rounded,
-        iconColor: Colors.redAccent,
-        primaryButtonColor: Colors.redAccent,
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isExpenseTab = _tabController.index == 0;
@@ -161,18 +83,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
             onPressed: _isExporting
                 ? null
                 : () {
-                    if (isExpenseTab) {
-                      final expenses = _applyFilter(
-                        context.read<ExpenseProvider>().expenses,
-                      );
-                      _exportToCSV(expenses);
-                    } else {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (context) => const ExportFilterBottomSheet(),
-                      );
-                    }
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (context) => ExportFilterBottomSheet(
+                        exportType: isExpenseTab
+                            ? ExportType.expenses
+                            : ExportType.sales,
+                      ),
+                    );
                   },
           ),
         ],
