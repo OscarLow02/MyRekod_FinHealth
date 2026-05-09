@@ -1227,7 +1227,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               theme,
               isChecked: _enableDiscountCharges,
               onChanged: (val) {
-                setState(() => _enableDiscountCharges = val ?? false);
+                final enabled = val ?? false;
+                setState(() => _enableDiscountCharges = enabled);
+                provider.setEnableDiscountCharges(enabled);
                 if (!_enableDiscountCharges) {
                   _discountRateCtrl.clear();
                   _feeRateCtrl.clear();
@@ -1367,7 +1369,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               theme,
               isChecked: _enablePaymentInfo,
               onChanged: (val) {
-                setState(() => _enablePaymentInfo = val ?? false);
+                final enabled = val ?? false;
+                setState(() => _enablePaymentInfo = enabled);
+                provider.setEnablePaymentInfo(enabled);
                 if (!_enablePaymentInfo) {
                   _bankAccountCtrl.clear();
                   _paymentTermsCtrl.clear();
@@ -1388,7 +1392,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   LhdnConstants.paymentModes,
                   icon: Icons.payment_outlined,
                 ),
-                onChanged: (val) => provider.setPaymentMode(val ?? '01'),
+                onChanged: (val) {
+                  final mode = val ?? '01';
+                  provider.setPaymentMode(mode);
+                  if (mode == '03') {
+                    // Sync the local controller with the provider's pre-filled value
+                    _bankAccountCtrl.text = provider.supplierBankAccount;
+                  }
+                },
                 validator: (v) => AppValidators.requiredField(v, 'Payment Mode'),
                 fillColor: theme.colorScheme.surface,
               ),
@@ -1448,7 +1459,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               theme,
               isChecked: _enablePrepayment,
               onChanged: (val) {
-                setState(() => _enablePrepayment = val ?? false);
+                final enabled = val ?? false;
+                setState(() => _enablePrepayment = enabled);
+                provider.setEnablePrepayment(enabled);
                 if (!_enablePrepayment) {
                   _prepayAmountCtrl.clear();
                   _prepayRefCtrl.clear();
@@ -1543,7 +1556,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               theme,
               isChecked: _enableBillingExemption,
               onChanged: (val) {
-                setState(() => _enableBillingExemption = val ?? false);
+                final enabled = val ?? false;
+                setState(() => _enableBillingExemption = enabled);
+                provider.setEnableBillingExemption(enabled);
                 if (!_enableBillingExemption) {
                   _taxExemptCtrl.clear();
                   setState(() {

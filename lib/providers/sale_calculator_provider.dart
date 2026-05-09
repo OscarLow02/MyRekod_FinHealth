@@ -7,6 +7,7 @@ import '../models/sale_item.dart';
 import '../models/sale_record.dart';
 import '../models/tax_config.dart';
 import '../models/sale_line_item.dart';
+import '../models/business_profile.dart';
 import '../services/firestore_service.dart';
 import '../services/lhdn_serializer.dart';
 import 'dart:convert';
@@ -41,12 +42,14 @@ class SaleCalculatorProvider extends ChangeNotifier {
   List<SaleItem> _saleItems = [];
   List<Customer> _customers = [];
   TaxConfig _taxConfig = TaxConfig.empty;
+  BusinessProfile? _businessProfile;
   StreamSubscription<List<SaleItem>>? _itemsSub;
   StreamSubscription<List<Customer>>? _customersSub;
 
   List<SaleItem> get saleItems => _saleItems;
   List<Customer> get customers => _customers;
   TaxConfig get taxConfig => _taxConfig;
+  BusinessProfile? get businessProfile => _businessProfile;
 
   // ── Form State (mutable, drives computed getters) ──────────────────────
 
@@ -152,11 +155,13 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   /// Computed actual discount amount (Rate % + Fixed Amount RM).
   double get actualDiscountAmount {
+    if (!_enableDiscountCharges) return 0.0;
     return _round2dp(subtotal * (_discountRate / 100.0) + _discountAmount);
   }
 
   /// Computed actual fee amount (Rate % + Fixed Amount RM).
   double get actualFeeAmount {
+    if (!_enableDiscountCharges) return 0.0;
     return _round2dp(subtotal * (_feeRate / 100.0) + _feeAmount);
   }
 
@@ -263,6 +268,9 @@ class SaleCalculatorProvider extends ChangeNotifier {
         _customers = customerList;
         notifyListeners();
       }, onError: (e) => debugPrint('Customers stream error: $e'));
+
+      // Load business profile for pre-filling (bank account, etc.)
+      _businessProfile = await _firestoreService.getBusinessProfile(user.uid);
 
       _isLoading = false;
       notifyListeners();
@@ -396,8 +404,14 @@ class SaleCalculatorProvider extends ChangeNotifier {
   }
 
   /// Update payment mode code (from LhdnConstants.paymentModes).
+  /// If set to '03' (Bank Transfer), pre-fills the bank account from the profile.
   void setPaymentMode(String code) {
     _paymentMode = code;
+    
+    // Pre-fill bank account if it's currently empty and we have a profile with a bank account
+    if (code == '03' && _supplierBankAccount.isEmpty && _businessProfile?.bankAccountNumber != null) {
+      _supplierBankAccount = _businessProfile!.bankAccountNumber!;
+    }
     notifyListeners();
   }
 
@@ -538,7 +552,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
       // Additional LHDN Details
       paymentTerms: _enablePaymentInfo ? _paymentTerms : null,
       supplierBankAccount: _enablePaymentInfo ? _supplierBankAccount : null,
-      billReference: _enableBillingExemption ? _billReference : null,
+      billReference: _enablePaymentInfo ? _billReference : null,
       prepaymentAmount: _enablePrepayment ? _prepaymentAmount : null,
       prepaymentDate: _enablePrepayment ? _prepaymentDate : null,
       prepaymentReference: _enablePrepayment ? _prepaymentReference : null,
