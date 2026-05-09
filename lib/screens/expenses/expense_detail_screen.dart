@@ -2,9 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:csv/csv.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../core/app_theme.dart';
 import '../../models/expense_record.dart';
 import '../../providers/expense_provider.dart';
@@ -12,6 +9,7 @@ import '../../widgets/app_dialogs.dart';
 import '../../widgets/custom_widgets.dart';
 import 'record_expense_screen.dart';
 import '../../services/ocr_service.dart';
+import '../../services/csv_export_service.dart';
 
 class ExpenseDetailScreen extends StatefulWidget {
   final ExpenseRecord expense;
@@ -93,42 +91,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   }
 
   Future<void> _exportToCsv() async {
-    try {
-      final dateStr = DateFormat('yyyy-MM-dd').format(_currentExpense.date);
-      final rows = [
-        ['ID', 'Date', 'Vendor', 'Category', 'Amount', 'Notes', 'Receipt Path'],
-        [
-          _currentExpense.id,
-          dateStr,
-          _currentExpense.vendor,
-          _currentExpense.category,
-          _currentExpense.amount.toStringAsFixed(2),
-          _currentExpense.notes ?? '',
-          _currentExpense.imagePath ?? 'No Receipt',
-        ]
-      ];
-
-      final csvData = const ListToCsvConverter().convert(rows);
-      final directory = await getTemporaryDirectory();
-      final fileName = 'Expense_${_currentExpense.vendor}_$dateStr.csv';
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsString(csvData);
-
-      final box = context.findRenderObject() as RenderBox?;
-
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'MyRekod Expense - ${_currentExpense.vendor}',
-        sharePositionOrigin:
-            box != null ? box.localToGlobal(Offset.zero) & box.size : null,
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to export CSV: $e')),
-        );
-      }
-    }
+    await CsvExportService.exportSingleExpenseToCSV(context, _currentExpense);
   }
 
   Widget _buildDetailCard(

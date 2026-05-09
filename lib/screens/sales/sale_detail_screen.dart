@@ -1,11 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:csv/csv.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/app_theme.dart';
 import '../../core/lhdn_constants.dart';
@@ -17,6 +13,7 @@ import '../../services/firestore_service.dart';
 import '../../services/lhdn_submission_service.dart';
 import '../../widgets/app_dialogs.dart';
 import '../../widgets/custom_widgets.dart';
+import '../../services/csv_export_service.dart';
 
 /// Detailed view of a completed sale record.
 ///
@@ -309,58 +306,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     );
   }
 
-  // ── CSV Export ──────────────────────────────────────────────────────────
-
-  Future<void> _exportToCsv() async {
-    try {
-      final dateStr = DateFormat('yyyy-MM-dd').format(_currentSale.saleDate);
-      final rows = [
-        [
-          'Invoice', 'Date', 'Customer', 'Item', 'Qty',
-          'Unit Price', 'Subtotal', 'Discount', 'Tax', 'Total',
-          'Payment', 'Status', 'LHDN UUID',
-        ],
-        [
-          _currentSale.invoiceNumber,
-          dateStr,
-          _currentSale.customerName,
-          _currentSale.lineItems.map((l) => l.item.name).join('; '),
-          _currentSale.lineItems.fold<double>(0, (sum, l) => sum + l.quantity).toString(),
-          _currentSale.lineItems.isEmpty ? '0.00' : _currentSale.lineItems.first.unitPrice.toStringAsFixed(2),
-          _currentSale.subtotal.toStringAsFixed(2),
-          (_currentSale.discountAmount ?? 0).toStringAsFixed(2),
-          _currentSale.taxAmount.toStringAsFixed(2),
-          _currentSale.totalPayable.toStringAsFixed(2),
-          LhdnConstants.paymentModes[_currentSale.paymentMode] ??
-              _currentSale.paymentMode ?? '01',
-          _currentSale.complianceStatus.label,
-          _currentSale.lhdnUuid ?? 'N/A',
-        ],
-      ];
-
-      final csvData = const ListToCsvConverter().convert(rows);
-      final directory = await getTemporaryDirectory();
-      final fileName = 'Invoice_${_currentSale.invoiceNumber}_$dateStr.csv';
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsString(csvData);
-
-      if (!mounted) return;
-      final box = context.findRenderObject() as RenderBox?;
-
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'MyRekod Invoice - ${_currentSale.invoiceNumber}',
-        sharePositionOrigin:
-            box != null ? box.localToGlobal(Offset.zero) & box.size : null,
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to export CSV: $e')),
-        );
-      }
-    }
-  }
 
   // ── UI Detail Card Builder ─────────────────────────────────────────────
 
@@ -763,7 +708,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               // TODO: Implement i18n
               text: 'Export to CSV',
               icon: const Icon(Icons.download_rounded, size: 20),
-              onPressed: _exportToCsv,
+              onPressed: () async => await CsvExportService.exportSingleSaleToCSV(context, _currentSale),
             ),
             const SizedBox(height: 32),
           ],
