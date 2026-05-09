@@ -11,6 +11,7 @@ import '../models/sale_record.dart';
 import '../providers/expense_provider.dart';
 import '../providers/sales_provider.dart';
 import '../widgets/app_dialogs.dart';
+import 'transactions/widgets/export_filter_bottom_sheet.dart';
 import 'expenses/expense_detail_screen.dart';
 import 'sales/sale_detail_screen.dart';
 
@@ -166,10 +167,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                       );
                       _exportToCSV(expenses);
                     } else {
-                      final sales = _applySalesFilter(
-                        context.read<SalesProvider>().saleRecords,
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (context) => const ExportFilterBottomSheet(),
                       );
-                      _exportSalesToCSV(sales);
                     }
                   },
           ),
@@ -615,78 +617,5 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
 
   double _calculateSalesTotal(List<SaleRecord> sales) {
     return sales.fold(0.0, (sum, r) => sum + r.totalPayable);
-  }
-
-  // ── CSV Export for Sales ──────────────────────────────────────────────────
-
-  Future<void> _exportSalesToCSV(List<SaleRecord> sales) async {
-    if (sales.isEmpty) {
-      AppDialogs.showActionModal(
-        context,
-        title: 'No Data to Export',
-        body: 'There are no sale records to export.',
-        primaryButtonText: 'OK',
-        onPrimaryPressed: () {},
-        icon: Icons.info_outline_rounded,
-        iconColor: AppTheme.primary,
-        primaryButtonColor: AppTheme.primary,
-      );
-      return;
-    }
-
-    setState(() => _isExporting = true);
-
-    try {
-      final List<List<dynamic>> rows = [
-        ['Invoice', 'Date', 'Customer', 'Item', 'Qty', 'Subtotal (RM)', 'Tax (RM)', 'Total (RM)', 'Payment', 'Status'],
-        ...sales.map((s) => [
-          s.invoiceNumber,
-          DateFormat('yyyy-MM-dd').format(s.saleDate),
-          s.customerName,
-          s.lineItems.map((l) => l.item.name).join('; '),
-          s.lineItems.fold<double>(0, (sum, l) => sum + l.quantity).toString(),
-          s.subtotal.toStringAsFixed(2),
-          s.taxAmount.toStringAsFixed(2),
-          s.totalPayable.toStringAsFixed(2),
-          s.paymentMode,
-          s.commercialStatus.name,
-        ]),
-        [],
-        ['', '', '', '', 'TOTAL', '', '', _calculateSalesTotal(sales).toStringAsFixed(2), '', ''],
-        ['', '', '', '', 'Generated', DateTime.now().toIso8601String().split('T')[0], '', '', '', ''],
-      ];
-
-      final csvString = const ListToCsvConverter().convert(rows);
-
-      final appDir = await getApplicationDocumentsDirectory();
-      final dateStr = DateTime.now().toIso8601String().split('T')[0];
-      final fileName = 'MyRekod_Sales_$dateStr.csv';
-      final file = File('${appDir.path}/$fileName');
-      await file.writeAsString(csvString);
-
-      if (!mounted) return;
-      setState(() => _isExporting = false);
-
-      final box = context.findRenderObject() as RenderBox?;
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'MyRekod Sales Report - $dateStr',
-        sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isExporting = false);
-
-      AppDialogs.showActionModal(
-        context,
-        title: 'Export Failed',
-        body: 'Could not generate CSV file.\n\nError: $e',
-        primaryButtonText: 'OK',
-        onPrimaryPressed: () {},
-        icon: Icons.error_outline_rounded,
-        iconColor: Colors.redAccent,
-        primaryButtonColor: Colors.redAccent,
-      );
-    }
   }
 }
