@@ -926,9 +926,12 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                           icon: const Icon(Icons.remove, size: 20),
                           onPressed: () => calc.updateLineItemQuantity(index, line.quantity - 1),
                         ),
-                        Text(
-                          line.quantity.toStringAsFixed(0),
-                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        InkWell(
+                          onTap: () => _showQuantityEditDialog(calc, index, line),
+                          child: Text(
+                            line.quantity.toStringAsFixed(0),
+                            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.add, size: 20),
@@ -1048,6 +1051,29 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         calc.addLineItem(item);
       }
     });
+  }
+
+  void _showQuantityEditDialog(SaleCalculatorProvider calc, int index, SaleLineItem line) {
+    final controller = TextEditingController(text: line.quantity.toStringAsFixed(0));
+    AppDialogs.showFormModal(
+      context,
+      title: 'Edit Quantity',
+      formBody: AppTextField(
+        controller: controller,
+        label: 'New Quantity',
+        keyboardType: const TextInputType.numberWithOptions(decimal: false),
+      ),
+      primaryButtonText: 'Apply',
+      onPrimaryPressed: () async {
+        final qty = double.tryParse(controller.text);
+        if (qty != null && qty >= 0) {
+          calc.updateLineItemQuantity(index, qty);
+        }
+        return true;
+      },
+      secondaryButtonText: 'Cancel',
+      onSecondaryPressed: () {},
+    );
   }
 
   void _showPriceOverrideDialog(SaleCalculatorProvider calc, int index, SaleLineItem line) {
