@@ -683,21 +683,16 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     value: _currentSale.prepaymentReference!),
             ],
 
-            // Billing & Exemption
-            if (_currentSale.billingFrequency != null || (_currentSale.taxExemptionAmount ?? 0) > 0 || _currentSale.billingStartDate != null) ...[
+            // Billing
+            if (_currentSale.billingFrequency != null || _currentSale.billingStartDate != null) ...[
               const SizedBox(height: 12),
-              _buildSectionHeader(theme, 'Billing & Exemption'),
+              _buildSectionHeader(theme, 'Billing'),
               const SizedBox(height: 12),
               if (_currentSale.billingFrequency != null && _currentSale.billingFrequency!.isNotEmpty)
                 _buildDetailCard(theme,
                     icon: Icons.update_rounded,
                     label: 'Billing Frequency',
                     value: _currentSale.billingFrequency!),
-              if ((_currentSale.taxExemptionAmount ?? 0) > 0)
-                _buildDetailCard(theme,
-                    icon: Icons.money_off_rounded,
-                    label: 'Tax Exemption Amount',
-                    value: 'RM ${_currentSale.taxExemptionAmount!.toStringAsFixed(2)}'),
               if (_currentSale.billingStartDate != null && _currentSale.billingEndDate != null)
                 _buildDetailCard(theme,
                     icon: Icons.date_range_rounded,

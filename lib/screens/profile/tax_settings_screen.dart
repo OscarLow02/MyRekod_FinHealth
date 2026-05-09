@@ -93,18 +93,18 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
     if (_userId == null) return;
     setState(() => _isSaving = true);
     try {
-      final bool isNA = _defaultTaxType == '06';
+      final bool isExemptOrNA = _defaultTaxType == '06' || _defaultTaxType == 'E';
       final config = TaxConfig(
         defaultTaxType: _defaultTaxType,
         // Total Percentage mode: save taxRate, clear unit fields
-        taxRate: !isNA && !_isUnitBased && _taxRateCtrl.text.isNotEmpty
+        taxRate: isExemptOrNA ? 0.0 : (!_isUnitBased && _taxRateCtrl.text.isNotEmpty
             ? double.tryParse(_taxRateCtrl.text)
-            : null,
+            : null),
         // Unit-Based mode: save unit fields, clear taxRate
-        numUnits: !isNA && _isUnitBased && _numUnitsCtrl.text.isNotEmpty
+        numUnits: !isExemptOrNA && _isUnitBased && _numUnitsCtrl.text.isNotEmpty
             ? double.tryParse(_numUnitsCtrl.text)
             : null,
-        ratePerUnit: !isNA && _isUnitBased && _ratePerUnitCtrl.text.isNotEmpty
+        ratePerUnit: !isExemptOrNA && _isUnitBased && _ratePerUnitCtrl.text.isNotEmpty
             ? double.tryParse(_ratePerUnitCtrl.text)
             : null,
         taxExemptionDetails: (_defaultTaxType == 'E' && _taxExemptionCtrl.text.trim().isNotEmpty)
@@ -207,7 +207,8 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
                   // ═══════════════════════════════
                   // Section 2: Calculation Method
                   // ═══════════════════════════════
-                  _buildCardSection(
+                  if (_defaultTaxType != 'E') ...[
+                    _buildCardSection(
                     theme,
                     title: 'CALCULATION METHOD',
                     child: isTaxNotApplicable
@@ -349,8 +350,9 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
                               ],
                             ],
                           ),
-                  ),
-                  const SizedBox(height: 16),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   // ═══════════════════════════════
                   // Section 3: Tax Exemption

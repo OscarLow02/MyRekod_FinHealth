@@ -350,7 +350,7 @@ class LhdnPayloadBuilder {
       "TaxSubtotal": [
         {
           "TaxableAmount": [
-            {"_": _fmt(isExempt ? (record.taxExemptionAmount ?? netAmount) : netAmount), "currencyID": _currencyCode}
+            {"_": _fmt(netAmount), "currencyID": _currencyCode}
           ],
           "TaxAmount": [
             {"_": _fmt(isExempt ? 0.0 : record.taxAmount), "currencyID": _currencyCode}
@@ -384,8 +384,7 @@ class LhdnPayloadBuilder {
     // 3. LineExtensionAmount is the sum of (qty * price) for all lines.
     // 4. TaxExclusiveAmount = Sum(LineExtension - LineDiscount + LineCharge) - DocumentAllowances.
     
-    final netLineAmount = record.subtotal - (record.discountAmount ?? 0.0) + (record.feeAmount ?? 0.0);
-    final taxExclusiveAmount = netLineAmount - (record.taxExemptionAmount ?? 0.0);
+    final taxExclusiveAmount = record.subtotal - (record.discountAmount ?? 0.0) + (record.feeAmount ?? 0.0);
     final taxInclusiveAmount = taxExclusiveAmount + record.taxAmount;
 
     return {

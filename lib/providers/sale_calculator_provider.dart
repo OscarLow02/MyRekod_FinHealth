@@ -177,6 +177,8 @@ class SaleCalculatorProvider extends ChangeNotifier {
   /// - Total Percentage mode: netAmount × (taxRate / 100)
   /// - Unit-Based mode: (total line items quantity / numUnits) × ratePerUnit
   double get taxAmount {
+    if (_taxType == 'E' || _taxType == '06') return 0.00;
+
     // Unit-based calculation takes priority if both units and rate are set
     if (_numUnits != null && _ratePerUnit != null && _numUnits! > 0) {
       double totalQty = 0.0;
@@ -209,6 +211,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
   ///   Total ending in .08 or .09 → round UP   (adjustment: +0.02 or +0.01)
   ///   Total ending in .00        → no change   (adjustment: 0.00)
   double get roundingAmount {
+    if (taxAmount == 0.00) return 0.00;
     return _calculateRoundingAdjustment(totalBeforeRounding);
   }
 

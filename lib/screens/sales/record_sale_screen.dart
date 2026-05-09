@@ -52,7 +52,6 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   final _billRefCtrl = TextEditingController();
   final _prepayAmountCtrl = TextEditingController();
   final _prepayRefCtrl = TextEditingController();
-  final _taxExemptCtrl = TextEditingController();
   final _bankAccountCtrl = TextEditingController();
   
   String? _billingFrequency;
@@ -140,7 +139,6 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     _billRefCtrl.dispose();
     _prepayAmountCtrl.dispose();
     _prepayRefCtrl.dispose();
-    _taxExemptCtrl.dispose();
     _bankAccountCtrl.dispose();
     super.dispose();
   }
@@ -207,7 +205,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         _billRefCtrl.clear();
         _prepayAmountCtrl.clear();
         _prepayRefCtrl.clear();
-        _taxExemptCtrl.clear();
+
         _billingFrequency = null;
         _billingStartDate = null;
         _billingEndDate = null;
@@ -504,7 +502,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     calc.setPrepaymentDate(_prepaymentDate);
     calc.setPrepaymentReference(_prepayRefCtrl.text);
     calc.setBillingFrequency(_billingFrequency ?? '');
-    calc.setTaxExemptionAmount(double.tryParse(_taxExemptCtrl.text) ?? 0.0);
+
     calc.setBillingPeriod(_billingStartDate, _billingEndDate);
   }
 
@@ -1549,9 +1547,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               ),
               const SizedBox(height: 24),
             ],
-            // 4. Billing & Exemption
+            // 4. Billing
             _buildSubHeader(
-              'Billing & Exemption', 
+              'Billing', 
               Icons.receipt_rounded, 
               theme,
               isChecked: _enableBillingExemption,
@@ -1560,7 +1558,6 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 setState(() => _enableBillingExemption = enabled);
                 provider.setEnableBillingExemption(enabled);
                 if (!_enableBillingExemption) {
-                  _taxExemptCtrl.clear();
                   setState(() {
                     _billingFrequency = null;
                     _billingStartDate = null;
@@ -1589,23 +1586,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 fillColor: theme.colorScheme.surface,
               ),
               const SizedBox(height: 16),
-              if (provider.taxType == 'E') ...[
-                _buildLabeledField(
-                  'Tax Exemption Amount',
-                  TextFormField(
-                    controller: _taxExemptCtrl,
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.done,
-                    textAlign: TextAlign.end,
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                    onChanged: (val) => provider.setTaxExemptionAmount(double.tryParse(val) ?? 0.0),
-                    validator: (v) => AppValidators.positiveNumber(v, 'Tax Exemption Amount'),
-                    decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
-                  ),
-                  theme,
-                ),
-                const SizedBox(height: 16),
-              ],
+
               _buildLabeledField(
                 'Billing Period',
                 FormField<DateTimeRange>(
