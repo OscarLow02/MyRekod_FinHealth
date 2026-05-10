@@ -194,9 +194,12 @@ class SaleRecord {
 
   /// ISO 8601 timestamp of LHDN validation.
   final DateTime? lhdnValidatedAt;
-  
+
   /// The raw LHDN JSON payload generated for this record.
   final String? lastGeneratedPayload;
+
+  /// If this record was rolled into a master invoice, this holds the master ID.
+  final String? consolidatedInvoiceRef;
 
   // ── Notes ──────────────────────────────────────────────────────────────
 
@@ -258,6 +261,7 @@ class SaleRecord {
     this.lhdnLongId,
     this.lhdnValidatedAt,
     this.lastGeneratedPayload,
+    this.consolidatedInvoiceRef,
     // Notes
     this.notes = '',
     // Timestamps
@@ -277,17 +281,25 @@ class SaleRecord {
       'customerTin': customerTin,
       'customerIdNumber': customerIdNumber,
       'customerIdScheme': customerIdScheme,
-      'customerSstRegistrationNumber': customerSstRegistrationNumber.isEmpty ? 'NA' : customerSstRegistrationNumber,
-      'customerTourismTaxNumber': customerTourismTaxNumber.isEmpty ? 'NA' : customerTourismTaxNumber,
+      'customerSstRegistrationNumber': customerSstRegistrationNumber.isEmpty
+          ? 'NA'
+          : customerSstRegistrationNumber,
+      'customerTourismTaxNumber': customerTourismTaxNumber.isEmpty
+          ? 'NA'
+          : customerTourismTaxNumber,
       // Items
-      'lineItems': lineItems.map((l) => {
-        'itemId': l.item.id,
-        'itemName': l.item.name,
-        'unitPrice': l.unitPrice,
-        'quantity': l.quantity,
-        'measurementUnit': l.item.measurementUnit,
-        'classificationCode': l.item.classificationCode,
-      }).toList(),
+      'lineItems': lineItems
+          .map(
+            (l) => {
+              'itemId': l.item.id,
+              'itemName': l.item.name,
+              'unitPrice': l.unitPrice,
+              'quantity': l.quantity,
+              'measurementUnit': l.item.measurementUnit,
+              'classificationCode': l.item.classificationCode,
+            },
+          )
+          .toList(),
       // Pricing
       'subtotal': subtotal,
       'taxType': taxType,
@@ -307,27 +319,39 @@ class SaleRecord {
     if (discountRate != null) data['discountRate'] = discountRate;
     if (feeAmount != null) data['feeAmount'] = feeAmount;
     if (feeRate != null) data['feeRate'] = feeRate;
-    if (discountDescription != null) data['discountDescription'] = discountDescription;
-    
+    if (discountDescription != null)
+      data['discountDescription'] = discountDescription;
+
     if (paymentMode != null) data['paymentMode'] = paymentMode;
     if (paymentTerms != null) data['paymentTerms'] = paymentTerms;
-    if (supplierBankAccount != null) data['supplierBankAccount'] = supplierBankAccount;
-    
+    if (supplierBankAccount != null)
+      data['supplierBankAccount'] = supplierBankAccount;
+
     if (prepaymentAmount != null) data['prepaymentAmount'] = prepaymentAmount;
-    if (prepaymentDate != null) data['prepaymentDate'] = Timestamp.fromDate(prepaymentDate!);
-    if (prepaymentReference != null) data['prepaymentReference'] = prepaymentReference;
-    
+    if (prepaymentDate != null)
+      data['prepaymentDate'] = Timestamp.fromDate(prepaymentDate!);
+    if (prepaymentReference != null)
+      data['prepaymentReference'] = prepaymentReference;
+
     if (billReference != null) data['billReference'] = billReference;
     if (billingFrequency != null) data['billingFrequency'] = billingFrequency;
-    if (taxExemptionAmount != null) data['taxExemptionAmount'] = taxExemptionAmount;
-    if (billingStartDate != null) data['billingStartDate'] = Timestamp.fromDate(billingStartDate!);
-    if (billingEndDate != null) data['billingEndDate'] = Timestamp.fromDate(billingEndDate!);
-    if (taxExemptionReason != null) data['taxExemptionReason'] = taxExemptionReason;
-    
+    if (taxExemptionAmount != null)
+      data['taxExemptionAmount'] = taxExemptionAmount;
+    if (billingStartDate != null)
+      data['billingStartDate'] = Timestamp.fromDate(billingStartDate!);
+    if (billingEndDate != null)
+      data['billingEndDate'] = Timestamp.fromDate(billingEndDate!);
+    if (taxExemptionReason != null)
+      data['taxExemptionReason'] = taxExemptionReason;
+
     if (lhdnUuid != null) data['lhdnUuid'] = lhdnUuid;
     if (lhdnLongId != null) data['lhdnLongId'] = lhdnLongId;
-    if (lhdnValidatedAt != null) data['lhdnValidatedAt'] = Timestamp.fromDate(lhdnValidatedAt!);
-    if (lastGeneratedPayload != null) data['lastGeneratedPayload'] = lastGeneratedPayload;
+    if (lhdnValidatedAt != null)
+      data['lhdnValidatedAt'] = Timestamp.fromDate(lhdnValidatedAt!);
+    if (lastGeneratedPayload != null)
+      data['lastGeneratedPayload'] = lastGeneratedPayload;
+    if (consolidatedInvoiceRef != null)
+      data['consolidatedInvoiceRef'] = consolidatedInvoiceRef;
 
     if (createdAt != null) {
       data['createdAt'] = Timestamp.fromDate(createdAt!);
@@ -340,9 +364,7 @@ class SaleRecord {
   }
 
   /// Constructs a [SaleRecord] from a Firestore document snapshot.
-  factory SaleRecord.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
+  factory SaleRecord.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
     return SaleRecord(
       id: doc.id,
@@ -358,7 +380,8 @@ class SaleRecord {
       customerTin: data['customerTin'] as String? ?? '',
       customerIdNumber: data['customerIdNumber'] as String? ?? '',
       customerIdScheme: data['customerIdScheme'] as String? ?? 'BRN',
-      customerSstRegistrationNumber: data['customerSstRegistrationNumber'] as String? ?? '',
+      customerSstRegistrationNumber:
+          data['customerSstRegistrationNumber'] as String? ?? '',
       // Items
       lineItems: (data['lineItems'] as List? ?? []).map((l) {
         final itemMap = l as Map<String, dynamic>;
@@ -402,10 +425,12 @@ class SaleRecord {
       billingEndDate: (data['billingEndDate'] as Timestamp?)?.toDate(),
       taxExemptionReason: data['taxExemptionReason'] as String?,
       // Status
-      commercialStatus:
-          CommercialStatus.fromString(data['commercialStatus'] as String?),
-      complianceStatus:
-          ComplianceStatus.fromString(data['complianceStatus'] as String?),
+      commercialStatus: CommercialStatus.fromString(
+        data['commercialStatus'] as String?,
+      ),
+      complianceStatus: ComplianceStatus.fromString(
+        data['complianceStatus'] as String?,
+      ),
       // LHDN
       lhdnUuid: data['lhdnUuid'] as String?,
       lhdnLongId: data['lhdnLongId'] as String?,
@@ -473,7 +498,8 @@ class SaleRecord {
       customerTin: customerTin ?? this.customerTin,
       customerIdNumber: customerIdNumber ?? this.customerIdNumber,
       customerIdScheme: customerIdScheme ?? this.customerIdScheme,
-      customerSstRegistrationNumber: customerSstRegistrationNumber ?? this.customerSstRegistrationNumber,
+      customerSstRegistrationNumber:
+          customerSstRegistrationNumber ?? this.customerSstRegistrationNumber,
       lineItems: lineItems ?? this.lineItems,
       subtotal: subtotal ?? this.subtotal,
       discountAmount: discountAmount ?? this.discountAmount,

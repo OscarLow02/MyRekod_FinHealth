@@ -220,6 +220,164 @@ class LhdnPayloadBuilder {
     };
   }
 
+  /// Builds a consolidated e-Invoice JSON payload for multiple [SaleRecord]s.
+  /// Used for "Digital Shoebox" consolidation where multiple receipts are
+  /// rolled into one master LHDN submission.
+  static Map<String, dynamic> buildConsolidatedPayload({
+    required String masterInvoiceNumber,
+    required List<SaleRecord> selectedSales,
+    required BusinessProfile sellerProfile,
+  }) {
+    final dateFormat = DateFormat('yyyy-MM-dd');
+    final timeFormat = DateFormat('HH:mm:ss');
+    final now = DateTime.now();
+    final saleDateStr = dateFormat.format(now);
+    final saleTimeStr = '${timeFormat.format(now)}Z';
+
+    double masterSubtotal = 0.0;
+    double masterTaxAmount = 0.0;
+    double masterTotalPayable = 0.0;
+
+    for (var sale in selectedSales) {
+      masterSubtotal += sale.subtotal;
+      masterTaxAmount += sale.taxAmount;
+      masterTotalPayable += sale.totalPayable;
+    }
+
+    // Dummy master record to reuse your exact helpers!
+    final masterRecord = SaleRecord(
+      id: 'master',
+      invoiceNumber: masterInvoiceNumber,
+      saleDate: now,
+      customerId: 'walk-in',
+      customerName: 'General Public',
+      customerType: CustomerType.b2c,
+      customerTin: 'EI00000000010',
+      lineItems: [], // Handled manually below
+      subtotal: masterSubtotal,
+      taxType: '06',
+      taxAmount: masterTaxAmount,
+      totalPayable: masterTotalPayable,
+    );
+
+    // Method A: Each receipt is a line item
+    final List<Map<String, dynamic>> invoiceLines = [];
+    for (int i = 0; i < selectedSales.length; i++) {
+      final sale = selectedSales[i];
+      invoiceLines.add({
+        "ID": [
+          {"_": (i + 1).toString()},
+        ],
+        "InvoicedQuantity": [
+          {"_": 1.0, "unitCode": "C62"},
+        ],
+        "LineExtensionAmount": [
+          {"_": _fmt(sale.subtotal), "currencyID": _currencyCode},
+        ],
+        "TaxTotal": [
+          {
+            "TaxAmount": [
+              {"_": _fmt(sale.taxAmount), "currencyID": _currencyCode},
+            ],
+            "TaxSubtotal": [
+              {
+                "TaxableAmount": [
+                  {"_": _fmt(sale.subtotal), "currencyID": _currencyCode},
+                ],
+                "TaxAmount": [
+                  {"_": _fmt(sale.taxAmount), "currencyID": _currencyCode},
+                ],
+                "Percent": [
+                  {"_": 0.0},
+                ],
+                "TaxCategory": [
+                  {
+                    "ID": [
+                      {"_": "06"},
+                    ],
+                    "TaxScheme": {
+                      "ID": [
+                        {
+                          "_": "OTH",
+                          "schemeID": "UN/ECE 5153",
+                          "schemeAgencyID": "6",
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        "Item": [
+          {
+            "CommodityClassification": [
+              {
+                "ItemClassificationCode": [{"_": "004", "listID": "CLASS"}],
+              },
+            ],
+            "Description": [
+              {"_": "Receipt #${sale.invoiceNumber}"},
+            ],
+          },
+        ],
+        "Price": [
+          {
+            "PriceAmount": [
+              {"_": _fmt(sale.subtotal), "currencyID": _currencyCode},
+            ],
+          },
+        ],
+        "ItemPriceExtension": [
+          {
+            "Amount": [{"_": _fmt(sale.subtotal), "currencyID": _currencyCode}],
+          },
+        ],
+      });
+    }
+
+    return {
+      "_D": "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2",
+      "_A":
+          "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2",
+      "_B":
+          "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2",
+      "Invoice": [
+        {
+          "UBLVersionID": [
+            {"_": "2.1"},
+          ],
+          "CustomizationID": [
+            {"_": "urn:lhdn:1.0"},
+          ],
+          "ID": [
+            {"_": masterInvoiceNumber},
+          ],
+          "IssueDate": [
+            {"_": saleDateStr},
+          ],
+          "IssueTime": [
+            {"_": saleTimeStr},
+          ],
+          "InvoiceTypeCode": [
+            {"_": "01", "listVersionID": "1.0"},
+          ],
+          "DocumentCurrencyCode": [
+            {"_": _currencyCode},
+          ],
+          "AccountingSupplierParty": [buildSupplierParty(sellerProfile)],
+          "AccountingCustomerParty": [
+            _buildBuyerParty(masterRecord),
+          ], // Injects General Public
+          "TaxTotal": [_buildTaxTotal(masterRecord)],
+          "LegalMonetaryTotal": [_buildMonetaryTotal(masterRecord)],
+          "InvoiceLine": invoiceLines,
+        },
+      ],
+    };
+  }
+
   // ══════════════════════════════════════════════════════════════════════════
   //  SUPPLIER PARTY (Fields 7–20)
   // ══════════════════════════════════════════════════════════════════════════
