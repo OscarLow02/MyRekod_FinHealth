@@ -55,13 +55,13 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   final List<SaleLineItem> _lineItems = [];
   Customer? _selectedCustomer;
-  
+
   bool _isDiscountRateMode = true; // true = Rate (%), false = Amount (RM)
   double _discountAmount = 0.0;
   double _discountRate = 0.0;
   double _feeAmount = 0.0;
   double _feeRate = 0.0;
-  
+
   String _discountDescription = '';
   String _paymentMode = '01'; // Default: Cash
   String _notes = '';
@@ -77,14 +77,14 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   String _taxType = '06'; // Default: Not Applicable
   double _taxRate = 0.0;
-  double? _numUnits;    // Unit-based: number of units
+  double? _numUnits; // Unit-based: number of units
   double? _ratePerUnit; // Unit-based: rate per unit
 
   // -- Additional LHDN Details --
   String _paymentTerms = '';
   String _supplierBankAccount = '';
   String _billReference = '';
-  
+
   double _prepaymentAmount = 0.0;
   DateTime? _prepaymentDate;
   String _prepaymentReference = '';
@@ -98,13 +98,13 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
   List<SaleLineItem> get lineItems => _lineItems;
   Customer? get selectedCustomer => _selectedCustomer;
-  
+
   bool get isDiscountRateMode => _isDiscountRateMode;
   double get discountAmount => _discountAmount;
   double get discountRate => _discountRate;
   double get feeAmount => _feeAmount;
   double get feeRate => _feeRate;
-  
+
   String get discountDescription => _discountDescription;
   String get paymentMode => _paymentMode;
   String get notes => _notes;
@@ -124,7 +124,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
   String get paymentTerms => _paymentTerms;
   String get supplierBankAccount => _supplierBankAccount;
   String get billReference => _billReference;
-  
+
   double get prepaymentAmount => _prepaymentAmount;
   DateTime? get prepaymentDate => _prepaymentDate;
   String get prepaymentReference => _prepaymentReference;
@@ -135,9 +135,12 @@ class SaleCalculatorProvider extends ChangeNotifier {
   DateTime? get billingEndDate => _billingEndDate;
 
   // Legacy getters for compatibility with single-item logic if needed
-  SaleItem? get selectedItem => _lineItems.isNotEmpty ? _lineItems.first.item : null;
-  double get quantity => _lineItems.isNotEmpty ? _lineItems.first.quantity : 1.0;
-  double get unitPrice => _lineItems.isNotEmpty ? _lineItems.first.unitPrice : 0.0;
+  SaleItem? get selectedItem =>
+      _lineItems.isNotEmpty ? _lineItems.first.item : null;
+  double get quantity =>
+      _lineItems.isNotEmpty ? _lineItems.first.quantity : 1.0;
+  double get unitPrice =>
+      _lineItems.isNotEmpty ? _lineItems.first.unitPrice : 0.0;
 
   // ══════════════════════════════════════════════════════════════════════════
   //  COMPUTED GETTERS — The Calculation Engine
@@ -187,12 +190,12 @@ class SaleCalculatorProvider extends ChangeNotifier {
       }
       return _round2dp((totalQty / _numUnits!) * _ratePerUnit!);
     }
-    
+
     // Percentage mode
     if (_taxRate > 0) {
       return _round2dp(netAmount * (_taxRate / 100.0));
     }
-    
+
     return 0.0;
   }
 
@@ -410,9 +413,11 @@ class SaleCalculatorProvider extends ChangeNotifier {
   /// If set to '03' (Bank Transfer), pre-fills the bank account from the profile.
   void setPaymentMode(String code) {
     _paymentMode = code;
-    
+
     // Pre-fill bank account if it's currently empty and we have a profile with a bank account
-    if (code == '03' && _supplierBankAccount.isEmpty && _businessProfile?.bankAccountNumber != null) {
+    if (code == '03' &&
+        _supplierBankAccount.isEmpty &&
+        _businessProfile?.bankAccountNumber != null) {
       _supplierBankAccount = _businessProfile!.bankAccountNumber!;
     }
     notifyListeners();
@@ -450,7 +455,7 @@ class SaleCalculatorProvider extends ChangeNotifier {
   }
 
   // -- Additional LHDN Setters --
-  
+
   void setPaymentTerms(String value) {
     _paymentTerms = value;
     notifyListeners();
@@ -549,7 +554,9 @@ class SaleCalculatorProvider extends ChangeNotifier {
       commercialStatus: statusOverride ?? CommercialStatus.pendingPayment,
       complianceStatus: customer.id == 'walk-in'
           ? ComplianceStatus.pendingConsolidation
-          : (finalSubmitToLhdn ? ComplianceStatus.valid : ComplianceStatus.pendingSubmission),
+          : (finalSubmitToLhdn
+                ? ComplianceStatus.valid
+                : ComplianceStatus.pendingSubmission),
       // Notes
       notes: _notes,
       // Additional LHDN Details
@@ -563,7 +570,9 @@ class SaleCalculatorProvider extends ChangeNotifier {
       taxExemptionAmount: _enableBillingExemption ? _taxExemptionAmount : null,
       billingStartDate: _enableBillingExemption ? _billingStartDate : null,
       billingEndDate: _enableBillingExemption ? _billingEndDate : null,
-      taxExemptionReason: _taxType == 'E' ? _taxConfig.taxExemptionDetails : null,
+      taxExemptionReason: _taxType == 'E'
+          ? _taxConfig.taxExemptionDetails
+          : null,
     );
   }
 
@@ -605,30 +614,36 @@ class SaleCalculatorProvider extends ChangeNotifier {
         submitToLhdnOverride: submitToLhdnOverride,
       );
       if (initialRecord == null) return null;
-      
+
       var record = initialRecord;
 
-      // Step 4: MANDATORY: Always generate the LHDN JSON payload
-      final profile = await _firestoreService.getBusinessProfile(_currentUserId!);
-      if (profile != null) {
-        final payloadMap = LhdnPayloadBuilder.buildInvoicePayload(
-          record: record,
-          sellerProfile: profile,
+      // Step 4 & 5: MANDATORY: Generate Payload ONLY if not pending consolidation
+      if (record.complianceStatus != ComplianceStatus.pendingConsolidation) {
+        final profile = await _firestoreService.getBusinessProfile(
+          _currentUserId!,
         );
-        final payloadJson = jsonEncode(payloadMap);
-        // Explicitly assigning the generated LHDN payload string
-        record = record.copyWith(lastGeneratedPayload: payloadJson);
-        debugPrint('LHDN Payload generated for ${record.invoiceNumber}');
-      }
+        if (profile != null) {
+          final payloadMap = LhdnPayloadBuilder.buildInvoicePayload(
+            record: record,
+            sellerProfile: profile,
+          );
+          final payloadJson = jsonEncode(payloadMap);
+          record = record.copyWith(lastGeneratedPayload: payloadJson);
+          debugPrint('LHDN Payload generated for ${record.invoiceNumber}');
+        }
 
-      // Step 5: Simulate LHDN Submission if applicable
-      if (record.complianceStatus == ComplianceStatus.valid) {
-        // Here we would normally call the LHDN API
-        // For now, we simulate a successful UUID response
-        record = record.copyWith(
-          lhdnUuid: 'LHDN-${math.Random().nextInt(999999).toString().padLeft(6, '0')}',
-          lhdnLongId: 'LHDN-LONG-${DateTime.now().millisecondsSinceEpoch}',
-          lhdnValidatedAt: DateTime.now(),
+        // Step 5: Simulate LHDN Submission if applicable
+        if (record.complianceStatus == ComplianceStatus.valid) {
+          record = record.copyWith(
+            lhdnUuid:
+                'LHDN-${math.Random().nextInt(999999).toString().padLeft(6, '0')}',
+            lhdnLongId: 'LHDN-LONG-${DateTime.now().millisecondsSinceEpoch}',
+            lhdnValidatedAt: DateTime.now(),
+          );
+        }
+      } else {
+        debugPrint(
+          'Skipping payload generation: Record is Pending Consolidation.',
         );
       }
 
@@ -761,7 +776,9 @@ class SaleCalculatorProvider extends ChangeNotifier {
   Future<void> fetchPreviewInvoiceNumber() async {
     if (_currentUserId == null) return;
     try {
-      final nextInv = await _firestoreService.peekNextInvoiceNumber(_currentUserId!);
+      final nextInv = await _firestoreService.peekNextInvoiceNumber(
+        _currentUserId!,
+      );
       _previewInvoiceNumber = nextInv;
       notifyListeners();
     } catch (e) {

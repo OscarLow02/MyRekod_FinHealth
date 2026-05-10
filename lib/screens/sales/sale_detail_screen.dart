@@ -410,11 +410,12 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.code_rounded, size: 22),
-            onPressed: _showJsonPreview,
-            tooltip: 'View JSON',
-          ),
+          if (_currentSale.complianceStatus != ComplianceStatus.pendingConsolidation)
+            IconButton(
+              icon: const Icon(Icons.code_rounded, size: 22),
+              onPressed: _showJsonPreview,
+              tooltip: 'View JSON',
+            ),
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded,
                 color: Colors.redAccent, size: 22),
@@ -515,7 +516,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             const SizedBox(height: 32),
 
             // ── LHDN Submission Button ────────────────────────────────
-            if (_currentSale.complianceStatus != ComplianceStatus.valid)
+            if (_currentSale.complianceStatus != ComplianceStatus.valid &&
+                _currentSale.complianceStatus != ComplianceStatus.pendingConsolidation)
               Padding(
                 padding: const EdgeInsets.only(bottom: 24),
                 child: AppButton(
