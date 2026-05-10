@@ -70,11 +70,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     AppDialogs.showActionModal(
       context,
       // TODO: Implement i18n
-      title: 'Submit e-Invoice?',
-      body: 'This will submit invoice ${_currentSale.invoiceNumber} to LHDN for validation.\n\n'
+      title: 'Confirm & Submit?',
+      body: 'This will submit invoice ${_currentSale.invoiceNumber} to LHDN for validation and mark it as Paid.\n\n'
           'Amount: RM ${_currentSale.totalPayable.toStringAsFixed(2)}\n'
           'Customer: ${_currentSale.customerName}',
-      primaryButtonText: 'Submit to LHDN',
+      primaryButtonText: 'Confirm & Submit',
       primaryButtonColor: AppTheme.primary,
       onPrimaryPressed: () => _performSubmission(profile),
       secondaryButtonText: 'Cancel',
@@ -102,6 +102,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           lhdnLongId: result.longId,
           lhdnValidatedAt: result.validatedAt,
           complianceStatus: ComplianceStatus.valid,
+          commercialStatus: CommercialStatus.paid,
         );
       });
 
@@ -524,7 +525,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   // TODO: Implement i18n
                   text: _isSubmitting
                       ? 'Submitting to LHDN...'
-                      : 'Submit e-Invoice to LHDN',
+                      : 'Confirm & Submit e-Invoice to LHDN',
                   icon: _isSubmitting
                       ? const SizedBox(
                           width: 18,
