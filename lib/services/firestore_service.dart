@@ -236,10 +236,12 @@ class FirestoreService {
 
   /// Returns a real-time stream of all sale records for a user.
   /// Ordered by sale date, newest first.
-  Stream<List<SaleRecord>> watchSaleRecords(String userId) {
-    return _saleRecordsCol(userId)
-        .orderBy('saleDate', descending: true)
-        .snapshots()
+  Stream<List<SaleRecord>> watchSaleRecords(String userId, {int? limit}) {
+    var query = _saleRecordsCol(userId).orderBy('saleDate', descending: true);
+    if (limit != null) {
+      query = query.limit(limit);
+    }
+    return query.snapshots()
         .map((snap) => snap.docs.map(SaleRecord.fromFirestore).toList());
   }
 

@@ -20,7 +20,6 @@ class TransactionsScreen extends StatefulWidget {
 
 class _TransactionsScreenState extends State<TransactionsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  int _selectedFilterIndex = 0; // 0: All, 1: 7 Days, 2: 30 Days
   bool _isExporting = false;
   final TextEditingController _searchController = TextEditingController();
 
@@ -39,30 +38,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
   void dispose() {
     _tabController.removeListener(_handleTabSelection);
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  // ── Filtering Logic ─────────────────────────────────────────────────────
+  // ── Expenses Logic ──────────────────────────────────────────────────────
 
-  List<ExpenseRecord> _applyFilter(List<ExpenseRecord> expenses) {
-    final now = DateTime.now();
-    switch (_selectedFilterIndex) {
-      case 1: // Last 7 Days
-        final cutoff = now.subtract(const Duration(days: 7));
-        return expenses.where((e) => e.date.isAfter(cutoff)).toList();
-      case 2: // Last 30 Days
-        final cutoff = now.subtract(const Duration(days: 30));
-        return expenses.where((e) => e.date.isAfter(cutoff)).toList();
-      default: // All Time
-        return expenses;
-    }
-  }
-
-  double _calculateTotal(List<ExpenseRecord> expenses) {
+  double _calculateExpensesTotal(List<ExpenseRecord> expenses) {
     return expenses.fold(0.0, (sum, item) => sum + item.amount);
   }
 
-
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isExpenseTab = _tabController.index == 0;
@@ -110,29 +96,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
       ),
       body: Column(
         children: [
-          // Filter Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-            child: Row(
-              children: [
-                _buildFilterChip('All Time', 0),
-                const SizedBox(width: 8),
-                _buildFilterChip('Last 7 Days', 1),
-                const SizedBox(width: 8),
-                _buildFilterChip('Last 30 Days', 2),
-              ],
-            ),
-          ),
-          
-          // Summary Cards (uses real data for Expenses)
+          // Summary Cards (uses real data)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
             child: isExpenseTab
                 ? Consumer<ExpenseProvider>(
                     builder: (context, provider, _) {
-                      final filteredExpenses = _applyFilter(provider.expenses);
-                      final total = _calculateTotal(filteredExpenses);
+                      final total = _calculateExpensesTotal(provider.expenses);
                       return _buildSummaryCard(
                         title: 'Total Expenses',
                         amount: 'RM ${total.toStringAsFixed(2)}',
@@ -143,10 +113,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                   )
                 : Consumer<SalesProvider>(
                     builder: (context, provider, _) {
-                      final filteredSales = _applySalesFilter(provider.saleRecords);
-                      final total = _calculateSalesTotal(filteredSales);
+                      final total = provider.filteredSalesTotal;
                       return _buildSummaryCard(
-                        title: 'Total Sales',
+                        title: provider.filterDate != null
+                            ? 'TOTAL SALES (${DateFormat('dd MMM yyyy').format(provider.filterDate!)})'
+                            : 'TOTAL SALES',
                         amount: 'RM ${total.toStringAsFixed(2)}',
                         color: AppTheme.primary,
                         icon: Icons.trending_up_rounded,
@@ -154,23 +125,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                     },
                   ),
           ),
-          const SizedBox(height: 16),
 
           // Tab Views
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                // Expenses Tab — real data
+                // 1. Expenses Tab
                 Consumer<ExpenseProvider>(
                   builder: (context, provider, _) {
                     if (provider.isLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    final filteredExpenses = _applyFilter(provider.expenses);
-
-                    if (filteredExpenses.isEmpty) {
+                    if (provider.expenses.isEmpty) {
                       return _buildEmptyState(
                         icon: Icons.receipt_long_rounded,
                         message: 'No expenses recorded yet',
@@ -178,10 +146,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                       );
                     }
 
-                    return _buildExpenseList(filteredExpenses);
+                    return _buildExpenseList(provider.expenses);
                   },
                 ),
-                // Sales Tab — Refactored to match Monthly Summary Mockup
+                // 2. Sales Tab
                 Consumer<SalesProvider>(
                   builder: (context, provider, _) {
                     if (provider.isLoading) {
@@ -213,49 +181,47 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                       },
                       child: RefreshIndicator(
                         onRefresh: () async {
-                          // Handled by Firestore stream
+                          provider.resetFilters();
                         },
                         child: CustomScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           slivers: [
-                            // 1. Total Sales Summary (Mockup Style)
+                            // 1. Monthly Summary Card
                             SliverToBoxAdapter(
                               child: _buildSalesMonthlySummary(provider),
                             ),
 
-                            // 2. LHDN Consolidation Rules Info Box
+                            // 2. Info Box
                             SliverToBoxAdapter(
                               child: _buildConsolidationRulesInfo(),
                             ),
 
-                            // 3. Pending Consolidation Button
-                            SliverToBoxAdapter(
-                              child: _buildConsolidationButton(context, provider),
-                            ),
-
-                            // 4. Search & Filter Row
+                            // 3. Search & Filter Row
                             SliverToBoxAdapter(
                               child: _buildSalesSearchAndFilter(provider),
+                            ),
+
+                            // 4. Status Summary Badges
+                            SliverToBoxAdapter(
+                              child: _buildStatusSummaryBadges(provider),
+                            ),
+
+                            // 5. Pending Consolidation Action Button
+                            SliverToBoxAdapter(
+                              child: _buildConsolidationButton(context, provider),
                             ),
 
                             // 5. Recent Sales Header
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
                                 child: Text(
                                   'RECENT SALES',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelLarge
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant
-                                            .withValues(alpha: 0.6),
-                                        letterSpacing: 1.2,
-                                      ),
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                    letterSpacing: 1.2,
+                                  ),
                                 ),
                               ),
                             ),
@@ -270,20 +236,36 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                                   color: AppTheme.primary,
                                 ),
                               )
-                            else
+                            else ...[
                               SliverPadding(
-                                padding: const EdgeInsets.fromLTRB(
-                                    16, 0, 16, 100), // Extra space for FAB
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
                                 sliver: SliverList(
                                   delegate: SliverChildBuilderDelegate(
                                     (context, index) {
-                                      return _buildSaleCard(
-                                          context, sales[index]);
+                                      return _buildSaleCard(context, sales[index]);
                                     },
                                     childCount: sales.length,
                                   ),
                                 ),
                               ),
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 32),
+                                  child: Center(
+                                    child: Text(
+                                      'End of results',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                        letterSpacing: 1.1,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SliverToBoxAdapter(
+                                child: SizedBox(height: 100), // Extra space for FAB
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -298,30 +280,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     );
   }
 
-  Widget _buildFilterChip(String label, int index) {
-    final isSelected = _selectedFilterIndex == index;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        if (selected) {
-          setState(() => _selectedFilterIndex = index);
-        }
-      },
-      selectedColor: AppTheme.primary.withValues(alpha: 0.15),
-      backgroundColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        side: BorderSide(
-          color: isSelected ? AppTheme.primary : Theme.of(context).colorScheme.outlineVariant,
-        ),
-      ),
-      labelStyle: TextStyle(
-        color: isSelected ? AppTheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-    );
-  }
+  // ── UI Components ───────────────────────────────────────────────────────
 
   Widget _buildSummaryCard({
     required String title,
@@ -435,9 +394,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
       itemCount: expenses.length,
       itemBuilder: (context, index) {
         final expense = expenses[index];
-        final dateStr = '${expense.date.year}-'
-            '${expense.date.month.toString().padLeft(2, '0')}-'
-            '${expense.date.day.toString().padLeft(2, '0')}';
+        final dateStr = DateFormat('yyyy-MM-dd').format(expense.date);
         
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -482,11 +439,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     );
   }
 
-  // ── Sales Refactored UI Helpers ──────────────────────────────────────────
+  // ── Sales Helpers ───────────────────────────────────────────────────────
 
   Widget _buildSalesMonthlySummary(SalesProvider provider) {
     final theme = Theme.of(context);
-    final total = provider.totalSales; // Total this month
+    final total = provider.totalSales; 
     final pendingCount = provider.pendingConsolidationRecords.length;
     final clearedCount = provider.saleRecords.where((s) => s.complianceStatus == ComplianceStatus.valid).length;
 
@@ -508,7 +465,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'TOTAL SALES THIS MONTH',
+                    provider.filterDate != null
+                        ? 'TOTAL SALES (${DateFormat('dd MMM yyyy').format(provider.filterDate!)})'
+                        : 'TOTAL SALES THIS MONTH',
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       letterSpacing: 1.1,
@@ -556,10 +515,63 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     );
   }
 
+  Widget _buildStatusSummaryBadges(SalesProvider provider) {
+    final sales = provider.saleRecords;
+
+    final pendingPayment = sales.where((s) => s.commercialStatus == CommercialStatus.pendingPayment).length;
+    final paid = sales.where((s) => s.commercialStatus == CommercialStatus.paid).length;
+    final pendingConsolidation = sales.where((s) => s.complianceStatus == ComplianceStatus.pendingConsolidation).length;
+    final valid = sales.where((s) => s.complianceStatus == ComplianceStatus.valid).length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          _buildSimpleBadge('$pendingPayment Pending Payment', Colors.orange),
+          _buildSimpleBadge('$paid Paid', AppTheme.neonGreenDark),
+          _buildSimpleBadge('$pendingConsolidation Pending Consolidation', Colors.purple),
+          _buildSimpleBadge('$valid Valid', AppTheme.neonGreenDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConsolidationButton(BuildContext context, SalesProvider provider) {
+    final count = provider.pendingConsolidationRecords.length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ConsolidationScreen()),
+            );
+          },
+          icon: const Icon(Icons.fact_check_rounded),
+          label: Text('Process Consolidation ($count Items)'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            ),
+            elevation: 2,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildConsolidationRulesInfo() {
     final theme = Theme.of(context);
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.blue.withValues(alpha: 0.05),
@@ -581,7 +593,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Ensure all sales above RM500 are individually invoiced. Smaller items can be consolidated monthly. Review un-invoiced items carefully.',
+                  'Ensure all sales above RM500 are individually invoiced. Smaller items can be consolidated monthly.',
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
@@ -592,36 +604,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     );
   }
 
-  Widget _buildConsolidationButton(BuildContext context, SalesProvider provider) {
-    final count = provider.pendingConsolidationRecords.length;
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: ElevatedButton.icon(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ConsolidationScreen()),
-            );
-          },
-          icon: const Icon(Icons.fact_check_rounded),
-          label: Text('Pending Consolidation ($count Items)'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLarge)),
-            elevation: 2,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildSalesSearchAndFilter(SalesProvider provider) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Expanded(
@@ -659,7 +644,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                   firstDate: DateTime(2023),
                   lastDate: DateTime.now(),
                 );
-                provider.setFilterDate(date);
+                provider.setDateFilter(date);
               },
             ),
           ),
@@ -672,10 +657,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     final theme = Theme.of(context);
     final dateStr = DateFormat('MMM dd, HH:mm').format(sale.saleDate);
 
-    // Commercial Status (Payment)
     final commColor = sale.commercialStatus == CommercialStatus.paid ? AppTheme.neonGreenDark : Colors.orange;
     
-    // Compliance Status (LHDN)
     final compColor = switch (sale.complianceStatus) {
       ComplianceStatus.valid => AppTheme.neonGreenDark,
       ComplianceStatus.pendingSubmission => Colors.orange,
@@ -699,7 +682,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
             color: AppTheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           ),
-          child: const Icon(Icons.restaurant_rounded, color: AppTheme.primary), // Icon based on mockup
+          child: const Icon(Icons.restaurant_rounded, color: AppTheme.primary), 
         ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -752,29 +735,5 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
         style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5),
       ),
     );
-  }
-
-  // ── Legacy Helpers (keep for Expenses or clean up if unused) ────────────────
-  
-
-
-  // ── Sales Filtering Logic ─────────────────────────────────────────────────
-
-  List<SaleRecord> _applySalesFilter(List<SaleRecord> sales) {
-    final now = DateTime.now();
-    switch (_selectedFilterIndex) {
-      case 1: // Last 7 Days
-        final cutoff = now.subtract(const Duration(days: 7));
-        return sales.where((s) => s.saleDate.isAfter(cutoff)).toList();
-      case 2: // Last 30 Days
-        final cutoff = now.subtract(const Duration(days: 30));
-        return sales.where((s) => s.saleDate.isAfter(cutoff)).toList();
-      default: // All Time
-        return sales;
-    }
-  }
-
-  double _calculateSalesTotal(List<SaleRecord> sales) {
-    return sales.fold(0.0, (sum, r) => sum + r.totalPayable);
   }
 }

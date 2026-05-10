@@ -55,13 +55,22 @@ class SalesProvider extends ChangeNotifier {
       });
     }
 
-    // 3. Apply pagination limit
-    return filtered.take(_limit).toList();
+    return filtered.toList();
+  }
+
+  /// Calculates the total amount based strictly on currently filtered records.
+  double get filteredSalesTotal {
+    return saleRecords.fold(0.0, (sum, r) => sum + r.totalPayable);
   }
 
   /// Returns only records awaiting monthly consolidated submission.
   List<SaleRecord> get pendingConsolidationRecords => _saleRecords
-      .where((r) => r.complianceStatus == ComplianceStatus.pendingConsolidation)
+      .where((r) => r.complianceStatus == ComplianceStatus.pendingConsolidation && r.consolidatedInvoiceRef == null)
+      .toList();
+
+  /// Returns records that have already been rolled into a consolidated invoice.
+  List<SaleRecord> get consolidatedHistoryRecords => _saleRecords
+      .where((r) => r.consolidatedInvoiceRef != null)
       .toList();
 
   bool get isLoading => _isLoading;
@@ -78,8 +87,8 @@ class SalesProvider extends ChangeNotifier {
     });
   }
 
-  void _initialize(String userId) {
-    if (_currentUserId == userId) return;
+  void _initialize(String userId, {bool force = false}) {
+    if (!force && _currentUserId == userId && _salesSubscription != null) return;
     _currentUserId = userId;
 
     _isLoading = true;
@@ -88,7 +97,7 @@ class SalesProvider extends ChangeNotifier {
 
     _salesSubscription?.cancel();
     _salesSubscription = _firestoreService
-        .watchSaleRecords(userId)
+        .watchSaleRecords(userId, limit: _limit)
         .listen(
           (records) {
             _saleRecords = records;
@@ -117,20 +126,28 @@ class SalesProvider extends ChangeNotifier {
 
   void setSearchQuery(String query) {
     _searchQuery = query;
-    _limit = 10; // Reset pagination on search
     notifyListeners();
   }
 
-  void setFilterDate(DateTime? date) {
+  void setDateFilter(DateTime? date) {
     _filterDate = date;
-    _limit = 10; // Reset pagination on filter
+    notifyListeners();
+  }
+
+  void resetFilters() {
+    _searchQuery = '';
+    _filterDate = null;
+    _limit = 10;
+    if (_currentUserId != null) {
+      _initialize(_currentUserId!, force: true);
+    }
     notifyListeners();
   }
 
   void loadMore() {
-    if (_limit < _saleRecords.length) {
-      _limit += 10;
-      notifyListeners();
+    _limit += 10;
+    if (_currentUserId != null) {
+      _initialize(_currentUserId!, force: true);
     }
   }
 

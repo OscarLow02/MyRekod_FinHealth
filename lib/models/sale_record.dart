@@ -436,6 +436,7 @@ class SaleRecord {
       lhdnLongId: data['lhdnLongId'] as String?,
       lhdnValidatedAt: (data['lhdnValidatedAt'] as Timestamp?)?.toDate(),
       lastGeneratedPayload: data['lastGeneratedPayload'] as String?,
+      consolidatedInvoiceRef: data['consolidatedInvoiceRef'] as String?,
       // Notes
       notes: data['notes'] as String? ?? '',
       // Timestamps
