@@ -9,6 +9,7 @@ import '../providers/sales_provider.dart';
 import 'transactions/widgets/export_filter_bottom_sheet.dart';
 import 'expenses/expense_detail_screen.dart';
 import 'sales/sale_detail_screen.dart';
+import 'sales/consolidation_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -21,6 +22,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
   late TabController _tabController;
   int _selectedFilterIndex = 0; // 0: All, 1: 7 Days, 2: 30 Days
   bool _isExporting = false;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -179,7 +181,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                     return _buildExpenseList(filteredExpenses);
                   },
                 ),
-                // Sales Tab — real data
+                // Sales Tab — Refactored to match Monthly Summary Mockup
                 Consumer<SalesProvider>(
                   builder: (context, provider, _) {
                     if (provider.isLoading) {
@@ -199,17 +201,93 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                       );
                     }
 
-                    final filteredSales = _applySalesFilter(provider.saleRecords);
+                    final sales = provider.saleRecords;
 
-                    if (filteredSales.isEmpty) {
-                      return _buildEmptyState(
-                        icon: Icons.point_of_sale_rounded,
-                        message: 'No sales recorded yet',
-                        color: AppTheme.primary,
-                      );
-                    }
+                    return NotificationListener<ScrollNotification>(
+                      onNotification: (ScrollNotification scrollInfo) {
+                        if (scrollInfo.metrics.pixels >=
+                            scrollInfo.metrics.maxScrollExtent - 200) {
+                          provider.loadMore();
+                        }
+                        return true;
+                      },
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          // Handled by Firestore stream
+                        },
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            // 1. Total Sales Summary (Mockup Style)
+                            SliverToBoxAdapter(
+                              child: _buildSalesMonthlySummary(provider),
+                            ),
 
-                    return _buildSalesList(filteredSales);
+                            // 2. LHDN Consolidation Rules Info Box
+                            SliverToBoxAdapter(
+                              child: _buildConsolidationRulesInfo(),
+                            ),
+
+                            // 3. Pending Consolidation Button
+                            SliverToBoxAdapter(
+                              child: _buildConsolidationButton(context, provider),
+                            ),
+
+                            // 4. Search & Filter Row
+                            SliverToBoxAdapter(
+                              child: _buildSalesSearchAndFilter(provider),
+                            ),
+
+                            // 5. Recent Sales Header
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                                child: Text(
+                                  'RECENT SALES',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                            .withValues(alpha: 0.6),
+                                        letterSpacing: 1.2,
+                                      ),
+                                ),
+                              ),
+                            ),
+
+                            // 6. List of Sales
+                            if (sales.isEmpty)
+                              SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: _buildEmptyState(
+                                  icon: Icons.point_of_sale_rounded,
+                                  message: 'No sales found matching filters',
+                                  color: AppTheme.primary,
+                                ),
+                              )
+                            else
+                              SliverPadding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    16, 0, 16, 100), // Extra space for FAB
+                                sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, index) {
+                                      return _buildSaleCard(
+                                          context, sales[index]);
+                                    },
+                                    childCount: sales.length,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -404,119 +482,281 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     );
   }
 
-  Widget _buildSalesList(List<SaleRecord> sales) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: sales.length,
-      itemBuilder: (context, index) {
-        final sale = sales[index];
-        final dateStr = DateFormat('yyyy-MM-dd').format(sale.saleDate);
+  // ── Sales Refactored UI Helpers ──────────────────────────────────────────
 
-        // Status indicator color
-        final statusColor = switch (sale.commercialStatus) {
-          CommercialStatus.paid => AppTheme.neonGreenDark,
-          CommercialStatus.pendingPayment => Colors.orange,
-        };
-        final statusLabel = switch (sale.commercialStatus) {
-          CommercialStatus.paid => 'Paid',
-          CommercialStatus.pendingPayment => 'Pending',
-        };
+  Widget _buildSalesMonthlySummary(SalesProvider provider) {
+    final theme = Theme.of(context);
+    final total = provider.totalSales; // Total this month
+    final pendingCount = provider.pendingConsolidationRecords.length;
+    final clearedCount = provider.saleRecords.where((s) => s.complianceStatus == ComplianceStatus.valid).length;
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 8,
-            ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => SaleDetailScreen(sale: sale),
-                ),
-              );
-            },
-            leading: CircleAvatar(
-              backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
-              child: const Icon(
-                Icons.receipt_rounded,
-                color: AppTheme.primary,
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'TOTAL SALES THIS MONTH',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      letterSpacing: 1.1,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'RM ${total.toStringAsFixed(2)}',
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            title: Text(
-              sale.lineItems.isEmpty ? 'Sale' : (sale.lineItems.length == 1 ? sale.lineItems.first.item.name : '${sale.lineItems.first.item.name} (+${sale.lineItems.length - 1} items)'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            subtitle: Column(
+              Icon(Icons.auto_graph_rounded, size: 48, color: AppTheme.primary.withValues(alpha: 0.2)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildSimpleBadge('• $pendingCount Un-invoiced', Colors.orange),
+              const SizedBox(width: 8),
+              _buildSimpleBadge('• $clearedCount Cleared', AppTheme.neonGreenDark),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSimpleBadge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  Widget _buildConsolidationRulesInfo() {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: const Border(left: BorderSide(color: Colors.blue, width: 4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline_rounded, color: Colors.blue, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Text(
+                  'LHDN Consolidation Rules',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                ),
                 const SizedBox(height: 4),
                 Text(
-                  '$dateStr • ${sale.customerName}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    // Invoice number badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(
-                          AppTheme.radiusSmall,
-                        ),
-                      ),
-                      child: Text(
-                        sale.invoiceNumber,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Payment status chip
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(
-                          AppTheme.radiusSmall,
-                        ),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                  'Ensure all sales above RM500 are individually invoiced. Smaller items can be consolidated monthly. Review un-invoiced items carefully.',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
-            trailing: Text(
-              '+RM ${sale.totalPayable.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppTheme.neonGreenDark,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConsolidationButton(BuildContext context, SalesProvider provider) {
+    final count = provider.pendingConsolidationRecords.length;
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ConsolidationScreen()),
+            );
+          },
+          icon: const Icon(Icons.fact_check_rounded),
+          label: Text('Pending Consolidation ($count Items)'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLarge)),
+            elevation: 2,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSalesSearchAndFilter(SalesProvider provider) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              onChanged: (val) => provider.setSearchQuery(val),
+              decoration: InputDecoration(
+                hintText: 'Search by item or customer',
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
             ),
           ),
-        );
-      },
+          const SizedBox(width: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            ),
+            child: IconButton(
+              icon: Icon(
+                provider.filterDate != null ? Icons.calendar_today_rounded : Icons.calendar_month_rounded,
+                color: provider.filterDate != null ? AppTheme.primary : null,
+              ),
+              onPressed: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: provider.filterDate ?? DateTime.now(),
+                  firstDate: DateTime(2023),
+                  lastDate: DateTime.now(),
+                );
+                provider.setFilterDate(date);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
+
+  Widget _buildSaleCard(BuildContext context, SaleRecord sale) {
+    final theme = Theme.of(context);
+    final dateStr = DateFormat('MMM dd, HH:mm').format(sale.saleDate);
+
+    // Commercial Status (Payment)
+    final commColor = sale.commercialStatus == CommercialStatus.paid ? AppTheme.neonGreenDark : Colors.orange;
+    
+    // Compliance Status (LHDN)
+    final compColor = switch (sale.complianceStatus) {
+      ComplianceStatus.valid => AppTheme.neonGreenDark,
+      ComplianceStatus.pendingSubmission => Colors.orange,
+      ComplianceStatus.pendingConsolidation => Colors.purple,
+      ComplianceStatus.invalid => Colors.red,
+    };
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SaleDetailScreen(sale: sale))),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          ),
+          child: const Icon(Icons.restaurant_rounded, color: AppTheme.primary), // Icon based on mockup
+        ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                sale.lineItems.isEmpty ? 'Sale' : sale.lineItems.first.item.name,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              'RM ${sale.totalPayable.toStringAsFixed(2)}',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              '$dateStr • ${sale.customerName}',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildMiniStatusBadge(sale.commercialStatus.label.toUpperCase(), commColor),
+                const SizedBox(width: 8),
+                _buildMiniStatusBadge(sale.complianceStatus.label.toUpperCase(), compColor),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniStatusBadge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+      ),
+    );
+  }
+
+  // ── Legacy Helpers (keep for Expenses or clean up if unused) ────────────────
+  
+
 
   // ── Sales Filtering Logic ─────────────────────────────────────────────────
 

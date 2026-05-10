@@ -23,7 +23,47 @@ class SalesProvider extends ChangeNotifier {
   StreamSubscription<List<SaleRecord>>? _salesSubscription;
   String? _currentUserId;
 
-  List<SaleRecord> get saleRecords => _saleRecords;
+  // ── New State for UI Dashboard ───────────────────────────────────────────
+  String _searchQuery = '';
+  DateTime? _filterDate;
+  int _limit = 10;
+
+  String get searchQuery => _searchQuery;
+  DateTime? get filterDate => _filterDate;
+
+  List<SaleRecord> get saleRecords {
+    Iterable<SaleRecord> filtered = _saleRecords;
+
+    // 1. Filter by search query (customer or item name)
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered = filtered.where((r) {
+        final nameMatch = r.customerName.toLowerCase().contains(query);
+        final itemMatch = r.lineItems.any(
+          (li) => li.item.name.toLowerCase().contains(query),
+        );
+        return nameMatch || itemMatch;
+      });
+    }
+
+    // 2. Filter by date (Exact match of Y/M/D)
+    if (_filterDate != null) {
+      filtered = filtered.where((r) {
+        return r.saleDate.year == _filterDate!.year &&
+            r.saleDate.month == _filterDate!.month &&
+            r.saleDate.day == _filterDate!.day;
+      });
+    }
+
+    // 3. Apply pagination limit
+    return filtered.take(_limit).toList();
+  }
+
+  /// Returns only records awaiting monthly consolidated submission.
+  List<SaleRecord> get pendingConsolidationRecords => _saleRecords
+      .where((r) => r.complianceStatus == ComplianceStatus.pendingConsolidation)
+      .toList();
+
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -66,8 +106,32 @@ class SalesProvider extends ChangeNotifier {
   void _clear() {
     _currentUserId = null;
     _saleRecords = [];
+    _searchQuery = '';
+    _filterDate = null;
+    _limit = 10;
     _salesSubscription?.cancel();
     notifyListeners();
+  }
+
+  // ── Dashboard Control Methods ────────────────────────────────────────────
+
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    _limit = 10; // Reset pagination on search
+    notifyListeners();
+  }
+
+  void setFilterDate(DateTime? date) {
+    _filterDate = date;
+    _limit = 10; // Reset pagination on filter
+    notifyListeners();
+  }
+
+  void loadMore() {
+    if (_limit < _saleRecords.length) {
+      _limit += 10;
+      notifyListeners();
+    }
   }
 
   @override
