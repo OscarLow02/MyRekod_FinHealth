@@ -10,7 +10,7 @@ enum CustomerType { b2b, b2c }
 /// Firestore path: `business_profiles/{uid}/customers/{customerId}`
 ///
 /// Per LHDN UBL 2.1 spec, the buyer party requires:
-/// - TIN (mandatory for B2B, generic "EI00000000020" for B2C walk-ins)
+/// - TIN (mandatory for B2B, generic "EI00000000010" for B2C walk-ins)
 /// - BRN / MyKad / Passport (mandatory for B2B)
 /// - Name, Address, Contact (mandatory for B2B, generic for B2C)
 class Customer {
@@ -62,12 +62,12 @@ class Customer {
   });
 
   /// Walk-in B2C customer singleton per LHDN guidelines.
-  /// Uses generic TIN "EI00000000020" and "NA" identification.
+  /// Uses generic TIN "EI00000000010" and "NA" identification.
   static const Customer walkIn = Customer(
     id: 'walk-in',
     name: 'Walk-in Customer',
     customerType: CustomerType.b2c,
-    tinNumber: 'EI00000000020',
+    tinNumber: 'EI00000000010',
     idNumber: 'NA',
     idScheme: 'BRN',
     sstRegistrationNumber: 'NA',
