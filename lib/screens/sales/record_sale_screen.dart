@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../widgets/app_dialogs.dart';
 import '../../core/app_theme.dart';
 import '../../core/lhdn_constants.dart';
 import '../../models/customer.dart';
@@ -9,13 +10,13 @@ import '../../models/sale_line_item.dart';
 import '../../providers/sale_calculator_provider.dart';
 import '../../widgets/custom_widgets.dart';
 import '../../widgets/custom_dropdown.dart';
-import '../../widgets/app_dialogs.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/sale_item.dart';
 import '../../models/sale_record.dart';
 import '../../core/validators.dart';
 import '../profile/widgets/add_item_bottom_sheet.dart';
+import '../customers/customer_list_screen.dart';
 
 /// Redesigned Record Sale form following the A-B-C hierarchy.
 /// Section A: Customer Type (Individual vs Business)
@@ -83,12 +84,12 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         // Note: The provider's stream will automatically pick up the new item.
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to add item: $e'),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
+          AppDialogs.showSystemAlert(
+            context,
+            title: 'Failed to Add Item',
+            body: e.toString(),
+            icon: Icons.error_outline_rounded,
+            iconColor: Colors.redAccent,
           );
         }
       }
@@ -521,7 +522,15 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
       if (result != null) {
         _showSuccessReview(result.invoiceNumber, result.totalPayable);
       } else if (calc.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(calc.error!)));
+      if (mounted) {
+        AppDialogs.showSystemAlert(
+          context,
+          title: 'Review Failed',
+          body: calc.error!,
+          icon: Icons.error_outline_rounded,
+          iconColor: Colors.redAccent,
+        );
+      }
       }
     }
   }
@@ -607,23 +616,47 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         else if (calc.selectedCustomer != null)
           _buildSelectedCustomerCard(calc, theme)
         else
-          CustomPremiumDropdown<String>(
-            label: '',
-            value: null,
-            hint: 'Select/Search Customer',
-            isSearchable: true,
-            items: calc.customers
-                .where((c) => _selectedType == SaleCustomerType.individual ? c.customerType == CustomerType.b2c : c.customerType == CustomerType.b2b)
-                .map((c) => CustomDropdownItem<String>(label: c.name, value: c.id, icon: Icons.person_outline_rounded))
-                .toList(),
-            onChanged: (val) {
-              if (val != null) {
-                final customer = calc.customers.firstWhere((c) => c.id == val);
-                calc.selectCustomer(customer);
+          InkWell(
+            onTap: () async {
+              final selectedCustomer = await Navigator.push<Customer>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CustomerListScreen(isPickerMode: true),
+                ),
+              );
+              if (selectedCustomer != null) {
+                calc.selectCustomer(selectedCustomer);
+                if (selectedCustomer.customerType == CustomerType.b2b) {
+                  setState(() => _selectedType = SaleCustomerType.business);
+                } else {
+                  setState(() => _selectedType = SaleCustomerType.individual);
+                }
               }
             },
-            validator: (v) => AppValidators.requiredField(v, 'Customer'),
-            fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.contact_page_rounded, color: AppTheme.primary),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Select Customer from Contact List',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  const Icon(Icons.chevron_right_rounded, color: AppTheme.primary),
+                ],
+              ),
+            ),
           ),
         if (_selectedType == SaleCustomerType.individual && !_isWalkIn) ...[
           const SizedBox(height: 12),
@@ -709,6 +742,12 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
   Widget _buildSelectedCustomerCard(SaleCalculatorProvider calc, ThemeData theme) {
     final customer = calc.selectedCustomer!;
+    
+    // Fallbacks
+    final initials = customer.name.isNotEmpty 
+        ? customer.name.substring(0, math.min(2, customer.name.length)).toUpperCase() 
+        : 'C';
+        
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -720,11 +759,42 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Customer', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: AppTheme.primary.withValues(alpha: 0.2),
+                child: Text(
+                  initials,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      customer.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Existing Customer',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               IconButton(
-                icon: Icon(Icons.edit_rounded, color: AppTheme.primary, size: 20),
+                icon: const Icon(Icons.edit_rounded, color: AppTheme.primary, size: 20),
                 onPressed: () => calc.selectCustomer(null),
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,
@@ -732,79 +802,55 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppTheme.primary.withValues(alpha: 0.2),
-                child: Text(customer.name.isNotEmpty ? customer.name.substring(0, math.min(2, customer.name.length)).toUpperCase() : 'C', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(customer.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
           Divider(color: theme.colorScheme.surfaceContainerHighest),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
+                flex: 2,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('TIN', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      'TIN',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(customer.tinNumber.isNotEmpty ? customer.tinNumber : '-', style: theme.textTheme.bodyMedium),
+                    Text(
+                      customer.tinNumber.isNotEmpty ? customer.tinNumber : '-',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
               Expanded(
+                flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Address', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      'Address',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(customer.city.isNotEmpty ? customer.city : '-', style: theme.textTheme.bodyMedium),
+                    Text(
+                      customer.city.isNotEmpty ? customer.city : '-',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('ID Number (${customer.idScheme})', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 4),
-                    Text(customer.idNumber.isNotEmpty ? customer.idNumber : '-', style: theme.textTheme.bodyMedium),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Phone', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 4),
-                    Text(customer.phoneNumber.isNotEmpty ? customer.phoneNumber : '-', style: theme.textTheme.bodyMedium),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('SST Registration Number', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 4),
-              Text(customer.sstRegistrationNumber.isNotEmpty ? customer.sstRegistrationNumber : '-', style: theme.textTheme.bodyMedium),
             ],
           ),
         ],

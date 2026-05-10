@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/app_theme.dart';
+import '../../../widgets/app_dialogs.dart';
 import '../../../models/sale_item.dart';
 import '../../../core/lhdn_constants.dart';
 import '../../../widgets/custom_dropdown.dart';
@@ -51,8 +52,12 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
     final price = double.tryParse(_priceCtrl.text.trim()) ?? 0.0;
 
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an item name.')),
+      AppDialogs.showSystemAlert(
+        context,
+        title: 'Input Required',
+        body: 'Please enter an item name.',
+        icon: Icons.warning_amber_rounded,
+        iconColor: Colors.orangeAccent,
       );
       return;
     }

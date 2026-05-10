@@ -260,6 +260,23 @@ class FirestoreService {
         .catchError((e) => debugPrint("Sale record update error: $e"));
   }
 
+  /// Updates the commercial and/or compliance status of a sale record.
+  Future<void> updateSaleStatus(
+    String userId, 
+    String recordId, {
+    CommercialStatus? commercialStatus,
+    ComplianceStatus? complianceStatus,
+  }) async {
+    final Map<String, dynamic> updates = {};
+    if (commercialStatus != null) updates['commercialStatus'] = commercialStatus.name;
+    if (complianceStatus != null) updates['complianceStatus'] = complianceStatus.name;
+    
+    if (updates.isEmpty) return;
+
+    _saleRecordsCol(userId).doc(recordId).update(updates).catchError(
+        (e) => debugPrint("Sale status update error: $e"));
+  }
+
   /// Deletes a sale record by document ID. Uses "Fire and Forget".
   Future<void> deleteSaleRecord(String userId, String recordId) async {
     _saleRecordsCol(userId).doc(recordId).delete()

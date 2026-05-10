@@ -7,6 +7,7 @@ import 'core/app_theme.dart';
 import 'providers/onboarding_provider.dart';
 import 'providers/expense_provider.dart';
 import 'providers/sales_provider.dart';
+import 'providers/customer_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/auth_wrapper.dart';
 
@@ -28,6 +29,7 @@ class MyRekodApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OnboardingProvider()),
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
         ChangeNotifierProvider(create: (_) => SalesProvider()),
+        ChangeNotifierProvider(create: (_) => CustomerProvider()),
       ],
       child: MaterialApp(
         title: 'MyRekod',

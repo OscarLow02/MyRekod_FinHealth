@@ -120,9 +120,14 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             : AppTheme.neonGreenLight,
         onPrimaryPressed: () {
           Clipboard.setData(ClipboardData(text: result.uuid ?? ''));
+          Clipboard.setData(ClipboardData(text: result.uuid ?? ''));
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('UUID copied to clipboard')),
+            AppDialogs.showSystemAlert(
+              context,
+              title: 'Copied',
+              body: 'UUID copied to clipboard.',
+              icon: Icons.copy_rounded,
+              iconColor: AppTheme.primary,
             );
           }
         },
@@ -142,6 +147,47 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         primaryButtonColor: Colors.redAccent,
         onPrimaryPressed: () => _performSubmission(profile),
         secondaryButtonText: 'Cancel',
+        icon: Icons.error_outline_rounded,
+        iconColor: Colors.redAccent,
+      );
+    }
+  }
+
+  Future<void> _markAsPaid() async {
+    setState(() => _isSubmitting = true);
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) return;
+
+      await _firestoreService.updateSaleStatus(
+        userId,
+        _currentSale.id,
+        commercialStatus: CommercialStatus.paid,
+      );
+
+      setState(() {
+        _currentSale = _currentSale.copyWith(commercialStatus: CommercialStatus.paid);
+        _isSubmitting = false;
+      });
+
+      if (!mounted) return;
+      final theme = Theme.of(context);
+      AppDialogs.showSystemAlert(
+        context,
+        title: 'Payment Confirmed',
+        body: 'Invoice ${_currentSale.invoiceNumber} has been marked as Paid.',
+        icon: Icons.check_circle_rounded,
+        iconColor: theme.brightness == Brightness.dark 
+            ? AppTheme.neonGreenDark 
+            : AppTheme.neonGreenLight,
+      );
+    } catch (e) {
+      setState(() => _isSubmitting = false);
+      if (!mounted) return;
+      AppDialogs.showSystemAlert(
+        context,
+        title: 'Update Failed',
+        body: e.toString(),
         icon: Icons.error_outline_rounded,
         iconColor: Colors.redAccent,
       );
@@ -235,10 +281,12 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                         tooltip: 'Copy to Clipboard',
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: jsonString));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('JSON copied to clipboard'),
-                            ),
+                          AppDialogs.showSystemAlert(
+                            context,
+                            title: 'Copied',
+                            body: 'JSON copied to clipboard.',
+                            icon: Icons.copy_rounded,
+                            iconColor: AppTheme.primary,
                           );
                           Navigator.pop(ctx);
                         },
@@ -516,13 +564,24 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             ),
             const SizedBox(height: 32),
 
+            // ── Mark as Paid Button ──────────────────────────────────
+            if (_currentSale.commercialStatus == CommercialStatus.pendingPayment)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: AppButton(
+                  text: 'Mark as Paid',
+                  icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                  onPressed: _isSubmitting ? null : _markAsPaid,
+                  isPrimary: _currentSale.complianceStatus == ComplianceStatus.valid,
+                ),
+              ),
+
             // ── LHDN Submission Button ────────────────────────────────
             if (_currentSale.complianceStatus != ComplianceStatus.valid &&
                 _currentSale.complianceStatus != ComplianceStatus.pendingConsolidation)
               Padding(
                 padding: const EdgeInsets.only(bottom: 24),
                 child: AppButton(
-                  // TODO: Implement i18n
                   text: _isSubmitting
                       ? 'Submitting to LHDN...'
                       : 'Confirm & Submit e-Invoice to LHDN',

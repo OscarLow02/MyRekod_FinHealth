@@ -11,6 +11,7 @@ import 'profile/profile_menu_screen.dart';
 import 'transactions_screen.dart';
 import 'expenses/scanner_screen.dart';
 import 'sales/record_sale_screen.dart';
+import 'customers/customer_list_screen.dart';
 
 /// Dashboard screen with bottom navigation skeleton.
 /// Sprint 1 placeholder — full implementation in Sprint 2.
@@ -103,7 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 1:
         return const TransactionsScreen();
       case 2:
-        return _buildPlaceholderPage(theme, 'Customers', Icons.people_outline_rounded);
+        return const CustomerListScreen(isPickerMode: false);
       case 3:
         return const ProfileMenuScreen();
       default:
@@ -204,34 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildPlaceholderPage(
-      ThemeData theme, String title, IconData icon) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 64,
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            // TODO: Implement i18n
-            'Coming in Sprint 2',
-            style: theme.textTheme.bodyLarge,
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildBottomNav(ThemeData theme) {
     // TODO: Implement i18n

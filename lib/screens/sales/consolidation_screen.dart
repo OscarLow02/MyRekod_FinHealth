@@ -7,9 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/sale_record.dart';
 import '../../providers/sales_provider.dart';
+import '../../widgets/app_dialogs.dart';
 import '../../services/consolidation_service.dart';
 import '../../core/app_theme.dart';
-import '../../widgets/app_dialogs.dart';
 
 class ConsolidationScreen extends StatefulWidget {
   const ConsolidationScreen({super.key});
@@ -340,15 +340,23 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
         // Auto switch to history tab? Maybe not, keep them here or pop.
         if (mounted) Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to submit consolidated invoice. Please try again.')),
+        AppDialogs.showSystemAlert(
+          context,
+          title: 'Submission Failed',
+          body: 'Failed to submit consolidated invoice. Please try again.',
+          icon: Icons.error_outline_rounded,
+          iconColor: Colors.redAccent,
         );
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+      AppDialogs.showSystemAlert(
+        context,
+        title: 'Unexpected Error',
+        body: e.toString(),
+        icon: Icons.error_outline_rounded,
+        iconColor: Colors.redAccent,
       );
     }
   }
@@ -411,9 +419,14 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
                 TextButton(
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: formattedPayload));
+                    Clipboard.setData(ClipboardData(text: formattedPayload));
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Copied to clipboard')),
+                      AppDialogs.showSystemAlert(
+                        context,
+                        title: 'Copied',
+                        body: 'Master Payload copied to clipboard.',
+                        icon: Icons.copy_rounded,
+                        iconColor: AppTheme.primary,
                       );
                     }
                   },
