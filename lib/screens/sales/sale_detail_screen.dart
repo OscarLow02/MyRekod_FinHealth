@@ -541,7 +541,32 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               ),
 
             // ── LHDN Response Section ─────────────────────────────────
-            if (_currentSale.lhdnUuid != null) ...[
+            if (_currentSale.consolidatedInvoiceRef != null) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.error),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'This receipt was consolidated under Master Invoice:\n${_currentSale.consolidatedInvoiceRef}\n\nIndividual payload generation is disabled.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (_currentSale.lhdnUuid != null) ...[
               // TODO: Implement i18n
               _buildSectionHeader(theme, 'LHDN Validation'),
               const SizedBox(height: 12),

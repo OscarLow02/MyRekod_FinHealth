@@ -252,13 +252,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 32),
                                   child: Center(
-                                    child: Text(
-                                      'End of results',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                                        letterSpacing: 1.1,
-                                      ),
-                                    ),
+                                    child: provider.hasMore
+                                        ? const CircularProgressIndicator()
+                                        : Text(
+                                            'End of results',
+                                            style: theme.textTheme.bodySmall?.copyWith(
+                                              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                              letterSpacing: 1.1,
+                                            ),
+                                          ),
                                   ),
                                 ),
                               ),

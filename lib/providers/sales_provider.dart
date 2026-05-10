@@ -23,55 +23,82 @@ class SalesProvider extends ChangeNotifier {
   StreamSubscription<List<SaleRecord>>? _salesSubscription;
   String? _currentUserId;
 
-  // ── New State for UI Dashboard ───────────────────────────────────────────
+  // ── Analytics, Filtering & Pagination State ─────────────────────────────
+  int _limit = 10;
   String _searchQuery = '';
   DateTime? _filterDate;
-  int _limit = 10;
 
-  String get searchQuery => _searchQuery;
   DateTime? get filterDate => _filterDate;
 
+  void setSearchQuery(String query) {
+    _searchQuery = query.toLowerCase();
+    notifyListeners();
+  }
+
+  void setDateFilter(DateTime? date) {
+    _filterDate = date;
+    notifyListeners();
+  }
+
+  void resetFilters() {
+    _searchQuery = '';
+    _filterDate = null;
+    _limit = 10;
+    if (_currentUserId != null) {
+      _initialize(_currentUserId!, force: true);
+    }
+    notifyListeners();
+  }
+
+  void loadMore() {
+    // Increase limit by 10 when user scrolls to bottom
+    _limit += 10;
+    if (_currentUserId != null) {
+      _initialize(_currentUserId!, force: true);
+    }
+  }
+
+  // 1. The Filtered & Paginated List (For Dashboard)
   List<SaleRecord> get saleRecords {
-    Iterable<SaleRecord> filtered = _saleRecords;
+    var filtered = _saleRecords.where((sale) {
+      // Search Logic
+      bool matchesSearch = true;
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery;
+        matchesSearch = sale.customerName.toLowerCase().contains(q) ||
+            sale.invoiceNumber.toLowerCase().contains(q) ||
+            sale.lineItems.any((line) => line.item.name.toLowerCase().contains(q));
+      }
 
-    // 1. Filter by search query (customer or item name)
-    if (_searchQuery.isNotEmpty) {
-      final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((r) {
-        final nameMatch = r.customerName.toLowerCase().contains(query);
-        final itemMatch = r.lineItems.any(
-          (li) => li.item.name.toLowerCase().contains(query),
-        );
-        return nameMatch || itemMatch;
-      });
-    }
+      // Date Logic
+      bool matchesDate = true;
+      if (_filterDate != null) {
+        matchesDate = sale.saleDate.year == _filterDate!.year &&
+            sale.saleDate.month == _filterDate!.month &&
+            sale.saleDate.day == _filterDate!.day;
+      }
+      return matchesSearch && matchesDate;
+    }).toList();
 
-    // 2. Filter by date (Exact match of Y/M/D)
-    if (_filterDate != null) {
-      filtered = filtered.where((r) {
-        return r.saleDate.year == _filterDate!.year &&
-            r.saleDate.month == _filterDate!.month &&
-            r.saleDate.day == _filterDate!.day;
-      });
-    }
-
-    return filtered.toList();
+    // Apply Pagination Limit Client-Side
+    return filtered.take(_limit).toList();
   }
 
-  /// Calculates the total amount based strictly on currently filtered records.
+  // 2. Dynamic Totals based on current Filter
   double get filteredSalesTotal {
-    return saleRecords.fold(0.0, (sum, r) => sum + r.totalPayable);
+    return saleRecords.fold(0.0, (sum, sale) => sum + sale.totalPayable);
   }
 
-  /// Returns only records awaiting monthly consolidated submission.
-  List<SaleRecord> get pendingConsolidationRecords => _saleRecords
-      .where((r) => r.complianceStatus == ComplianceStatus.pendingConsolidation && r.consolidatedInvoiceRef == null)
-      .toList();
+  // 3. Consolidation Getters (Unfiltered by limit/search)
+  List<SaleRecord> get pendingConsolidationRecords {
+    return _saleRecords.where((r) => r.complianceStatus == ComplianceStatus.pendingConsolidation).toList();
+  }
 
-  /// Returns records that have already been rolled into a consolidated invoice.
-  List<SaleRecord> get consolidatedHistoryRecords => _saleRecords
-      .where((r) => r.consolidatedInvoiceRef != null)
-      .toList();
+  List<SaleRecord> get consolidatedHistoryRecords {
+    return _saleRecords.where((r) => r.consolidatedInvoiceRef != null).toList();
+  }
+
+  bool get hasMore => _saleRecords.length >= _limit;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -91,7 +118,10 @@ class SalesProvider extends ChangeNotifier {
     if (!force && _currentUserId == userId && _salesSubscription != null) return;
     _currentUserId = userId;
 
-    _isLoading = true;
+    // Only show full-screen loader if we have no data yet
+    if (_saleRecords.isEmpty) {
+      _isLoading = true;
+    }
     _error = null;
     notifyListeners();
 
@@ -122,34 +152,6 @@ class SalesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Dashboard Control Methods ────────────────────────────────────────────
-
-  void setSearchQuery(String query) {
-    _searchQuery = query;
-    notifyListeners();
-  }
-
-  void setDateFilter(DateTime? date) {
-    _filterDate = date;
-    notifyListeners();
-  }
-
-  void resetFilters() {
-    _searchQuery = '';
-    _filterDate = null;
-    _limit = 10;
-    if (_currentUserId != null) {
-      _initialize(_currentUserId!, force: true);
-    }
-    notifyListeners();
-  }
-
-  void loadMore() {
-    _limit += 10;
-    if (_currentUserId != null) {
-      _initialize(_currentUserId!, force: true);
-    }
-  }
 
   @override
   void dispose() {
