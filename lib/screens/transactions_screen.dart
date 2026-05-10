@@ -18,7 +18,8 @@ class TransactionsScreen extends StatefulWidget {
   State<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
-class _TransactionsScreenState extends State<TransactionsScreen> with SingleTickerProviderStateMixin {
+class _TransactionsScreenState extends State<TransactionsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isExporting = false;
   final TextEditingController _searchController = TextEditingController();
@@ -96,35 +97,26 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
       ),
       body: Column(
         children: [
-          // Summary Cards (uses real data)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-            child: isExpenseTab
-                ? Consumer<ExpenseProvider>(
-                    builder: (context, provider, _) {
-                      final total = _calculateExpensesTotal(provider.expenses);
-                      return _buildSummaryCard(
-                        title: 'Total Expenses',
-                        amount: 'RM ${total.toStringAsFixed(2)}',
-                        color: Colors.orange.shade700,
-                        icon: Icons.trending_down_rounded,
-                      );
-                    },
-                  )
-                : Consumer<SalesProvider>(
-                    builder: (context, provider, _) {
-                      final total = provider.filteredSalesTotal;
-                      return _buildSummaryCard(
-                        title: provider.filterDate != null
-                            ? 'TOTAL SALES (${DateFormat('dd MMM yyyy').format(provider.filterDate!)})'
-                            : 'TOTAL SALES',
-                        amount: 'RM ${total.toStringAsFixed(2)}',
-                        color: AppTheme.primary,
-                        icon: Icons.trending_up_rounded,
-                      );
-                    },
-                  ),
-          ),
+          // Summary Cards (Only for Expenses)
+          if (isExpenseTab)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 16.0,
+              ),
+              child: Consumer<ExpenseProvider>(
+                builder: (context, provider, _) {
+                  final total = _calculateExpensesTotal(provider.expenses);
+                  return _buildSummaryCard(
+                    title: 'Total Expenses',
+                    amount: 'RM ${total.toStringAsFixed(2)}',
+                    color: Colors.orange.shade700,
+                    icon: Icons.trending_down_rounded,
+                  );
+                },
+              ),
+            ),
+
 
           // Tab Views
           Expanded(
@@ -186,14 +178,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                         child: CustomScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           slivers: [
-                            // 1. Monthly Summary Card
+                            // 1. Unified Hero Card
                             SliverToBoxAdapter(
-                              child: _buildSalesMonthlySummary(provider),
+                              child: _buildSalesHeroCard(provider),
                             ),
 
-                            // 2. Info Box
+                            // 2. Pending Consolidation Action Button
                             SliverToBoxAdapter(
-                              child: _buildConsolidationRulesInfo(),
+                              child: _buildConsolidationButton(
+                                context,
+                                provider,
+                              ),
                             ),
 
                             // 3. Search & Filter Row
@@ -201,27 +196,35 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                               child: _buildSalesSearchAndFilter(provider),
                             ),
 
-                            // 4. Status Summary Badges
-                            SliverToBoxAdapter(
-                              child: _buildStatusSummaryBadges(provider),
-                            ),
-
-                            // 5. Pending Consolidation Action Button
-                            SliverToBoxAdapter(
-                              child: _buildConsolidationButton(context, provider),
-                            ),
-
-                            // 5. Recent Sales Header
+                            // 4. Recent Sales Header
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                                child: Text(
-                                  'RECENT SALES',
-                                  style: theme.textTheme.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                                    letterSpacing: 1.2,
-                                  ),
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  24,
+                                  16,
+                                  8,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'RECENT SALES',
+                                      style: theme.textTheme.labelLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.6),
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${provider.totalFilteredCount} SALES',
+                                      style: theme.textTheme.labelLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.primary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -238,34 +241,47 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                               )
                             else ...[
                               SliverPadding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                                 sliver: SliverList(
-                                  delegate: SliverChildBuilderDelegate(
-                                    (context, index) {
-                                      return _buildSaleCard(context, sales[index]);
-                                    },
-                                    childCount: sales.length,
-                                  ),
+                                  delegate: SliverChildBuilderDelegate((
+                                    context,
+                                    index,
+                                  ) {
+                                    return _buildSaleCard(
+                                      context,
+                                      sales[index],
+                                    );
+                                  }, childCount: sales.length),
                                 ),
                               ),
                               SliverToBoxAdapter(
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 32),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 32,
+                                  ),
                                   child: Center(
                                     child: provider.hasMore
                                         ? const CircularProgressIndicator()
                                         : Text(
                                             'End of results',
-                                            style: theme.textTheme.bodySmall?.copyWith(
-                                              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                                              letterSpacing: 1.1,
-                                            ),
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurfaceVariant
+                                                      .withValues(alpha: 0.5),
+                                                  letterSpacing: 1.1,
+                                                ),
                                           ),
                                   ),
                                 ),
                               ),
                               const SliverToBoxAdapter(
-                                child: SizedBox(height: 100), // Extra space for FAB
+                                child: SizedBox(
+                                  height: 100,
+                                ), // Extra space for FAB
                               ),
                             ],
                           ],
@@ -397,7 +413,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
       itemBuilder: (context, index) {
         final expense = expenses[index];
         final dateStr = DateFormat('yyyy-MM-dd').format(expense.date);
-        
+
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
@@ -443,19 +459,22 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
 
   // ── Sales Helpers ───────────────────────────────────────────────────────
 
-  Widget _buildSalesMonthlySummary(SalesProvider provider) {
+  Widget _buildSalesHeroCard(SalesProvider provider) {
     final theme = Theme.of(context);
-    final total = provider.totalSales; 
-    final pendingCount = provider.pendingConsolidationRecords.length;
-    final clearedCount = provider.saleRecords.where((s) => s.complianceStatus == ComplianceStatus.valid).length;
+    final pendingPayment = provider.getStatusCount(commStatus: CommercialStatus.pendingPayment);
+    final paid = provider.getStatusCount(commStatus: CommercialStatus.paid);
+    final pendingConsolidation = provider.getStatusCount(compStatus: ComplianceStatus.pendingConsolidation);
+    final valid = provider.getStatusCount(compStatus: ComplianceStatus.valid);
 
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,18 +486,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    provider.filterDate != null
-                        ? 'TOTAL SALES (${DateFormat('dd MMM yyyy').format(provider.filterDate!)})'
-                        : 'TOTAL SALES THIS MONTH',
+                    provider.startDate != null && provider.endDate != null
+                        ? 'TOTAL SALES (${DateFormat('d MMM yy').format(provider.startDate!)} - ${DateFormat('d MMM yy').format(provider.endDate!)})'
+                        : 'TOTAL SALES (THIS MONTH)',
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       letterSpacing: 1.1,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Text(
-                    'RM ${total.toStringAsFixed(2)}',
+                    'RM ${provider.filteredSalesTotal.toStringAsFixed(2)}',
                     style: theme.textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primary,
@@ -486,15 +505,22 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                   ),
                 ],
               ),
-              Icon(Icons.auto_graph_rounded, size: 48, color: AppTheme.primary.withValues(alpha: 0.2)),
+              Icon(
+                Icons.auto_graph_rounded,
+                size: 40,
+                color: AppTheme.primary.withValues(alpha: 0.2),
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              _buildSimpleBadge('• $pendingCount Un-invoiced', Colors.orange),
-              const SizedBox(width: 8),
-              _buildSimpleBadge('• $clearedCount Cleared', AppTheme.neonGreenDark),
+              _buildSimpleBadge('$pendingPayment Pending Payment', Colors.orange),
+              _buildSimpleBadge('$paid Paid', AppTheme.neonGreenDark),
+              _buildSimpleBadge('$pendingConsolidation Pending Consolidation', Colors.purple),
+              _buildSimpleBadge('$valid Valid', AppTheme.neonGreenDark),
             ],
           ),
         ],
@@ -512,35 +538,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 
-  Widget _buildStatusSummaryBadges(SalesProvider provider) {
-    final sales = provider.saleRecords;
-
-    final pendingPayment = sales.where((s) => s.commercialStatus == CommercialStatus.pendingPayment).length;
-    final paid = sales.where((s) => s.commercialStatus == CommercialStatus.paid).length;
-    final pendingConsolidation = sales.where((s) => s.complianceStatus == ComplianceStatus.pendingConsolidation).length;
-    final valid = sales.where((s) => s.complianceStatus == ComplianceStatus.valid).length;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          _buildSimpleBadge('$pendingPayment Pending Payment', Colors.orange),
-          _buildSimpleBadge('$paid Paid', AppTheme.neonGreenDark),
-          _buildSimpleBadge('$pendingConsolidation Pending Consolidation', Colors.purple),
-          _buildSimpleBadge('$valid Valid', AppTheme.neonGreenDark),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildConsolidationButton(BuildContext context, SalesProvider provider) {
+  Widget _buildConsolidationButton(
+    BuildContext context,
+    SalesProvider provider,
+  ) {
     final count = provider.pendingConsolidationRecords.length;
 
     return Padding(
@@ -570,41 +580,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     );
   }
 
-  Widget _buildConsolidationRulesInfo() {
-    final theme = Theme.of(context);
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        border: const Border(left: BorderSide(color: Colors.blue, width: 4)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.info_outline_rounded, color: Colors.blue, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'LHDN Consolidation Rules',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Ensure all sales above RM500 are individually invoiced. Smaller items can be consolidated monthly.',
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildSalesSearchAndFilter(SalesProvider provider) {
     return Padding(
@@ -619,7 +595,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
                 hintText: 'Search by item or customer',
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
                   borderSide: BorderSide.none,
@@ -631,22 +609,34 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
           const SizedBox(width: 12),
           Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
             ),
             child: IconButton(
               icon: Icon(
-                provider.filterDate != null ? Icons.calendar_today_rounded : Icons.calendar_month_rounded,
-                color: provider.filterDate != null ? AppTheme.primary : null,
+                provider.startDate != null
+                    ? Icons.date_range_rounded
+                    : Icons.calendar_month_rounded,
+                color: provider.startDate != null ? AppTheme.primary : null,
               ),
               onPressed: () async {
-                final date = await showDatePicker(
+                final range = await showDateRangePicker(
                   context: context,
-                  initialDate: provider.filterDate ?? DateTime.now(),
-                  firstDate: DateTime(2023),
-                  lastDate: DateTime.now(),
+                  firstDate: DateTime(2024),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                  initialDateRange:
+                      provider.startDate != null && provider.endDate != null
+                          ? DateTimeRange(
+                            start: provider.startDate!,
+                            end: provider.endDate!,
+                          )
+                          : null,
                 );
-                provider.setDateFilter(date);
+                if (range != null) {
+                  provider.setDateRange(range.start, range.end);
+                }
               },
             ),
           ),
@@ -659,8 +649,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
     final theme = Theme.of(context);
     final dateStr = DateFormat('MMM dd, HH:mm').format(sale.saleDate);
 
-    final commColor = sale.commercialStatus == CommercialStatus.paid ? AppTheme.neonGreenDark : Colors.orange;
-    
+    final commColor = sale.commercialStatus == CommercialStatus.paid
+        ? AppTheme.neonGreenDark
+        : Colors.orange;
+
     final compColor = switch (sale.complianceStatus) {
       ComplianceStatus.valid => AppTheme.neonGreenDark,
       ComplianceStatus.pendingSubmission => Colors.orange,
@@ -673,33 +665,44 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SaleDetailScreen(sale: sale))),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => SaleDetailScreen(sale: sale)),
+        ),
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: AppTheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           ),
-          child: const Icon(Icons.restaurant_rounded, color: AppTheme.primary), 
+          child: const Icon(Icons.restaurant_rounded, color: AppTheme.primary),
         ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
               child: Text(
-                sale.lineItems.isEmpty ? 'Sale' : sale.lineItems.first.item.name,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                sale.lineItems.isEmpty
+                    ? 'Sale'
+                    : sale.lineItems.first.item.name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             Text(
               'RM ${sale.totalPayable.toStringAsFixed(2)}',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -709,14 +712,22 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
             const SizedBox(height: 4),
             Text(
               '$dateStr • ${sale.customerName}',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                _buildMiniStatusBadge(sale.commercialStatus.label.toUpperCase(), commColor),
+                _buildMiniStatusBadge(
+                  sale.commercialStatus.label.toUpperCase(),
+                  commColor,
+                ),
                 const SizedBox(width: 8),
-                _buildMiniStatusBadge(sale.complianceStatus.label.toUpperCase(), compColor),
+                _buildMiniStatusBadge(
+                  sale.complianceStatus.label.toUpperCase(),
+                  compColor,
+                ),
               ],
             ),
           ],
@@ -734,7 +745,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

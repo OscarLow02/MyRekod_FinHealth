@@ -26,23 +26,27 @@ class SalesProvider extends ChangeNotifier {
   // ── Analytics, Filtering & Pagination State ─────────────────────────────
   int _limit = 10;
   String _searchQuery = '';
-  DateTime? _filterDate;
+  DateTime? _startDate;
+  DateTime? _endDate;
 
-  DateTime? get filterDate => _filterDate;
+  DateTime? get startDate => _startDate;
+  DateTime? get endDate => _endDate;
 
   void setSearchQuery(String query) {
     _searchQuery = query.toLowerCase();
     notifyListeners();
   }
 
-  void setDateFilter(DateTime? date) {
-    _filterDate = date;
+  void setDateRange(DateTime? start, DateTime? end) {
+    _startDate = start;
+    _endDate = end;
     notifyListeners();
   }
 
   void resetFilters() {
     _searchQuery = '';
-    _filterDate = null;
+    _startDate = null;
+    _endDate = null;
     _limit = 10;
     if (_currentUserId != null) {
       _initialize(_currentUserId!, force: true);
@@ -51,16 +55,20 @@ class SalesProvider extends ChangeNotifier {
   }
 
   void loadMore() {
+    if (!hasMore) return;
     // Increase limit by 10 when user scrolls to bottom
     _limit += 10;
-    if (_currentUserId != null) {
-      _initialize(_currentUserId!, force: true);
-    }
+    notifyListeners();
   }
 
-  // 1. The Filtered & Paginated List (For Dashboard)
+  // 1. The Paginated List (For UI)
   List<SaleRecord> get saleRecords {
-    var filtered = _saleRecords.where((sale) {
+    return _allFilteredRecords.take(_limit).toList();
+  }
+
+  // 2. Internal Helper for ALL filtered records (Used for totals)
+  List<SaleRecord> get _allFilteredRecords {
+    return _saleRecords.where((sale) {
       // Search Logic
       bool matchesSearch = true;
       if (_searchQuery.isNotEmpty) {
@@ -72,24 +80,33 @@ class SalesProvider extends ChangeNotifier {
 
       // Date Logic
       bool matchesDate = true;
-      if (_filterDate != null) {
-        matchesDate = sale.saleDate.year == _filterDate!.year &&
-            sale.saleDate.month == _filterDate!.month &&
-            sale.saleDate.day == _filterDate!.day;
+      if (_startDate != null && _endDate != null) {
+        final start = DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
+        final end = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
+        matchesDate = (sale.saleDate.isAtSameMomentAs(start) || sale.saleDate.isAfter(start)) &&
+                      (sale.saleDate.isAtSameMomentAs(end) || sale.saleDate.isBefore(end));
       }
       return matchesSearch && matchesDate;
     }).toList();
-
-    // Apply Pagination Limit Client-Side
-    return filtered.take(_limit).toList();
   }
 
-  // 2. Dynamic Totals based on current Filter
+  // 3. Dynamic Totals based on current Filter (Unlimited)
   double get filteredSalesTotal {
-    return saleRecords.fold(0.0, (sum, sale) => sum + sale.totalPayable);
+    return _allFilteredRecords.fold(0.0, (sum, sale) => sum + sale.totalPayable);
   }
 
-  // 3. Consolidation Getters (Unfiltered by limit/search)
+  // 4. Status Counts (Unlimited)
+  int getStatusCount({CommercialStatus? commStatus, ComplianceStatus? compStatus}) {
+    return _allFilteredRecords.where((r) {
+      if (commStatus != null && r.commercialStatus != commStatus) return false;
+      if (compStatus != null && r.complianceStatus != compStatus) return false;
+      return true;
+    }).length;
+  }
+
+  int get totalFilteredCount => _allFilteredRecords.length;
+
+  // 5. Consolidation Getters (Unfiltered by limit/search)
   List<SaleRecord> get pendingConsolidationRecords {
     return _saleRecords.where((r) => r.complianceStatus == ComplianceStatus.pendingConsolidation).toList();
   }
@@ -98,7 +115,7 @@ class SalesProvider extends ChangeNotifier {
     return _saleRecords.where((r) => r.consolidatedInvoiceRef != null).toList();
   }
 
-  bool get hasMore => _saleRecords.length >= _limit;
+  bool get hasMore => _allFilteredRecords.length > _limit;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -127,7 +144,7 @@ class SalesProvider extends ChangeNotifier {
 
     _salesSubscription?.cancel();
     _salesSubscription = _firestoreService
-        .watchSaleRecords(userId, limit: _limit)
+        .watchSaleRecords(userId) // Removed limit
         .listen(
           (records) {
             _saleRecords = records;
@@ -146,7 +163,8 @@ class SalesProvider extends ChangeNotifier {
     _currentUserId = null;
     _saleRecords = [];
     _searchQuery = '';
-    _filterDate = null;
+    _startDate = null;
+    _endDate = null;
     _limit = 10;
     _salesSubscription?.cancel();
     notifyListeners();
