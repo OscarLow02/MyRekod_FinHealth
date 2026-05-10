@@ -38,8 +38,10 @@ class ConsolidationService {
 
       // 4. Firestore Batch Update (Link children to Master)
       final batch = FirebaseFirestore.instance.batch();
+      double masterTotalPayable = 0.0;
 
       for (var sale in selectedSales) {
+        masterTotalPayable += sale.totalPayable;
         final docRef = FirebaseFirestore.instance
             .collection('business_profiles')
             .doc(user.uid)
@@ -53,6 +55,22 @@ class ConsolidationService {
           'lhdnValidatedAt': FieldValue.serverTimestamp(),
         });
       }
+
+      // Save the Master Payload to Firestore
+      final masterDocRef = FirebaseFirestore.instance
+          .collection('business_profiles')
+          .doc(user.uid)
+          .collection('consolidated_invoices')
+          .doc(masterInvoiceNumber);
+
+      batch.set(masterDocRef, {
+        'invoiceNumber': masterInvoiceNumber,
+        'payload': payloadJson, // The raw JSON string
+        'createdAt': FieldValue.serverTimestamp(),
+        'totalAmount': masterTotalPayable,
+        'recordCount': selectedSales.length,
+        'lhdnUuid': mockUuid,
+      });
 
       await batch.commit();
       return true;

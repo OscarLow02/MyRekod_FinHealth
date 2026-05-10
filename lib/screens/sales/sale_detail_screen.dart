@@ -410,7 +410,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          if (_currentSale.complianceStatus != ComplianceStatus.pendingConsolidation)
+          if (_currentSale.consolidatedInvoiceRef == null && _currentSale.lastGeneratedPayload != null)
             IconButton(
               icon: const Icon(Icons.code_rounded, size: 22),
               onPressed: _showJsonPreview,
