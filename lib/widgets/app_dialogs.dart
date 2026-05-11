@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:intl/intl.dart';
 import '../core/app_theme.dart';
 
 /// Centralized utility for presenting MyRekod "Interruption Architecture" popups.
@@ -842,6 +844,84 @@ class AppDialogs {
           ],
         ),
       ),
+    );
+  }
+
+  static void showMockLhdnSuccessDialog(
+    BuildContext context, {
+    required String invoiceNumber,
+    required double totalAmount,
+    required VoidCallback onDone,
+  }) {
+    final theme = Theme.of(context);
+    final currencyFormat = NumberFormat.currency(symbol: 'RM ', decimalDigits: 2);
+    final formattedAmount = currencyFormat.format(totalAmount);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  size: 64,
+                  color: AppTheme.neonGreenLight,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'LHDN Submission Successful',
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Invoice: $invoiceNumber',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                Text(
+                  'Total: $formattedAmount',
+                  style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 24),
+                QrImageView(
+                  data: 'https://verify.hasil.gov.my/?invoice=$invoiceNumber',
+                  version: QrVersions.auto,
+                  size: 150.0,
+                  backgroundColor: Colors.white,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Scan to Verify',
+                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: () {
+                      onDone();
+                    },
+                    child: const Text('Done', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

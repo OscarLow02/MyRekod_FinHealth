@@ -185,42 +185,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
 
 
-  void _showSuccessReview(String invoiceNumber, double total) {
-    final theme = Theme.of(context);
-    AppDialogs.showActionModal(
-      context,
-      title: 'Sale Recorded',
-      body: '$invoiceNumber • RM ${total.toStringAsFixed(2)}',
-      primaryButtonText: 'Record Another',
-      onPrimaryPressed: () {
-        context.read<SaleCalculatorProvider>().resetForm();
-        _quantityController.text = '1';
-        _discountController.clear();
-        _discountDescController.clear();
-        _notesController.clear();
-        _taxRateController.clear();
-        _discountRateCtrl.clear();
-        _feeRateCtrl.clear();
-        _feeAmountCtrl.clear();
-        _paymentTermsCtrl.clear();
-        _billRefCtrl.clear();
-        _prepayAmountCtrl.clear();
-        _prepayRefCtrl.clear();
 
-        _billingFrequency = null;
-        _billingStartDate = null;
-        _billingEndDate = null;
-        _prepaymentDate = null;
-        setState(() {});
-        _selectWalkIn(context.read<SaleCalculatorProvider>());
-      },
-      secondaryButtonText: 'Done',
-      onSecondaryPressed: () => Navigator.pop(context),
-      icon: Icons.check_circle_outline_rounded,
-      iconColor: theme.brightness == Brightness.dark ? AppTheme.neonGreenDark : AppTheme.neonGreenLight,
-      primaryButtonColor: AppTheme.primary,
-    );
-  }
 
   // ── Preview Bottom Sheet ────────────────────────────────────────────────
 
@@ -520,7 +485,15 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     if (mounted) {
       setState(() => _isSaving = false);
       if (result != null) {
-        _showSuccessReview(result.invoiceNumber, result.totalPayable);
+        AppDialogs.showMockLhdnSuccessDialog(
+          context,
+          invoiceNumber: result.invoiceNumber,
+          totalAmount: result.totalPayable,
+          onDone: () {
+            Navigator.of(context).pop(); // Pops the dialog
+            Navigator.of(context).pop(); // Pops the screen
+          },
+        );
       } else if (calc.error != null) {
       if (mounted) {
         AppDialogs.showSystemAlert(
