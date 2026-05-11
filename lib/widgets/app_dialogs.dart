@@ -852,6 +852,7 @@ class AppDialogs {
     required String invoiceNumber,
     required double totalAmount,
     required VoidCallback onDone,
+    bool isLhdnSubmitted = true,
   }) {
     final theme = Theme.of(context);
     final currencyFormat = NumberFormat.currency(symbol: 'RM ', decimalDigits: 2);
@@ -870,13 +871,13 @@ class AppDialogs {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.check_circle_outline_rounded,
+                  isLhdnSubmitted ? Icons.check_circle_outline_rounded : Icons.cloud_done_rounded,
                   size: 64,
-                  color: AppTheme.neonGreenLight,
+                  color: isLhdnSubmitted ? AppTheme.neonGreenLight : AppTheme.primary,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'LHDN Submission Successful',
+                  isLhdnSubmitted ? 'LHDN Submission Successful' : 'Sale Recorded Successfully',
                   style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
@@ -889,18 +890,41 @@ class AppDialogs {
                   'Total: $formattedAmount',
                   style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 24),
-                QrImageView(
-                  data: 'https://verify.hasil.gov.my/?invoice=$invoiceNumber',
-                  version: QrVersions.auto,
-                  size: 150.0,
-                  backgroundColor: Colors.white,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Scan to Verify',
-                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
+                if (isLhdnSubmitted) ...[
+                  const SizedBox(height: 24),
+                  QrImageView(
+                    data: 'https://verify.hasil.gov.my/?invoice=$invoiceNumber',
+                    version: QrVersions.auto,
+                    size: 150.0,
+                    backgroundColor: Colors.white,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Scan to Verify',
+                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'This sale is saved as pending. You can submit it to LHDN later from the history.',
+                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,

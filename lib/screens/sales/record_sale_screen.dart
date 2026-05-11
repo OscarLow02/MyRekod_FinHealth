@@ -489,6 +489,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           context,
           invoiceNumber: result.invoiceNumber,
           totalAmount: result.totalPayable,
+          isLhdnSubmitted: submitToLhdn,
           onDone: () {
             Navigator.of(context).pop(); // Pops the dialog
             Navigator.of(context).pop(); // Pops the screen

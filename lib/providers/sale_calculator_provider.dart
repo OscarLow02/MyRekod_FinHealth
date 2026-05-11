@@ -616,8 +616,8 @@ class SaleCalculatorProvider extends ChangeNotifier {
 
       var record = initialRecord;
 
-      // Step 4 & 5: MANDATORY: Generate Payload ONLY if not pending consolidation
-      if (record.complianceStatus != ComplianceStatus.pendingConsolidation) {
+      // Step 4 & 5: MANDATORY: Generate Payload ONLY if submitting to LHDN now
+      if (record.complianceStatus == ComplianceStatus.valid) {
         final profile = await _firestoreService.getBusinessProfile(
           _currentUserId!,
         );
@@ -631,18 +631,16 @@ class SaleCalculatorProvider extends ChangeNotifier {
           debugPrint('LHDN Payload generated for ${record.invoiceNumber}');
         }
 
-        // Step 5: Simulate LHDN Submission if applicable
-        if (record.complianceStatus == ComplianceStatus.valid) {
-          record = record.copyWith(
-            lhdnUuid:
-                'LHDN-${math.Random().nextInt(999999).toString().padLeft(6, '0')}',
-            lhdnLongId: 'LHDN-LONG-${DateTime.now().millisecondsSinceEpoch}',
-            lhdnValidatedAt: DateTime.now(),
-          );
-        }
+        // Step 5: Simulate LHDN Submission details
+        record = record.copyWith(
+          lhdnUuid:
+              'LHDN-${math.Random().nextInt(999999).toString().padLeft(6, '0')}',
+          lhdnLongId: 'LHDN-LONG-${DateTime.now().millisecondsSinceEpoch}',
+          lhdnValidatedAt: DateTime.now(),
+        );
       } else {
         debugPrint(
-          'Skipping payload generation: Record is Pending Consolidation.',
+          'Skipping payload generation: Record status is ${record.complianceStatus}.',
         );
       }
 
