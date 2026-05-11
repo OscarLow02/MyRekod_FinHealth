@@ -47,7 +47,7 @@ class AppButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[icon!, const SizedBox(width: 8)],
-                    Text(text),
+                    Flexible(child: Text(text, overflow: TextOverflow.ellipsis)),
                   ],
                 ),
         ),
@@ -74,7 +74,7 @@ class AppButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[icon!, const SizedBox(width: 8)],
-                    Text(text),
+                    Flexible(child: Text(text, overflow: TextOverflow.ellipsis)),
                   ],
                 ),
         ),
@@ -99,11 +99,14 @@ class AppTextField extends StatelessWidget {
   final TextCapitalization textCapitalization;
   final void Function(String)? onChanged;
 
+  final bool isRequired;
+
   const AppTextField({
     super.key,
     this.controller,
     this.hintText,
     this.labelText,
+    this.isRequired = false,
     this.obscureText = false,
     this.keyboardType,
     this.validator,
@@ -124,7 +127,6 @@ class AppTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -135,13 +137,35 @@ class AppTextField extends StatelessWidget {
                 Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
                 const SizedBox(width: 8),
               ],
-              Text(
-                label!,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurfaceVariant,
+              Flexible(
+                child: Text(
+                  label!,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (isRequired) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: Colors.redAccent, width: 1),
+                  ),
+                  child: Text(
+                    'REQUIRED',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.redAccent,
+                      fontSize: 8,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),

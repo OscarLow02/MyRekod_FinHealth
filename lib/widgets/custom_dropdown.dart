@@ -34,12 +34,15 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
   final VoidCallback? onActionPressed;
   final IconData actionIcon;
 
+  final bool isRequired;
+
   const CustomPremiumDropdown({
     super.key,
     required this.label,
     required this.items,
     required this.value,
     required this.onChanged,
+    this.isRequired = false,
     this.hint,
     this.isEditMode = true,
     this.isSearchable = false,
@@ -114,12 +117,35 @@ class CustomPremiumDropdown<T> extends StatelessWidget {
                     Icon(selectedItem!.icon, size: 16, color: AppTheme.primary),
                     const SizedBox(width: 8),
                   ],
-                  Text(
-                    label,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (isRequired) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.redAccent, width: 1),
+                      ),
+                      child: Text(
+                        'REQUIRED',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.redAccent,
+                          fontSize: 8,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 8),

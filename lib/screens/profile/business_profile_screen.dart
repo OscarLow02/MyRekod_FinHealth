@@ -526,6 +526,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         label: 'TIN',
                         controller: _tinCtrl,
                         validator: AppValidators.tin,
+                        hintText: 'e.g. TR123456789',
                       ),
                       const SizedBox(height: 16),
                       _buildLabeledField(
@@ -543,12 +544,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         controller: _sstCtrl,
                       ),
                       const SizedBox(height: 16),
-                      _buildLabeledField(
-                        theme,
-                        icon: Icons.flight_takeoff_rounded,
-                        label: 'Tourism Tax Number',
-                        controller: _tourismTaxCtrl,
-                      ),
                       const SizedBox(height: 32),
 
                       // ── Contact Information ──
@@ -562,7 +557,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         keyboardType: TextInputType.emailAddress,
                         validator: AppValidators.requiredEmail,
                         readOnly: true,
-                        hintText: 'Email matched to your authentication account',
                       ),
                       const SizedBox(height: 16),
                       PhoneInputField(
@@ -598,20 +592,23 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                           label: 'Address Line 1*',
                           controller: _addressLine1Ctrl,
                           validator: (v) => AppValidators.requiredField(v, 'Address Line 1'),
+                          hintText: 'Unit / House No., Street Name',
                         ),
                         const SizedBox(height: 16),
                         _buildLabeledField(
                           theme,
-                          icon: Icons.location_city_outlined,
-                          label: 'Address Line 2 (Optional)',
+                          icon: Icons.location_on_outlined,
+                          label: 'Address Line 2',
                           controller: _addressLine2Ctrl,
+                          hintText: 'Building, Floor, etc.',
                         ),
                         const SizedBox(height: 16),
                         _buildLabeledField(
                           theme,
-                          icon: Icons.add_business_outlined,
-                          label: 'Address Line 3 (Optional)',
+                          icon: Icons.location_on_outlined,
+                          label: 'Address Line 3',
                           controller: _addressLine3Ctrl,
+                          hintText: 'Area, Landmark',
                         ),
                         const SizedBox(height: 16),
                         _buildLabeledField(

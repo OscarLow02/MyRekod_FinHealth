@@ -11,6 +11,7 @@ class PhoneInputField extends StatefulWidget {
   final TextEditingController controller;
   final bool readOnly;
   final String? hint;
+  final bool isRequired;
   final String? Function(String?)? validator;
 
   const PhoneInputField({
@@ -18,6 +19,7 @@ class PhoneInputField extends StatefulWidget {
     required this.label,
     required this.controller,
     this.readOnly = false,
+    this.isRequired = false,
     this.hint,
     this.validator,
   });
@@ -108,12 +110,35 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
           children: [
             const Icon(Icons.phone_outlined, size: 16, color: AppTheme.primary),
             const SizedBox(width: 8),
-            Text(
-              widget.label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+            Expanded(
+              child: Text(
+                widget.label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (widget.isRequired) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.redAccent, width: 1),
+                ),
+                child: Text(
+                  'REQUIRED',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.redAccent,
+                    fontSize: 8,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 8),
