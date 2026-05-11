@@ -206,15 +206,14 @@ class SaleCalculatorProvider extends ChangeNotifier {
   }
 
   /// The 5-cent rounding adjustment.
-  /// Per Malaysian Central Bank (BNM) Rounding Mechanism:
-  ///   Total ending in .01 or .02 → round DOWN (adjustment: -0.01 or -0.02)
-  ///   Total ending in .03 or .04 → round UP   (adjustment: +0.02 or +0.01)
-  ///   Total ending in .05        → no change   (adjustment: 0.00)
-  ///   Total ending in .06 or .07 → round DOWN (adjustment: -0.01 or -0.02)
-  ///   Total ending in .08 or .09 → round UP   (adjustment: +0.02 or +0.01)
-  ///   Total ending in .00        → no change   (adjustment: 0.00)
   double get roundingAmount {
-    if (taxAmount == 0.00) return 0.00;
+    // 1. Remove the taxAmount == 0.00 check so it ALWAYS calculates odd cents.
+    // 2. (Optional LHDN Best Practice): BNM rounding legally only applies
+    //    to Cash payments ('01'). If they pay by DuitNow/Card, exact cents are kept.
+    if (enablePaymentInfo && paymentMode != '01') {
+      return 0.00;
+    }
+
     return _calculateRoundingAdjustment(totalBeforeRounding);
   }
 
