@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/app_theme.dart';
 import '../../core/lhdn_constants.dart';
 import '../../models/sale_record.dart';
@@ -113,6 +114,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         totalAmount: _currentSale.totalPayable,
         saleRecord: _currentSale,
         businessProfile: profile,
+        isLhdnSubmitted: true, // Explicitly show QR Code
         onDone: () {
           Navigator.pop(context); // Close dialog
         },
@@ -183,6 +185,40 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       debugPrint('Failed to load profile: $e');
       return null;
     }
+  }
+
+  Future<void> _shareReceipt(BuildContext btnContext) async {
+    final profile = await _getSellerProfile();
+    if (profile == null) {
+      if (!mounted) return;
+      AppDialogs.showActionModal(
+        context,
+        title: 'Profile Required',
+        body: 'Complete your Business Profile first to share receipts.',
+        primaryButtonText: 'OK',
+        onPrimaryPressed: () {},
+        icon: Icons.info_outline_rounded,
+        iconColor: AppTheme.primary,
+        primaryButtonColor: AppTheme.primary,
+      );
+      return;
+    }
+
+    final text = AppDialogs.generateReceiptText(_currentSale, profile);
+    
+    if (!mounted) return;
+    
+    // Get the render box of the button for iPad support
+    final box = btnContext.findRenderObject() as RenderBox?;
+    final Offset? offset = box?.localToGlobal(Offset.zero);
+    final Size? size = box?.size;
+    
+    Share.share(
+      text,
+      sharePositionOrigin: (offset != null && size != null)
+          ? offset & size
+          : null,
+    );
   }
 
   // ── JSON Preview ───────────────────────────────────────────────────────
@@ -439,6 +475,13 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          Builder(
+            builder: (btnContext) => IconButton(
+              icon: const Icon(Icons.share_rounded, size: 22),
+              onPressed: () => _shareReceipt(btnContext),
+              tooltip: 'Share Receipt',
+            ),
+          ),
           if (_currentSale.consolidatedInvoiceRef == null && _currentSale.lastGeneratedPayload != null)
             IconButton(
               icon: const Icon(Icons.code_rounded, size: 22),

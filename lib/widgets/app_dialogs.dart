@@ -985,23 +985,36 @@ class AppDialogs {
                 if (saleRecord != null && businessProfile != null) ...[
                   SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, AppTheme.minTouchTarget),
-                        side: const BorderSide(color: AppTheme.primary, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
-                      ),
-                      onPressed: () {
-                        final text = generateReceiptText(saleRecord, businessProfile);
-                        Share.share(text);
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.share_rounded, size: 20, color: AppTheme.primary),
-                          const SizedBox(width: 12),
-                          const Text('Share Receipt', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ],
+                    child: Builder(
+                      builder: (buttonContext) => OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, AppTheme.minTouchTarget),
+                          side: const BorderSide(color: AppTheme.primary, width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
+                        ),
+                        onPressed: () {
+                          final text = generateReceiptText(saleRecord, businessProfile);
+                          
+                          // Get the render box of the button for iPad support
+                          final box = buttonContext.findRenderObject() as RenderBox?;
+                          final Offset? offset = box?.localToGlobal(Offset.zero);
+                          final Size? size = box?.size;
+                          
+                          Share.share(
+                            text,
+                            sharePositionOrigin: (offset != null && size != null)
+                                ? offset & size
+                                : null,
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.share_rounded, size: 20, color: AppTheme.primary),
+                            const SizedBox(width: 12),
+                            const Text('Share Receipt', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ),
                     ),
                   ),

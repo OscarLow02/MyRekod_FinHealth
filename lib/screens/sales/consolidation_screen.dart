@@ -335,6 +335,7 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
           context,
           invoiceNumber: result.masterInvoiceNumber ?? 'N/A',
           totalAmount: result.totalAmount,
+          isLhdnSubmitted: true, // Show mock LHDN QR code for consolidation
           onDone: () {
             Navigator.pop(context); // Close dialog
             _selectedSaleIds.clear(); // Clear selection after success
