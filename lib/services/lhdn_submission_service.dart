@@ -12,6 +12,7 @@ class LhdnSubmissionResult {
   final bool success;
   final String? uuid;
   final String? longId;
+  final String? validationUrl;
   final DateTime? validatedAt;
   final String? errorMessage;
   final Map<String, dynamic>? payload;
@@ -20,6 +21,7 @@ class LhdnSubmissionResult {
     required this.success,
     this.uuid,
     this.longId,
+    this.validationUrl,
     this.validatedAt,
     this.errorMessage,
     this.payload,
@@ -64,7 +66,7 @@ class LhdnSubmissionService {
       debugPrint('═══ End Payload ═══');
 
       // Step 2: Submit to LHDN API (mocked)
-      final result = await _mockApiCall(payload);
+      final result = await _mockApiCall(payload, record.invoiceNumber);
 
       // Step 3: Update Firestore record with LHDN response
       if (result.success) {
@@ -73,6 +75,7 @@ class LhdnSubmissionService {
           final updatedRecord = record.copyWith(
             lhdnUuid: result.uuid,
             lhdnLongId: result.longId,
+            lhdnValidationUrl: result.validationUrl,
             lhdnValidatedAt: result.validatedAt,
             complianceStatus: ComplianceStatus.valid,
           );
@@ -134,6 +137,7 @@ class LhdnSubmissionService {
   /// ```
   Future<LhdnSubmissionResult> _mockApiCall(
     Map<String, dynamic> payload,
+    String invoiceNumber,
   ) async {
     // Simulate network latency
     final delayMs = 1000 + Random().nextInt(1500);
@@ -146,11 +150,13 @@ class LhdnSubmissionService {
       final now = DateTime.now();
       final uuid = _generateMockUuid();
       final longId = _generateMockLongId();
+      final validationUrl = 'https://myinvois.hasil.gov.my/mock-validation/$invoiceNumber';
 
       return LhdnSubmissionResult(
         success: true,
         uuid: uuid,
         longId: longId,
+        validationUrl: validationUrl,
         validatedAt: now,
         payload: payload,
       );

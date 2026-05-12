@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
+import '../services/pdf_receipt_service.dart';
 import '../core/app_theme.dart';
 import '../core/lhdn_constants.dart';
 import '../models/sale_record.dart';
@@ -995,19 +995,11 @@ class AppDialogs {
                           side: const BorderSide(color: AppTheme.primary, width: 1.5),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
                         ),
-                        onPressed: () {
-                          final text = generateReceiptText(saleRecord, businessProfile);
-                          
-                          // Get the render box of the button for iPad support
-                          final box = buttonContext.findRenderObject() as RenderBox?;
-                          final Offset? offset = box?.localToGlobal(Offset.zero);
-                          final Size? size = box?.size;
-                          
-                          Share.share(
-                            text,
-                            sharePositionOrigin: (offset != null && size != null)
-                                ? offset & size
-                                : null,
+                        onPressed: () async {
+                          await PdfReceiptService.generateAndShareReceipt(
+                            saleRecord,
+                            businessProfile,
+                            buttonContext,
                           );
                         },
                         child: Row(
@@ -1015,7 +1007,7 @@ class AppDialogs {
                           children: [
                             Icon(Icons.share_rounded, size: 20, color: AppTheme.primary),
                             const SizedBox(width: 12),
-                            const Text('Share Receipt', style: TextStyle(fontWeight: FontWeight.bold)),
+                            const Text('Share PDF Receipt', style: TextStyle(fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),

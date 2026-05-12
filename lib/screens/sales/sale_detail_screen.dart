@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../core/app_theme.dart';
 import '../../core/lhdn_constants.dart';
 import '../../models/sale_record.dart';
@@ -12,8 +11,15 @@ import '../../models/business_profile.dart';
 import '../../providers/sales_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/lhdn_submission_service.dart';
+import '../../services/pdf_receipt_service.dart';
 import '../../widgets/app_dialogs.dart';
 import '../../widgets/custom_widgets.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:gal/gal.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'dart:ui' as ui;
 import '../../services/csv_export_service.dart';
 
 /// Detailed view of a completed sale record.
@@ -188,37 +194,46 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   }
 
   Future<void> _shareReceipt(BuildContext btnContext) async {
-    final profile = await _getSellerProfile();
-    if (profile == null) {
-      if (!mounted) return;
-      AppDialogs.showActionModal(
-        context,
-        title: 'Profile Required',
-        body: 'Complete your Business Profile first to share receipts.',
-        primaryButtonText: 'OK',
-        onPrimaryPressed: () {},
-        icon: Icons.info_outline_rounded,
-        iconColor: AppTheme.primary,
-        primaryButtonColor: AppTheme.primary,
-      );
-      return;
-    }
+    setState(() => _isSubmitting = true);
+    try {
+      final profile = await _getSellerProfile();
+      if (profile == null) {
+        if (!mounted) return;
+        AppDialogs.showActionModal(
+          context,
+          title: 'Profile Required',
+          body: 'Complete your Business Profile first to share professional PDF receipts.',
+          primaryButtonText: 'OK',
+          onPrimaryPressed: () {},
+          icon: Icons.info_outline_rounded,
+          iconColor: AppTheme.primary,
+          primaryButtonColor: AppTheme.primary,
+        );
+        return;
+      }
 
-    final text = AppDialogs.generateReceiptText(_currentSale, profile);
-    
-    if (!mounted) return;
-    
-    // Get the render box of the button for iPad support
-    final box = btnContext.findRenderObject() as RenderBox?;
-    final Offset? offset = box?.localToGlobal(Offset.zero);
-    final Size? size = box?.size;
-    
-    Share.share(
-      text,
-      sharePositionOrigin: (offset != null && size != null)
-          ? offset & size
-          : null,
-    );
+      if (!mounted) return;
+      
+      // Generate and share the professional PDF receipt
+      await PdfReceiptService.generateAndShareReceipt(
+        _currentSale,
+        profile,
+        btnContext,
+      );
+    } catch (e) {
+      debugPrint('Error sharing receipt: $e');
+      if (mounted) {
+        AppDialogs.showSystemAlert(
+          context,
+          title: 'Share Failed',
+          body: 'Could not generate PDF receipt. Please try again.',
+          icon: Icons.error_outline_rounded,
+          iconColor: Colors.redAccent,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   // ── JSON Preview ───────────────────────────────────────────────────────
@@ -369,6 +384,102 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       },
       secondaryButtonText: 'Cancel',
     );
+  }
+
+  Future<void> _launchUrl() async {
+    final url = Uri.parse(_currentSale.lhdnValidationUrl!);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (!mounted) return;
+      AppDialogs.showSystemAlert(
+        context,
+        title: 'Launch Failed',
+        body: 'Could not open the validation URL.',
+        icon: Icons.error_outline_rounded,
+        iconColor: Colors.redAccent,
+      );
+    }
+  }
+
+  Future<void> _saveQrToGallery() async {
+    setState(() => _isSubmitting = true);
+    try {
+      // 1. Check/Request Permission
+      final hasAccess = await Gal.hasAccess();
+      if (!hasAccess) {
+        final granted = await Gal.requestAccess();
+        if (!granted) {
+          throw 'Gallery access denied. Please enable it in settings.';
+        }
+      }
+
+      // 2. Render QR to Image
+      final qrValidationUrl = _currentSale.lhdnValidationUrl!;
+      final qrPainter = QrPainter(
+        data: qrValidationUrl,
+        version: QrVersions.auto,
+        errorCorrectionLevel: QrErrorCorrectLevel.M,
+        gapless: true,
+        color: Colors.black,
+        emptyColor: Colors.white,
+      );
+
+      // Create a picture and then an image
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      const size = 512.0;
+      
+      // Draw white background
+      final paint = Paint()..color = Colors.white;
+      canvas.drawRect(const Rect.fromLTWH(0, 0, size, size), paint);
+      
+      // Draw QR code with some padding
+      const padding = 40.0;
+      const qrSize = size - (padding * 2);
+      qrPainter.paint(canvas, const Size(qrSize, qrSize));
+      
+      // Offset the QR to center it
+      // Actually QrPainter paints from origin, so we should have moved the canvas or calculated rect
+      // Let's re-do the drawing with offset
+      canvas.save();
+      canvas.translate(padding, padding);
+      qrPainter.paint(canvas, const Size(qrSize, qrSize));
+      canvas.restore();
+
+      final picture = recorder.endRecording();
+      final img = await picture.toImage(size.toInt(), size.toInt());
+      final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+      final Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      // 3. Save to Temp File and then to Gallery
+      final directory = await getTemporaryDirectory();
+      final filePath = '${directory.path}/QR_${_currentSale.invoiceNumber}.png';
+      final file = File(filePath);
+      await file.writeAsBytes(pngBytes);
+
+      await Gal.putImage(file.path);
+
+      if (!mounted) return;
+      AppDialogs.showSystemAlert(
+        context,
+        title: 'Saved',
+        body: 'QR Code saved to your photos.',
+        icon: Icons.check_circle_rounded,
+        iconColor: AppTheme.neonGreenLight,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppDialogs.showSystemAlert(
+        context,
+        title: 'Save Failed',
+        body: e.toString(),
+        icon: Icons.error_outline_rounded,
+        iconColor: Colors.redAccent,
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
 
