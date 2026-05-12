@@ -632,12 +632,26 @@ class SaleCalculatorProvider extends ChangeNotifier {
         }
 
         // Step 5: Simulate LHDN Submission details
+        final mockUuid = 'LHDN-${math.Random().nextInt(999999).toString().padLeft(6, '0')}';
         record = record.copyWith(
-          lhdnUuid:
-              'LHDN-${math.Random().nextInt(999999).toString().padLeft(6, '0')}',
+          lhdnUuid: mockUuid,
           lhdnLongId: 'LHDN-LONG-${DateTime.now().millisecondsSinceEpoch}',
           lhdnValidatedAt: DateTime.now(),
         );
+
+        // Step 5b: Generate rich validation URL for QR code
+        final validationUri = Uri.https(
+          'oscarlow02.github.io',
+          '/MyRekod_FinHealth/web_mock/verify.html',
+          {
+            'inv': record.invoiceNumber,
+            'amt': record.totalPayable.toStringAsFixed(2),
+            'date': record.saleDate.toIso8601String().split('T').first,
+            'type': record.customerType == CustomerType.b2b ? 'B2B' : 'B2C',
+            'uuid': mockUuid,
+          },
+        );
+        record = record.copyWith(lhdnValidationUrl: validationUri.toString());
       } else {
         debugPrint(
           'Skipping payload generation: Record status is ${record.complianceStatus}.',

@@ -12,12 +12,14 @@ class ConsolidationResult {
   final String? masterInvoiceNumber;
   final double totalAmount;
   final String? error;
+  final String? lhdnValidationUrl;
 
   ConsolidationResult({
     required this.success,
     this.masterInvoiceNumber,
     this.totalAmount = 0.0,
     this.error,
+    this.lhdnValidationUrl,
   });
 }
 
@@ -77,6 +79,20 @@ class ConsolidationService {
           .collection('consolidated_invoices')
           .doc(masterInvoiceNumber);
 
+      // Generate rich validation URL for QR code
+      final validationUri = Uri.https(
+        'oscarlow02.github.io',
+        '/MyRekod_FinHealth/web_mock/verify.html',
+        {
+          'inv': masterInvoiceNumber,
+          'amt': masterTotalPayable.toStringAsFixed(2),
+          'date': DateTime.now().toIso8601String().split('T').first,
+          'type': 'B2C',
+          'uuid': mockUuid,
+        },
+      );
+      final validationUrl = validationUri.toString();
+
       batch.set(masterDocRef, {
         'invoiceNumber': masterInvoiceNumber,
         'payload': payloadJson, // The raw JSON string
@@ -84,6 +100,7 @@ class ConsolidationService {
         'totalAmount': masterTotalPayable,
         'recordCount': selectedSales.length,
         'lhdnUuid': mockUuid,
+        'lhdnValidationUrl': validationUrl,
       });
 
       await batch.commit();
@@ -91,6 +108,7 @@ class ConsolidationService {
         success: true,
         masterInvoiceNumber: masterInvoiceNumber,
         totalAmount: masterTotalPayable,
+        lhdnValidationUrl: validationUrl,
       );
     } catch (e) {
       debugPrint("Consolidation error: $e");

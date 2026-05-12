@@ -908,6 +908,7 @@ class AppDialogs {
     required VoidCallback onDone,
     SaleRecord? saleRecord,
     BusinessProfile? businessProfile,
+    String? lhdnValidationUrl,
     bool isLhdnSubmitted = true,
   }) {
     final theme = Theme.of(context);
@@ -949,7 +950,9 @@ class AppDialogs {
                 if (isLhdnSubmitted) ...[
                   const SizedBox(height: 24),
                   QrImageView(
-                    data: 'https://myinvois.hasil.gov.my/mock-validation/$invoiceNumber',
+                    data: lhdnValidationUrl
+                        ?? saleRecord?.lhdnValidationUrl
+                        ?? 'https://myinvois.hasil.gov.my/mock-validation/$invoiceNumber',
                     version: QrVersions.auto,
                     size: 180.0,
                     backgroundColor: Colors.white,

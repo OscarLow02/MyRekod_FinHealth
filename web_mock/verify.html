@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyInvois – e-Invoice Verification</title>
+    <meta name="description" content="LHDN MyInvois e-Invoice Validation Portal – Verify your e-Invoice document authenticity.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ── Reset & Base ──────────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #0D7C3D;
+            --primary-light: #E8F5E9;
+            --primary-dark: #065A2B;
+            --surface: #FFFFFF;
+            --bg: #F4F7F5;
+            --text: #1A1A2E;
+            --text-secondary: #5A6B6A;
+            --border: #E0E8E4;
+            --error-bg: #FFF3F0;
+            --error-text: #C0392B;
+            --error-accent: #E74C3C;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Print Styles ─────────────────────────────────────────────────── */
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .card { box-shadow: none; border: 1px solid #ddd; }
+            .header { background: white !important; }
+            .header__title, .header__subtitle { color: var(--primary) !important; }
+        }
+
+        /* ── Header ───────────────────────────────────────────────────────── */
+        .header {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 32px 24px 28px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -40%;
+            left: -10%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+
+        .header__logo {
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .header__logo svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+
+        .header__title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .header__subtitle {
+            font-size: 0.85rem;
+            opacity: 0.85;
+            font-weight: 500;
+        }
+
+        /* ── Container ────────────────────────────────────────────────────── */
+        .container {
+            width: 100%;
+            max-width: 480px;
+            padding: 0 16px;
+            margin-top: -8px;
+            flex: 1;
+        }
+
+        /* ── Card ─────────────────────────────────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            margin-bottom: 16px;
+            animation: fadeUp 0.5s ease-out both;
+        }
+
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Status Banner ────────────────────────────────────────────────── */
+        .status-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px;
+            background: var(--primary-light);
+            border-bottom: 1px solid rgba(13,124,61,0.12);
+        }
+
+        .status-banner--error {
+            background: var(--error-bg);
+            border-bottom-color: rgba(231,76,60,0.12);
+        }
+
+        .status-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .status-icon--error { background: var(--error-accent); }
+
+        .status-icon svg {
+            width: 22px;
+            height: 22px;
+            fill: white;
+        }
+
+        .status-text__title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--primary-dark);
+        }
+
+        .status-text__title--error { color: var(--error-text); }
+
+        .status-text__subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ── Detail Rows ──────────────────────────────────────────────────── */
+        .details { padding: 0; }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-row:last-child { border-bottom: none; }
+
+        .detail-row__label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-row__label svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .detail-row__value {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text);
+            text-align: right;
+        }
+
+        .detail-row__value--amount {
+            font-size: 1.15rem;
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        .detail-row__value--badge {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        /* ── UUID Row ─────────────────────────────────────────────────────── */
+        .uuid-row {
+            padding: 14px 20px;
+            background: rgba(0,0,0,0.02);
+            border-top: 1px solid var(--border);
+        }
+
+        .uuid-row__label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .uuid-row__value {
+            font-size: 0.78rem;
+            color: var(--text);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            word-break: break-all;
+        }
+
+        /* ── Actions ──────────────────────────────────────────────────────── */
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            animation: fadeUp 0.5s ease-out 0.3s both;
+        }
+
+        .btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 20px;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        .btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn--primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(13,124,61,0.3);
+        }
+
+        .btn--primary:hover { background: var(--primary-dark); }
+        .btn--primary svg { fill: white; }
+
+        .btn--secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1.5px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn--secondary:hover { background: var(--bg); }
+        .btn--secondary svg { fill: var(--text-secondary); }
+
+        /* ── Footer ───────────────────────────────────────────────────────── */
+        .footer {
+            text-align: center;
+            padding: 20px 16px 32px;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* ── Error State ──────────────────────────────────────────────────── */
+        .error-card {
+            text-align: center;
+            padding: 40px 24px;
+        }
+
+        .error-card__icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: var(--error-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-card__icon svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--error-accent);
+        }
+
+        .error-card__title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--error-text);
+        }
+
+        .error-card__body {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ── Responsive ───────────────────────────────────────────────────── */
+        @media (min-width: 600px) {
+            .container { padding: 0 24px; margin-top: -12px; }
+            .header { padding: 40px 24px 36px; }
+            .header__title { font-size: 1.75rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header no-print">
+        <div class="header__logo">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        </div>
+        <div class="header__title">MyInvois Portal</div>
+        <div class="header__subtitle">e-Invoice Document Verification</div>
+    </div>
+
+    <div class="container">
+        <!-- Content injected by JavaScript -->
+        <div id="content"></div>
+    </div>
+
+    <div class="footer no-print">
+        <div>This is a <strong>mock validation portal</strong> for demonstration purposes.</div>
+        <div style="margin-top: 4px;">Powered by <a href="https://github.com/OscarLow02/MyRekod_FinHealth" target="_blank">MyRekod FinHealth</a></div>
+    </div>
+
+    <script>
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+
+            const inv  = params.get('inv');
+            const amt  = params.get('amt');
+            const date = params.get('date');
+            const type = params.get('type');
+            const uuid = params.get('uuid');
+
+            const contentEl = document.getElementById('content');
+
+            // ── Error State ──────────────────────────────────────────────
+            if (!inv || !amt || !date) {
+                contentEl.innerHTML = `
+                    <div class="card" style="margin-top: 24px;">
+                        <div class="error-card">
+                            <div class="error-card__icon">
+                                <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                            </div>
+                            <div class="error-card__title">Invalid Verification Link</div>
+                            <div class="error-card__body">
+                                This link is missing required parameters.<br>
+                                Please scan the QR code from a valid e-Invoice receipt.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // ── Format Values ────────────────────────────────────────────
+            const formattedAmt = parseFloat(amt).toLocaleString('en-MY', {
+                style: 'currency',
+                currency: 'MYR',
+                minimumFractionDigits: 2,
+            });
+
+            const dateObj = new Date(date + 'T00:00:00');
+            const formattedDate = dateObj.toLocaleDateString('en-MY', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            });
+
+            const typeLabel = (type || 'B2C').toUpperCase();
+            const verifiedTime = new Date().toLocaleString('en-MY', {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+            });
+
+            // ── Success State ────────────────────────────────────────────
+            contentEl.innerHTML = `
+                <!-- Status Card -->
+                <div class="card" style="margin-top: 24px;">
+                    <div class="status-banner">
+                        <div class="status-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                        </div>
+                        <div class="status-text">
+                            <div class="status-text__title">Document Verified</div>
+                            <div class="status-text__subtitle">Validated on ${verifiedTime}</div>
+                        </div>
+                    </div>
+
+                    <div class="details">
+                        <div class="detail-row">
+                            <span class="detail-row__label">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                                Invoice Number
+                            </span>
+                            <span class="detail-row__value">${inv}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-row__label">
+                                <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                                Total Amount
+                            </span>
+                            <span class="detail-row__value detail-row__value--amount">${formattedAmt}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-row__label">
+                                <svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+                                Date of Issue
+                            </span>
+                            <span class="detail-row__value">${formattedDate}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-row__label">
+                                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                                Transaction Type
+                            </span>
+                            <span class="detail-row__value detail-row__value--badge">${typeLabel}</span>
+                        </div>
+                    </div>
+
+                    ${uuid ? `
+                    <div class="uuid-row">
+                        <div class="uuid-row__label">Submission UUID</div>
+                        <div class="uuid-row__value">${uuid}</div>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <!-- Actions -->
+                <div class="actions no-print">
+                    <button class="btn btn--primary" onclick="window.print()">
+                        <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                        Save as PDF
+                    </button>
+                    <button class="btn btn--secondary" id="copyBtn">
+                        <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                        Copy Link
+                    </button>
+                </div>
+            `;
+
+            // ── Copy Link Handler ────────────────────────────────────────
+            const copyBtn = document.getElementById('copyBtn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', function() {
+                    navigator.clipboard.writeText(window.location.href).then(function() {
+                        copyBtn.innerHTML = `
+                            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            Copied!
+                        `;
+                        setTimeout(function() {
+                            copyBtn.innerHTML = `
+                                <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                                Copy Link
+                            `;
+                        }, 2000);
+                    });
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

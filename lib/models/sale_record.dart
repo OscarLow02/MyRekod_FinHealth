@@ -198,6 +198,9 @@ class SaleRecord {
   /// The raw LHDN JSON payload generated for this record.
   final String? lastGeneratedPayload;
 
+  /// Mock LHDN validation URL for QR code verification.
+  final String? lhdnValidationUrl;
+
   /// If this record was rolled into a master invoice, this holds the master ID.
   final String? consolidatedInvoiceRef;
 
@@ -261,6 +264,7 @@ class SaleRecord {
     this.lhdnLongId,
     this.lhdnValidatedAt,
     this.lastGeneratedPayload,
+    this.lhdnValidationUrl,
     this.consolidatedInvoiceRef,
     // Notes
     this.notes = '',
@@ -350,6 +354,8 @@ class SaleRecord {
       data['lhdnValidatedAt'] = Timestamp.fromDate(lhdnValidatedAt!);
     if (lastGeneratedPayload != null)
       data['lastGeneratedPayload'] = lastGeneratedPayload;
+    if (lhdnValidationUrl != null)
+      data['lhdnValidationUrl'] = lhdnValidationUrl;
     if (consolidatedInvoiceRef != null)
       data['consolidatedInvoiceRef'] = consolidatedInvoiceRef;
 
@@ -436,6 +442,7 @@ class SaleRecord {
       lhdnLongId: data['lhdnLongId'] as String?,
       lhdnValidatedAt: (data['lhdnValidatedAt'] as Timestamp?)?.toDate(),
       lastGeneratedPayload: data['lastGeneratedPayload'] as String?,
+      lhdnValidationUrl: data['lhdnValidationUrl'] as String?,
       consolidatedInvoiceRef: data['consolidatedInvoiceRef'] as String?,
       // Notes
       notes: data['notes'] as String? ?? '',
@@ -487,6 +494,7 @@ class SaleRecord {
     String? lhdnLongId,
     DateTime? lhdnValidatedAt,
     String? lastGeneratedPayload,
+    String? lhdnValidationUrl,
     String? notes,
   }) {
     return SaleRecord(
@@ -531,6 +539,7 @@ class SaleRecord {
       lhdnLongId: lhdnLongId ?? this.lhdnLongId,
       lhdnValidatedAt: lhdnValidatedAt ?? this.lhdnValidatedAt,
       lastGeneratedPayload: lastGeneratedPayload ?? this.lastGeneratedPayload,
+      lhdnValidationUrl: lhdnValidationUrl ?? this.lhdnValidationUrl,
       notes: notes ?? this.notes,
       createdAt: createdAt,
       updatedAt: updatedAt,
