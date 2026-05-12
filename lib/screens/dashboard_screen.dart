@@ -13,8 +13,6 @@ import 'expenses/scanner_screen.dart';
 import 'sales/record_sale_screen.dart';
 import 'customers/customer_list_screen.dart';
 
-/// Dashboard screen with bottom navigation skeleton.
-/// Sprint 1 placeholder — full implementation in Sprint 2.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -60,6 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'User';
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -97,7 +96,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildCurrentPage(ThemeData theme, String displayName) {
-    // Sprint 1: Only the Home tab has content; others are placeholders
     switch (_currentIndex) {
       case 0:
         return _buildHomePage(theme, displayName);
@@ -113,99 +111,191 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHomePage(ThemeData theme, String displayName) {
-    return Padding(
+    // Placeholder for Provider state
+    // TODO: Connect to SalesProvider to determine if hasData is true
+    bool hasData = false; // Toggle this to test zero-state (set to false for Zero-State UI testing)
+    
+    // User-facing strings
+    final String greetingText = "Selamat Pagi, $displayName!"; // TODO: Implement i18n
+    const String zeroStateText = "No sales recorded today!\nTap the '+' to start your streak."; // TODO: Implement i18n
+
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 16),
-
-          // ── Greeting ──
-          Text(
-            // TODO: Implement i18n
-            'Welcome to MyRekod,',
-            style: theme.textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$displayName!',
-            style: theme.textTheme.headlineMedium,
+          // --- Header Section ---
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  greetingText,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  _buildHeaderButton(
+                    context, 
+                    icon: Icons.language_rounded, 
+                    onPressed: () {}, // TODO: Implement Language Settings
+                  ),
+                  const SizedBox(width: 12),
+                  _buildHeaderButton(
+                    context, 
+                    icon: Icons.settings_rounded, 
+                    onPressed: () {}, // TODO: Implement Settings
+                  ),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 32),
 
-          // ── Quick Stats Card (placeholder) ──
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          // --- Conditional Body ---
+          if (hasData) ...[
+            // Placeholder: Hero Card
+            _buildPlaceholderCard(
+              context,
+              height: 180,
+              label: "Financial Health Score (Hero Card)",
+              icon: Icons.speed_rounded,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 24),
+            
+            // Placeholder: Bar Chart
+            _buildPlaceholderCard(
+              context,
+              height: 240,
+              label: "Weekly Sales Trends (Bar Chart)",
+              icon: Icons.bar_chart_rounded,
+            ),
+            const SizedBox(height: 24),
+            
+            // Placeholder: Export Buttons
+            Row(
               children: [
-                Text(
-                  // TODO: Implement i18n
-                  "TODAY'S SALES",
-                  style: theme.textTheme.labelMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'RM ${context.watch<SalesProvider>().todaySalesTotal.toStringAsFixed(2)}',
-                  style: theme.textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
+                Expanded(
+                  child: _buildPlaceholderCard(
+                    context,
+                    height: 110,
+                    label: "Export PDF",
+                    icon: Icons.picture_as_pdf_rounded,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  // TODO: Implement i18n
-                  'Start recording transactions to see your daily summary.',
-                  style: theme.textTheme.bodyLarge,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildPlaceholderCard(
+                    context,
+                    height: 110,
+                    label: "Export Excel",
+                    icon: Icons.table_chart_rounded,
+                  ),
                 ),
               ],
             ),
-          ),
-
-          const Spacer(),
-
-          // ── Setup Completion Badge ──
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppTheme.neonGreenDark.withValues(alpha: 0.1),
-                borderRadius:
-                    BorderRadius.circular(AppTheme.radiusMedium),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+            const SizedBox(height: 80), // Padding for FAB
+          ] else ...[
+            // --- Zero-State UI ---
+            const SizedBox(height: 80),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.check_circle_rounded,
-                    color: AppTheme.neonGreenDark,
-                    size: 20,
+                  // Friendly Illustration Placeholder
+                  Container(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.05),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.insights_rounded,
+                        size: 100,
+                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    // TODO: Implement i18n
-                    'Business profile setup complete!',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: AppTheme.neonGreenDark,
+                  const SizedBox(height: 40),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      zeroStateText,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 24),
+          ],
         ],
       ),
     );
   }
 
+  /// Builds a header button with 48dp touch target as per requirements
+  Widget _buildHeaderButton(BuildContext context, {required IconData icon, required VoidCallback onPressed}) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      ),
+      child: IconButton(
+        iconSize: 24,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        icon: Icon(icon, color: Theme.of(context).colorScheme.onSurface),
+        onPressed: onPressed,
+      ),
+    );
+  }
 
+  /// Builds a placeholder container for dashboard elements
+  Widget _buildPlaceholderCard(BuildContext context, {
+    required double height, 
+    required String label,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      height: height,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(
+          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: theme.colorScheme.primary.withValues(alpha: 0.4), size: 32),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildBottomNav(ThemeData theme) {
     // TODO: Implement i18n
