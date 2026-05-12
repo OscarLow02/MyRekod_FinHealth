@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/sale_record.dart';
 import '../models/expense_record.dart';
+import '../models/business_profile.dart';
 import 'sales_provider.dart';
 import 'expense_provider.dart';
 
@@ -104,8 +105,9 @@ class DashboardProvider with ChangeNotifier {
   /// ```
   Future<void> aggregateMonthlyData(
     List<SaleRecord> sales,
-    List<ExpenseRecord> expenses,
-  ) async {
+    List<ExpenseRecord> expenses, {
+    BusinessProfile? profile,
+  }) async {
     _isLoading = true;
     notifyListeners();
 
@@ -118,7 +120,7 @@ class DashboardProvider with ChangeNotifier {
       (sale) =>
           sale.saleDate.month == currentMonth &&
           sale.saleDate.year == currentYear,
-    );
+    ).toList();
     _totalMonthlySales = monthlySales.fold(
       0.0,
       (sum, sale) => sum + sale.totalPayable,
@@ -130,15 +132,53 @@ class DashboardProvider with ChangeNotifier {
       (expense) =>
           expense.date.month == currentMonth &&
           expense.date.year == currentYear,
-    );
+    ).toList();
     _totalMonthlyExpenses = monthlyExpenses.fold(
       0.0,
       (sum, expense) => sum + expense.amount,
     );
     _monthlyExpenseCount = monthlyExpenses.length;
 
+    // ── Compute Credit Readiness Score inline ───────────────────────────
+    final activeDays = _countActiveDays(monthlySales, monthlyExpenses);
+    int newScore = 300; // Base
+    if (_isProfileComplete(profile)) newScore += 100;
+    newScore += (activeDays * 10).clamp(0, 300);
+    if (netProfit > 0) {
+      newScore += (netProfit * 0.1).round().clamp(0, 300);
+    }
+    _creditScore = newScore.clamp(0, 1000);
+
     _isLoading = false;
     notifyListeners();
+  }
+
+  // ── Credit Score Helpers ─────────────────────────────────────────────────
+
+  /// A profile is "complete" when all LHDN-critical fields are filled.
+  static bool _isProfileComplete(BusinessProfile? profile) {
+    if (profile == null) return false;
+    return profile.businessName.isNotEmpty &&
+        profile.tinNumber.isNotEmpty &&
+        profile.brnNumber.isNotEmpty &&
+        profile.email.isNotEmpty &&
+        profile.phoneNumber.isNotEmpty &&
+        profile.msicCode.isNotEmpty;
+  }
+
+  /// Counts unique calendar days with at least one recorded transaction.
+  static int _countActiveDays(
+    List<SaleRecord> monthlySales,
+    List<ExpenseRecord> monthlyExpenses,
+  ) {
+    final days = <int>{};
+    for (final s in monthlySales) {
+      days.add(s.saleDate.day);
+    }
+    for (final e in monthlyExpenses) {
+      days.add(e.date.day);
+    }
+    return days.length;
   }
 
   // ── Daily Breakdown (for Bar Chart) ───────────────────────────────────────

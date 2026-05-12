@@ -10,6 +10,8 @@ import '../providers/dashboard_provider.dart';
 import '../providers/sale_calculator_provider.dart';
 import '../widgets/app_dialogs.dart';
 import '../widgets/cashflow_bar_chart.dart';
+import '../widgets/credit_score_gauge.dart';
+import '../services/pdf_report_service.dart';
 import 'profile/profile_menu_screen.dart';
 import 'transactions_screen.dart';
 import 'expenses/scanner_screen.dart';
@@ -27,6 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
   BusinessProfile? _profile;
   bool _isLoading = true;
+  bool _isGeneratingPdf = false;
 
   @override
   void initState() {
@@ -121,6 +124,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           dashProv.aggregateMonthlyData(
             salesProv.saleRecords,
             expProv.expenses,
+            profile: _profile,
           );
         });
 
@@ -167,13 +171,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           // --- Conditional Body ---
           if (hasData) ...[
-            // Placeholder: Hero Card
-            _buildPlaceholderCard(
-              context,
-              height: 180,
-              label: "Financial Health Score (Hero Card)",
-              icon: Icons.speed_rounded,
-            ),
+            // Hero Card: Credit Score Gauge
+            CreditScoreGauge(score: dashProv.creditScore),
             const SizedBox(height: 24),
             
             // Native Bar Chart: Sales vs. Expenses
@@ -183,27 +182,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 24),
             
-            // Placeholder: Export Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: _buildPlaceholderCard(
-                    context,
-                    height: 110,
-                    label: "Export PDF",
-                    icon: Icons.picture_as_pdf_rounded,
-                  ),
+            // PDF Export Button (48dp min touch target via ElevatedButton theme)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isGeneratingPdf
+                    ? null
+                    : () => _generatePdfReport(
+                          dashProv: dashProv,
+                          salesProv: salesProv,
+                          expProv: expProv,
+                        ),
+                icon: _isGeneratingPdf
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.picture_as_pdf_rounded),
+                // TODO: Implement i18n
+                label: Text(
+                  _isGeneratingPdf
+                      ? 'Generating...'
+                      : 'Generate Monthly PDF Report',
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildPlaceholderCard(
-                    context,
-                    height: 110,
-                    label: "Export Excel",
-                    icon: Icons.table_chart_rounded,
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 80), // Padding for FAB
           ] else ...[
@@ -272,38 +278,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// Builds a placeholder container for dashboard elements
-  Widget _buildPlaceholderCard(BuildContext context, {
-    required double height, 
-    required String label,
-    required IconData icon,
-  }) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      height: height,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        border: Border.all(
-          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: theme.colorScheme.primary.withValues(alpha: 0.4), size: 32),
-          const SizedBox(height: 12),
-          Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
+  /// Generates and shares the monthly PDF report via native share dialog.
+  Future<void> _generatePdfReport({
+    required DashboardProvider dashProv,
+    required SalesProvider salesProv,
+    required ExpenseProvider expProv,
+  }) async {
+    setState(() => _isGeneratingPdf = true);
+    try {
+      await PdfReportService.generateAndShareMonthlyReport(
+        businessName: _profile?.businessName ?? 'My Business',
+        totalSales: dashProv.totalMonthlySales,
+        totalExpenses: dashProv.totalMonthlyExpenses,
+        sales: salesProv.saleRecords,
+        expenses: expProv.expenses,
+      );
+      if (mounted) {
+        // TODO: Implement i18n
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF report generated successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate report: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGeneratingPdf = false);
+    }
   }
 
   Widget _buildBottomNav(ThemeData theme) {
