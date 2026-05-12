@@ -17,6 +17,7 @@ import '../../widgets/custom_widgets.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:gal/gal.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -425,23 +426,17 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         emptyColor: Colors.white,
       );
 
-      // Create a picture and then an image
+      const size = 512.0;
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
-      const size = 512.0;
       
       // Draw white background
       final paint = Paint()..color = Colors.white;
       canvas.drawRect(const Rect.fromLTWH(0, 0, size, size), paint);
       
-      // Draw QR code with some padding
+      // Draw QR code with padding
       const padding = 40.0;
       const qrSize = size - (padding * 2);
-      qrPainter.paint(canvas, const Size(qrSize, qrSize));
-      
-      // Offset the QR to center it
-      // Actually QrPainter paints from origin, so we should have moved the canvas or calculated rect
-      // Let's re-do the drawing with offset
       canvas.save();
       canvas.translate(padding, padding);
       qrPainter.paint(canvas, const Size(qrSize, qrSize));
@@ -450,7 +445,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       final picture = recorder.endRecording();
       final img = await picture.toImage(size.toInt(), size.toInt());
       final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-      final Uint8List pngBytes = byteData!.buffer.asUint8List();
+      if (byteData == null) throw 'Could not generate image data';
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
 
       // 3. Save to Temp File and then to Gallery
       final directory = await getTemporaryDirectory();
@@ -478,8 +474,17 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         iconColor: Colors.redAccent,
       );
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
+  }
+
+  void _shareValidationUrl() {
+    Share.share(
+      'Here is your official e-Invoice receipt: ${_currentSale.lhdnValidationUrl!}',
+      subject: 'e-Invoice ${_currentSale.invoiceNumber}',
+    );
   }
 
 
@@ -764,6 +769,108 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               // TODO: Implement i18n
               _buildSectionHeader(theme, 'LHDN Validation'),
               const SizedBox(height: 12),
+
+              // QR Code and Quick Actions
+              if (_currentSale.lhdnValidationUrl != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                    border: Border.all(
+                      color: AppTheme.primary.withValues(alpha: 0.2),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Center(
+                        child: QrImageView(
+                          data: _currentSale.lhdnValidationUrl!,
+                          version: QrVersions.auto,
+                          size: 160.0,
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.all(12),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Scan to verify e-Invoice',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _launchUrl,
+                              icon: const Icon(Icons.open_in_browser_rounded, size: 18),
+                              label: const Text('Open Portal'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.5)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _shareValidationUrl,
+                              icon: const Icon(Icons.share_rounded, size: 18),
+                              label: const Text('Share Link'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.5)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _isSubmitting ? null : _saveQrToGallery,
+                          icon: _isSubmitting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppTheme.primary,
+                                  ),
+                                )
+                              : const Icon(Icons.download_for_offline_rounded, size: 18),
+                          label: Text(_isSubmitting ? 'Saving...' : 'Save QR to Photos'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.5)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               _buildDetailCard(
                 theme,
                 icon: Icons.fingerprint_rounded,
