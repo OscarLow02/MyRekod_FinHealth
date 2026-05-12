@@ -1,11 +1,13 @@
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
 import '../services/pdf_receipt_service.dart';
 import '../core/app_theme.dart';
 import '../core/lhdn_constants.dart';
 import '../models/sale_record.dart';
 import '../models/business_profile.dart';
+import 'lhdn_qr_section.dart';
 
 /// Centralized utility for presenting MyRekod "Interruption Architecture" popups.
 class AppDialogs {
@@ -374,23 +376,27 @@ class AppDialogs {
             ],
           ),
           child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top drag handle
-                const SizedBox(height: 12),
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Top drag handle
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const SizedBox(height: 16),
-                child,
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: child,
+                ),
+              ),
+            ],
+          ),
           ),
         );
       },
@@ -949,18 +955,11 @@ class AppDialogs {
                 ),
                 if (isLhdnSubmitted) ...[
                   const SizedBox(height: 24),
-                  QrImageView(
-                    data: lhdnValidationUrl
+                  LhdnQrSection(
+                    lhdnValidationUrl: lhdnValidationUrl
                         ?? saleRecord?.lhdnValidationUrl
                         ?? 'https://myinvois.hasil.gov.my/mock-validation/$invoiceNumber',
-                    version: QrVersions.auto,
-                    size: 180.0,
-                    backgroundColor: Colors.white,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Scan to Verify',
-                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    invoiceNumber: invoiceNumber,
                   ),
                 ] else ...[
                   const SizedBox(height: 24),
@@ -1035,6 +1034,147 @@ class AppDialogs {
           ),
         );
       },
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 6. MASTER PAYLOAD DETAIL SHEET (Bottom)
+  // Covers: Viewing Consolidated Invoice Payload & QR
+  // ───────────────────────────────────────────────────────────────────────────
+  static Future<void> showMasterPayloadDetail(
+    BuildContext context, {
+    required String masterRef,
+    required String jsonPayload,
+    String? lhdnValidationUrl,
+  }) {
+    final theme = Theme.of(context);
+    
+    // Attempt to format JSON for display
+    String formattedPayload = jsonPayload;
+    try {
+      final dynamic jsonObject = json.decode(jsonPayload);
+      formattedPayload = const JsonEncoder.withIndent('  ').convert(jsonObject);
+    } catch (e) {
+      debugPrint('Error formatting JSON: $e');
+    }
+
+    return _showBaseSheet(
+      context,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  ),
+                  child: const Icon(Icons.inventory_2_rounded, color: AppTheme.primary, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Master E-Invoice',
+                        style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        masterRef,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            
+            // QR Section (Modular)
+            if (lhdnValidationUrl != null) ...[
+              LhdnQrSection(
+                lhdnValidationUrl: lhdnValidationUrl,
+                invoiceNumber: masterRef,
+              ),
+              const SizedBox(height: 8),
+            ],
+
+            // Expandable JSON Payload
+            Theme(
+              data: theme.copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                title: const Text(
+                  'Technical Details (JSON)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                subtitle: const Text('Raw payload for submission', style: TextStyle(fontSize: 12)),
+                leading: const Icon(Icons.code_rounded, color: AppTheme.primary),
+                childrenPadding: EdgeInsets.zero,
+                tilePadding: EdgeInsets.zero,
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: formattedPayload));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Payload copied to clipboard'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.copy_all_rounded, size: 16),
+                          label: const Text('Copy Payload', style: TextStyle(fontSize: 12)),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: SelectableText(
+                            formattedPayload,
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 11,
+                              height: 1.5,
+                              color: Colors.blueGrey,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

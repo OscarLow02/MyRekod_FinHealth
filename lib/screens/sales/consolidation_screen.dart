@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -389,59 +387,17 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
       if (context.mounted) Navigator.pop(context);
 
       if (masterDoc.exists && masterDoc.data() != null) {
-        final rawPayload = masterDoc.data()!['payload'] as String;
-        String formattedPayload = rawPayload;
+        final data = masterDoc.data()!;
+        final rawPayload = data['payload'] as String;
+        final lhdnUrl = data['lhdnValidationUrl'] as String?;
 
-        try {
-          // Pretty print the JSON for better readability
-          final dynamic jsonObject = jsonDecode(rawPayload);
-          formattedPayload = const JsonEncoder.withIndent('  ').convert(jsonObject);
-        } catch (e) {
-          debugPrint('Error formatting JSON: $e');
-        }
-
-        // 3. Show the JSON Dialog
+        // 3. Show the Centralized Detail Modal
         if (context.mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text('Master Payload: $masterRef'),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    formattedPayload,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 11,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: formattedPayload));
-                    Clipboard.setData(ClipboardData(text: formattedPayload));
-                    if (context.mounted) {
-                      AppDialogs.showSystemAlert(
-                        context,
-                        title: 'Copied',
-                        body: 'Master Payload copied to clipboard.',
-                        icon: Icons.copy_rounded,
-                        iconColor: AppTheme.primary,
-                      );
-                    }
-                  },
-                  child: const Text('Copy'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                )
-              ],
-            ),
+          AppDialogs.showMasterPayloadDetail(
+            context,
+            masterRef: masterRef,
+            jsonPayload: rawPayload,
+            lhdnValidationUrl: lhdnUrl,
           );
         }
       } else {
