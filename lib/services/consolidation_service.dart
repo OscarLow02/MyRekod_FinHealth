@@ -7,13 +7,27 @@ import '../models/sale_record.dart';
 import 'firestore_service.dart';
 import 'lhdn_serializer.dart';
 
+class ConsolidationResult {
+  final bool success;
+  final String? masterInvoiceNumber;
+  final double totalAmount;
+  final String? error;
+
+  ConsolidationResult({
+    required this.success,
+    this.masterInvoiceNumber,
+    this.totalAmount = 0.0,
+    this.error,
+  });
+}
+
 class ConsolidationService {
   final FirestoreService _firestoreService = FirestoreService();
 
-  Future<bool> submitConsolidatedInvoice(List<SaleRecord> selectedSales) async {
-    if (selectedSales.isEmpty) return false;
+  Future<ConsolidationResult> submitConsolidatedInvoice(List<SaleRecord> selectedSales) async {
+    if (selectedSales.isEmpty) return ConsolidationResult(success: false, error: "No sales selected");
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return false;
+    if (user == null) return ConsolidationResult(success: false, error: "User not authenticated");
 
     try {
       final profile = await _firestoreService.getBusinessProfile(user.uid);
@@ -73,10 +87,14 @@ class ConsolidationService {
       });
 
       await batch.commit();
-      return true;
+      return ConsolidationResult(
+        success: true,
+        masterInvoiceNumber: masterInvoiceNumber,
+        totalAmount: masterTotalPayable,
+      );
     } catch (e) {
       debugPrint("Consolidation error: $e");
-      return false;
+      return ConsolidationResult(success: false, error: e.toString());
     }
   }
 }

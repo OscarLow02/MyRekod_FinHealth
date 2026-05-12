@@ -325,25 +325,27 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
 
     try {
       final selectedRecords = allPending.where((r) => _selectedSaleIds.contains(r.id)).toList();
-      final success = await ConsolidationService().submitConsolidatedInvoice(selectedRecords);
+      final result = await ConsolidationService().submitConsolidatedInvoice(selectedRecords);
 
       if (!mounted) return;
       setState(() => _isSubmitting = false);
 
-      if (success) {
-        await AppDialogs.showSystemAlert(
+      if (result.success) {
+        AppDialogs.showMockLhdnSuccessDialog(
           context,
-          title: 'Success',
-          body: 'Consolidated e-invoice has been submitted successfully.',
+          invoiceNumber: result.masterInvoiceNumber ?? 'N/A',
+          totalAmount: result.totalAmount,
+          onDone: () {
+            Navigator.pop(context); // Close dialog
+            _selectedSaleIds.clear(); // Clear selection after success
+            if (mounted) Navigator.pop(context); // Go back to history/dashboard
+          },
         );
-        _selectedSaleIds.clear(); // Clear selection after success
-        // Auto switch to history tab? Maybe not, keep them here or pop.
-        if (mounted) Navigator.pop(context);
       } else {
         AppDialogs.showSystemAlert(
           context,
           title: 'Submission Failed',
-          body: 'Failed to submit consolidated invoice. Please try again.',
+          body: result.error ?? 'Failed to submit consolidated invoice. Please try again.',
           icon: Icons.error_outline_rounded,
           iconColor: Colors.redAccent,
         );

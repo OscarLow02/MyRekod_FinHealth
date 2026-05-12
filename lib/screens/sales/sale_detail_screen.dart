@@ -106,36 +106,16 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         );
       });
 
-      final theme = Theme.of(context);
       // TODO: Implement i18n
-      AppDialogs.showActionModal(
+      AppDialogs.showMockLhdnSuccessDialog(
         context,
-        title: 'e-Invoice Validated ✓',
-        body: 'LHDN has accepted your invoice.\n\n'
-            'UUID: ${result.uuid}\n'
-            'Long ID: ${result.longId}',
-        primaryButtonText: 'Copy UUID',
-        primaryButtonColor: theme.brightness == Brightness.dark
-            ? AppTheme.neonGreenDark
-            : AppTheme.neonGreenLight,
-        onPrimaryPressed: () {
-          Clipboard.setData(ClipboardData(text: result.uuid ?? ''));
-          Clipboard.setData(ClipboardData(text: result.uuid ?? ''));
-          if (mounted) {
-            AppDialogs.showSystemAlert(
-              context,
-              title: 'Copied',
-              body: 'UUID copied to clipboard.',
-              icon: Icons.copy_rounded,
-              iconColor: AppTheme.primary,
-            );
-          }
+        invoiceNumber: _currentSale.invoiceNumber,
+        totalAmount: _currentSale.totalPayable,
+        saleRecord: _currentSale,
+        businessProfile: profile,
+        onDone: () {
+          Navigator.pop(context); // Close dialog
         },
-        secondaryButtonText: 'Done',
-        icon: Icons.verified_rounded,
-        iconColor: theme.brightness == Brightness.dark
-            ? AppTheme.neonGreenDark
-            : AppTheme.neonGreenLight,
       );
     } else {
       // TODO: Implement i18n
@@ -675,9 +655,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             _buildDetailCard(theme,
                 icon: Icons.payment_rounded,
                 label: 'Payment Method',
-                value:
-                    LhdnConstants.paymentModes[_currentSale.paymentMode] ??
-                        _currentSale.paymentMode ?? '01'),
+                value: LhdnConstants.paymentModes[_currentSale.paymentMode] ?? 'Cash'),
             if (_currentSale.paymentTerms != null && _currentSale.paymentTerms!.isNotEmpty)
               _buildDetailCard(theme,
                   icon: Icons.handshake_rounded,

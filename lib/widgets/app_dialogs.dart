@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 import '../core/app_theme.dart';
+import '../core/lhdn_constants.dart';
+import '../models/sale_record.dart';
+import '../models/business_profile.dart';
 
 /// Centralized utility for presenting MyRekod "Interruption Architecture" popups.
 class AppDialogs {
@@ -847,11 +851,63 @@ class AppDialogs {
     );
   }
 
+  /// Generates a plaintext receipt for sharing via WhatsApp/SMS.
+  static String generateReceiptText(SaleRecord sale, BusinessProfile profile) {
+    final dateFormat = DateFormat('dd MMM yyyy, hh:mm a');
+    final currencyFormat = NumberFormat.currency(symbol: 'RM ', decimalDigits: 2);
+    
+    final StringBuffer buffer = StringBuffer();
+    buffer.writeln('🧾 RECEIPT');
+    buffer.writeln('Business: ${profile.businessName}');
+    buffer.writeln('Invoice No: ${sale.invoiceNumber}');
+    buffer.writeln('Date: ${dateFormat.format(sale.saleDate)}');
+    buffer.writeln('------------------------');
+    
+    for (final item in sale.lineItems) {
+      final qty = item.quantity % 1 == 0 ? item.quantity.toInt().toString() : item.quantity.toString();
+      buffer.writeln('${item.item.name} x $qty = ${currencyFormat.format(item.subtotal)}');
+    }
+    
+    buffer.writeln('------------------------');
+    buffer.writeln('Subtotal: ${currencyFormat.format(sale.subtotal)}');
+    
+    if (sale.discountAmount != null && sale.discountAmount! > 0) {
+      buffer.writeln('Discount: -${currencyFormat.format(sale.discountAmount)}');
+    }
+
+    if (sale.feeAmount != null && sale.feeAmount! > 0) {
+      buffer.writeln('Fees/Charges: ${currencyFormat.format(sale.feeAmount)}');
+    }
+
+    if (sale.taxAmount > 0) {
+      buffer.writeln('Tax (${sale.taxRate}%): ${currencyFormat.format(sale.taxAmount)}');
+    }
+
+    if (sale.roundingAmount != 0) {
+      buffer.writeln('Rounding: ${currencyFormat.format(sale.roundingAmount)}');
+    }
+
+    buffer.writeln('------------------------');
+    buffer.writeln('TOTAL: ${currencyFormat.format(sale.totalPayable)}');
+    
+    if (sale.paymentMode != null) {
+      final mode = LhdnConstants.paymentModes[sale.paymentMode] ?? sale.paymentMode;
+      buffer.writeln('Payment: $mode');
+    }
+    
+    buffer.writeln('------------------------');
+    buffer.writeln('Thank you for your purchase!');
+    
+    return buffer.toString();
+  }
+
   static void showMockLhdnSuccessDialog(
     BuildContext context, {
     required String invoiceNumber,
     required double totalAmount,
     required VoidCallback onDone,
+    SaleRecord? saleRecord,
+    BusinessProfile? businessProfile,
     bool isLhdnSubmitted = true,
   }) {
     final theme = Theme.of(context);
@@ -893,9 +949,9 @@ class AppDialogs {
                 if (isLhdnSubmitted) ...[
                   const SizedBox(height: 24),
                   QrImageView(
-                    data: 'https://verify.hasil.gov.my/?invoice=$invoiceNumber',
+                    data: 'https://myinvois.hasil.gov.my/mock-validation/$invoiceNumber',
                     version: QrVersions.auto,
-                    size: 150.0,
+                    size: 180.0,
                     backgroundColor: Colors.white,
                   ),
                   const SizedBox(height: 8),
@@ -926,14 +982,39 @@ class AppDialogs {
                   ),
                 ],
                 const SizedBox(height: 24),
+                if (saleRecord != null && businessProfile != null) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, AppTheme.minTouchTarget),
+                        side: const BorderSide(color: AppTheme.primary, width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
+                      ),
+                      onPressed: () {
+                        final text = generateReceiptText(saleRecord, businessProfile);
+                        Share.share(text);
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.share_rounded, size: 20, color: AppTheme.primary),
+                          const SizedBox(width: 12),
+                          const Text('Share Receipt', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      minimumSize: const Size(double.infinity, AppTheme.minTouchTarget),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMedium)),
                     ),
                     onPressed: () {
                       onDone();
