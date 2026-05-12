@@ -5,8 +5,11 @@ import '../core/app_theme.dart';
 import '../services/firestore_service.dart';
 import '../models/business_profile.dart';
 import '../providers/sales_provider.dart';
+import '../providers/expense_provider.dart';
+import '../providers/dashboard_provider.dart';
 import '../providers/sale_calculator_provider.dart';
 import '../widgets/app_dialogs.dart';
+import '../widgets/cashflow_bar_chart.dart';
 import 'profile/profile_menu_screen.dart';
 import 'transactions_screen.dart';
 import 'expenses/scanner_screen.dart';
@@ -111,13 +114,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHomePage(ThemeData theme, String displayName) {
-    // Placeholder for Provider state
-    // TODO: Connect to SalesProvider to determine if hasData is true
-    bool hasData = false; // Toggle this to test zero-state (set to false for Zero-State UI testing)
-    
-    // User-facing strings
-    final String greetingText = "Selamat Pagi, $displayName!"; // TODO: Implement i18n
-    const String zeroStateText = "No sales recorded today!\nTap the '+' to start your streak."; // TODO: Implement i18n
+    return Consumer3<SalesProvider, ExpenseProvider, DashboardProvider>(
+      builder: (context, salesProv, expProv, dashProv, _) {
+        // Re-aggregate monthly data whenever upstream providers change
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          dashProv.aggregateMonthlyData(
+            salesProv.saleRecords,
+            expProv.expenses,
+          );
+        });
+
+        final hasData = !dashProv.hasNoData;
+        final String greetingText = "Selamat Pagi, $displayName!"; 
+        const String zeroStateText = "No sales recorded today!\nTap the '+' to start your streak."; // TODO: Implement i18n
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -167,12 +176,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 24),
             
-            // Placeholder: Bar Chart
-            _buildPlaceholderCard(
-              context,
-              height: 240,
-              label: "Weekly Sales Trends (Bar Chart)",
-              icon: Icons.bar_chart_rounded,
+            // Native Bar Chart: Sales vs. Expenses
+            CashflowBarChart(
+              totalSales: dashProv.totalMonthlySales,
+              totalExpenses: dashProv.totalMonthlyExpenses,
             ),
             const SizedBox(height: 24),
             
@@ -242,7 +249,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
-  }
+  },
+);
+}
 
   /// Builds a header button with 48dp touch target as per requirements
   Widget _buildHeaderButton(BuildContext context, {required IconData icon, required VoidCallback onPressed}) {
