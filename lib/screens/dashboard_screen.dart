@@ -9,15 +9,16 @@ import '../providers/expense_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../providers/sale_calculator_provider.dart';
 import '../widgets/app_dialogs.dart';
-import '../widgets/cashflow_chart.dart';
 import '../widgets/credit_score_gauge.dart';
 import '../widgets/credit_score_info_sheet.dart';
+import '../widgets/dashboard_wave_header.dart';
 import '../services/pdf_report_service.dart';
 import 'profile/profile_menu_screen.dart';
 import 'transactions_screen.dart';
 import 'expenses/scanner_screen.dart';
 import 'sales/record_sale_screen.dart';
 import 'customers/customer_list_screen.dart';
+import 'cashflow_analysis_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -31,7 +32,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   BusinessProfile? _profile;
   bool _isLoading = true;
   bool _isGeneratingPdf = false;
-  ChartPeriod _chartPeriod = ChartPeriod.monthly;
 
   @override
   void initState() {
@@ -60,18 +60,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final theme = Theme.of(context);
     final user = FirebaseAuth.instance.currentUser;
 
-    // Resolve display name from profile or Firebase user
     final displayName = _profile?.businessName ??
         user?.displayName ??
         'User';
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _buildCurrentPage(theme, displayName),
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildCurrentPage(theme, displayName),
       bottomNavigationBar: _buildBottomNav(theme),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -118,6 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // ── The Overlapping Stack Dashboard ───────────────────────────────────────
   Widget _buildHomePage(ThemeData theme, String displayName) {
     return Consumer3<SalesProvider, ExpenseProvider, DashboardProvider>(
       builder: (context, salesProv, expProv, dashProv, _) {
@@ -130,208 +128,443 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
 
         final hasData = !dashProv.hasNoData;
-        final String greetingText = "Welcome, $displayName!"; 
-        const String zeroStateText = "No sales recorded today!\nTap the '+' to start your streak."; // TODO: Implement i18n
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- Header Section ---
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                greetingText,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              // Header buttons removed for simplified English-only phase
-            ],
-          ),
-          const SizedBox(height: 32),
+        // TODO: Implement i18n
+        final String welcomeLabel = 'Welcome back,';
+        final String businessName = _profile?.businessName ?? "Oscar's Kitchen";
+        const String zeroStateText =
+            "No sales recorded today!\nTap the '+' to start your streak.";
 
-          // --- Conditional Body ---
-          if (hasData) ...[
-            // Hero Card: Credit Score Gauge with Education Info
-            Stack(
-              alignment: Alignment.topRight,
-              children: [
-                CreditScoreGauge(score: dashProv.creditScore),
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, right: 8),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.info_outline_rounded,
-                      color: theme.colorScheme.primary,
-                    ),
-                    onPressed: () => CreditScoreInfoSheet.show(context),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+        return Stack(
+          children: [
+            // ── Bottom Layer: Purple Wave ──────────────────────────────────
+            const DashboardWaveHeader(height: 220),
 
-            // Net Profit Trend Analysis Card
-            _buildNetProfitTrendCard(theme, dashProv),
-            const SizedBox(height: 24),
-
-            // High-Performance Line Chart: Cashflow Analysis
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // ── Top Layer: Content ────────────────────────────────────────
+            SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Cashflow Analysis',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    // ── Section 1: Header on wave ──────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  welcomeLabel,
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: theme.colorScheme.secondary,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  businessName,
+                                  style: theme.textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Notification bell with red badge
+                          SizedBox(
+                            width: AppTheme.minTouchTarget,
+                            height: AppTheme.minTouchTarget,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    // TODO: Implement notifications
+                                  },
+                                  icon: const Icon(
+                                    Icons.notifications_outlined,
+                                    color: Colors.white,
+                                    size: 26,
+                                  ),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: Colors.black26,
+                                    shape: const CircleBorder(),
+                                  ),
+                                ),
+                                // Red notification dot
+                                Positioned(
+                                  top: 12,
+                                  right: 14,
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: Colors.redAccent,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: theme.colorScheme.primary,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    _buildChartToggle(),
+
+                    // ── Section 2: Overlapping Hero Card ──────────────────
+                    if (hasData) ...[
+                      const SizedBox(height: 40),
+                      Transform(
+                        transform: Matrix4.translationValues(0.0, -40.0, 0.0),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppTheme.darkSurfaceContainer.withValues(alpha: 0.85),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.05),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              children: [
+                                CreditScoreGauge(score: dashProv.creditScore),
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: IconButton(
+                                    icon: Icon(
+                                      Icons.info_outline_rounded,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      size: 22,
+                                    ),
+                                    onPressed: () =>
+                                        CreditScoreInfoSheet.show(context),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // ── Section 3: Quick Actions ──────────────────────────
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Transform(
+                          transform: Matrix4.translationValues(0.0, -24.0, 0.0),
+                          child: Row(
+                            children: [
+                              _buildQuickAction(
+                                context,
+                                icon: Icons.add_circle_outline_rounded,
+                                label: 'Record\nSale',
+                                color: theme.colorScheme.secondary,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ChangeNotifierProvider(
+                                        create: (_) => SaleCalculatorProvider(),
+                                        child: const RecordSaleScreen(),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 16),
+                              _buildQuickAction(
+                                context,
+                                icon: Icons.remove_circle_outline_rounded,
+                                label: 'Record\nExpense',
+                                color: Colors.redAccent,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => const ScannerScreen()),
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 16),
+                              _buildQuickAction(
+                                context,
+                                icon: Icons.description_outlined,
+                                label: 'Generate\nReport',
+                                color: Colors.white,
+                                isPrimary: true,
+                                isLoading: _isGeneratingPdf,
+                                onTap: () => _generatePdfReport(
+                                  dashProv: dashProv,
+                                  salesProv: salesProv,
+                                  expProv: expProv,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // ── Section 4: Net Profit Card ────────────────────────
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: _buildNetProfitCard(theme, dashProv),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // ── Section 5: Cash Flow Overview ─────────────────────
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: _buildCashFlowOverview(theme, dashProv),
+                      ),
+                      const SizedBox(height: 80), // Bottom padding for FAB
+                    ] else ...[
+                      // ── Zero-State UI ───────────────────────────────────
+                      const SizedBox(height: 120),
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 220,
+                              height: 220,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.05),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.insights_rounded,
+                                  size: 100,
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.3),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 24),
+                              child: Text(
+                                zeroStateText,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 220,
-                  child: CashflowChart(
-                    period: _chartPeriod,
-                    salesSpots: dashProv.getSalesSpots(_chartPeriod),
-                    expenseSpots: dashProv.getExpenseSpots(_chartPeriod),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            
-            // PDF Export Button (48dp min touch target via ElevatedButton theme)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isGeneratingPdf
-                    ? null
-                    : () => _generatePdfReport(
-                          dashProv: dashProv,
-                          salesProv: salesProv,
-                          expProv: expProv,
-                        ),
-                icon: _isGeneratingPdf
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.picture_as_pdf_rounded),
-                // TODO: Implement i18n
-                label: Text(
-                  _isGeneratingPdf
-                      ? 'Generating...'
-                      : 'Generate Monthly PDF Report',
-                ),
               ),
             ),
-            const SizedBox(height: 80), // Padding for FAB
-          ] else ...[
-            // --- Zero-State UI ---
-            const SizedBox(height: 80),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+          ],
+        );
+      },
+    );
+  }
+
+  // ── Quick Action Button ─────────────────────────────────────────────────
+  Widget _buildQuickAction(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+    bool isPrimary = false,
+    bool isLoading = false,
+  }) {
+    final theme = Theme.of(context);
+    return Expanded(
+      child: Column(
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: isLoading ? null : onTap,
+              borderRadius: BorderRadius.circular(100),
+              child: Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: isPrimary
+                      ? theme.colorScheme.primary
+                      : AppTheme.darkSurfaceContainer,
+                  shape: BoxShape.circle,
+                  border: isPrimary
+                      ? null
+                      : Border.all(
+                          color: Colors.white.withValues(alpha: 0.05),
+                        ),
+                  boxShadow: isPrimary
+                      ? [
+                          BoxShadow(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.3),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : Icon(icon, color: color, size: 28),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 12,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Net Profit Card ─────────────────────────────────────────────────────
+  Widget _buildNetProfitCard(ThemeData theme, DashboardProvider dashProv) {
+    final isPositive = dashProv.netProfit >= 0;
+    final profitParts = dashProv.netProfit.toStringAsFixed(2).split('.');
+    // TODO: Implement i18n
+    const netProfitLabel = 'Net Profit (Current Month)';
+    const trendLabel = '↗ 12% vs last month'; // Mocked trend
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.darkSurfaceContainer,
+        borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.05),
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Decorative glow
+          Positioned(
+            right: -40,
+            top: -40,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppTheme.neonGreenDark.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                netProfitLabel,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Friendly Illustration Placeholder
-                  Container(
-                    width: 220,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.05),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.insights_rounded,
-                        size: 100,
-                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                      ),
+                  Text(
+                    'RM ${_formatWithCommas(profitParts[0])}',
+                    style: theme.textTheme.displayMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      fontSize: 32,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 40),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
-                      zeroStateText,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      '.${profitParts[1]}',
+                      style: theme.textTheme.titleLarge?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
-                        height: 1.5,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ],
-      ),
-    );
-  },
-);
-}
-
-  Widget _buildNetProfitTrendCard(ThemeData theme, DashboardProvider dashProv) {
-    final isPositive = dashProv.netProfit >= 0;
-    
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Net Profit',
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'RM ${dashProv.netProfit.toStringAsFixed(2)}',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isPositive 
-                      ? const Color(0xFF00FF85) 
-                      : theme.colorScheme.error,
-                ),
-              ),
+              const SizedBox(height: 16),
+              // Trend pill chip
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: (isPositive ? const Color(0xFF00FF85) : theme.colorScheme.error)
-                      .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
+                  color: (isPositive
+                          ? AppTheme.neonGreenDark
+                          : theme.colorScheme.error)
+                      .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(100),
                 ),
-                child: Text(
-                  dashProv.profitMarginLabel,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isPositive ? const Color(0xFF00FF85) : theme.colorScheme.error,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.trending_up_rounded,
+                      size: 16,
+                      color: isPositive
+                          ? AppTheme.neonGreenDark
+                          : theme.colorScheme.error,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      trendLabel,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: isPositive
+                            ? AppTheme.neonGreenDark
+                            : theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -341,45 +574,152 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildChartToggle() {
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: ChartPeriod.values.map((period) {
-          final isSelected = _chartPeriod == period;
-          final label = period.name[0].toUpperCase() + period.name.substring(1);
-          return GestureDetector(
-            onTap: () => setState(() => _chartPeriod = period),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected 
-                      ? Theme.of(context).colorScheme.onPrimary 
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+  // ── Cash Flow Overview Section ──────────────────────────────────────────
+  Widget _buildCashFlowOverview(ThemeData theme, DashboardProvider dashProv) {
+    // TODO: Implement i18n
+    const overviewTitle = 'Cash Flow Overview';
+    const viewDetailsLabel = 'View Details';
+
+    final totalSales = dashProv.totalMonthlySales;
+    final totalExpenses = dashProv.totalMonthlyExpenses;
+    final maxValue = totalSales > totalExpenses ? totalSales : totalExpenses;
+
+    return Column(
+      children: [
+        // Header row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              overviewTitle,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
             ),
-          );
-        }).toList(),
-      ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CashflowAnalysisScreen(),
+                  ),
+                );
+              },
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, AppTheme.minTouchTarget),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    viewDetailsLabel,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.secondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: theme.colorScheme.secondary,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Mini Bar Chart
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.darkSurfaceContainer,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.05),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Sales bar
+              Expanded(
+                child: _buildMiniBar(
+                  theme,
+                  label: 'Sales',
+                  value: totalSales,
+                  maxValue: maxValue,
+                  color: AppTheme.neonGreenDark,
+                ),
+              ),
+              const SizedBox(width: 32),
+              // Expenses bar
+              Expanded(
+                child: _buildMiniBar(
+                  theme,
+                  label: 'Expenses',
+                  value: totalExpenses,
+                  maxValue: maxValue,
+                  color: Colors.redAccent,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
+  Widget _buildMiniBar(
+    ThemeData theme, {
+    required String label,
+    required double value,
+    required double maxValue,
+    required Color color,
+  }) {
+    final barHeight = maxValue > 0 ? (value / maxValue) * 100.0 : 4.0;
+    final valueLabel = value >= 1000
+        ? '${(value / 1000).toStringAsFixed(1)}k'
+        : value.toStringAsFixed(0);
 
+    return Column(
+      children: [
+        Text(
+          valueLabel,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 110,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutCubic,
+              width: 48,
+              height: barHeight.clamp(4.0, 110.0),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.8),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
 
   /// Generates and shares the monthly PDF report via native share dialog.
   Future<void> _generatePdfReport({
@@ -411,6 +751,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } finally {
       if (mounted) setState(() => _isGeneratingPdf = false);
     }
+  }
+
+  /// Adds commas to number strings (e.g. "10081" → "10,081").
+  String _formatWithCommas(String number) {
+    final isNegative = number.startsWith('-');
+    final digits = isNegative ? number.substring(1) : number;
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(digits[i]);
+    }
+    return isNegative ? '-${buffer.toString()}' : buffer.toString();
   }
 
   Widget _buildBottomNav(ThemeData theme) {
