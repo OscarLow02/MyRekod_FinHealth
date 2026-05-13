@@ -177,47 +177,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ],
                             ),
                           ),
-                          // Notification bell with red badge
-                          SizedBox(
-                            width: AppTheme.minTouchTarget,
-                            height: AppTheme.minTouchTarget,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                IconButton(
-                                  onPressed: () {
-                                    // TODO: Implement notifications
-                                  },
-                                  icon: const Icon(
-                                    Icons.notifications_outlined,
-                                    color: Colors.white,
-                                    size: 26,
-                                  ),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: Colors.black26,
-                                    shape: const CircleBorder(),
-                                  ),
-                                ),
-                                // Red notification dot
-                                Positioned(
-                                  top: 12,
-                                  right: 14,
-                                  child: Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(
-                                      color: Colors.redAccent,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: theme.colorScheme.primary,
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -293,7 +252,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               const SizedBox(width: 16),
                               _buildQuickAction(
                                 context,
-                                icon: Icons.remove_circle_outline_rounded,
+                                icon: Icons.document_scanner_outlined,
                                 label: 'Record\nExpense',
                                 color: Colors.redAccent,
                                 onTap: () {
