@@ -283,6 +283,32 @@ class FirestoreService {
         .catchError((e) => debugPrint("Sale record delete error: $e"));
   }
 
+  /// Fetches sale records within a specific date range.
+  Future<List<SaleRecord>> getSaleRecordsInDateRange(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final query = await _saleRecordsCol(userId)
+        .where('saleDate', isGreaterThanOrEqualTo: start)
+        .where('saleDate', isLessThanOrEqualTo: end)
+        .get();
+    return query.docs.map(SaleRecord.fromFirestore).toList();
+  }
+
+  /// Fetches expense records within a specific date range.
+  Future<List<ExpenseRecord>> getExpensesInDateRange(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final query = await _expensesCol(userId)
+        .where('date', isGreaterThanOrEqualTo: start)
+        .where('date', isLessThanOrEqualTo: end)
+        .get();
+    return query.docs.map((doc) => ExpenseRecord.fromMap(doc.data(), doc.id)).toList();
+  }
+
   // ── Running Invoice ID Generator ───────────────────────────────────────
 
   /// Reads the current counter and returns what the next invoice number

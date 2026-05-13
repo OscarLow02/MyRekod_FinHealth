@@ -21,7 +21,6 @@ class ProfileMenuScreen extends StatefulWidget {
 
 class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
   BusinessProfile? _profile;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -36,11 +35,10 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
       if (mounted) {
         setState(() {
           _profile = profile;
-          _isLoading = false;
         });
       }
     } else {
-      if (mounted) setState(() => _isLoading = false);
+      // No user, nothing to load
     }
   }
 

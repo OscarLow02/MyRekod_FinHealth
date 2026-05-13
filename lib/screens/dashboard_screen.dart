@@ -9,8 +9,9 @@ import '../providers/expense_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../providers/sale_calculator_provider.dart';
 import '../widgets/app_dialogs.dart';
-import '../widgets/cashflow_bar_chart.dart';
+import '../widgets/cashflow_chart.dart';
 import '../widgets/credit_score_gauge.dart';
+import '../widgets/credit_score_info_sheet.dart';
 import '../services/pdf_report_service.dart';
 import 'profile/profile_menu_screen.dart';
 import 'transactions_screen.dart';
@@ -30,6 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   BusinessProfile? _profile;
   bool _isLoading = true;
   bool _isGeneratingPdf = false;
+  ChartPeriod _chartPeriod = ChartPeriod.monthly;
 
   @override
   void initState() {
@@ -121,11 +123,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (context, salesProv, expProv, dashProv, _) {
         // Re-aggregate monthly data whenever upstream providers change
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          dashProv.aggregateMonthlyData(
-            salesProv.saleRecords,
-            expProv.expenses,
-            profile: _profile,
-          );
+          final currentUser = FirebaseAuth.instance.currentUser;
+          if (currentUser != null) {
+            dashProv.aggregateMonthlyData(currentUser.uid, profile: _profile);
+          }
         });
 
         final hasData = !dashProv.hasNoData;
@@ -171,14 +172,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           // --- Conditional Body ---
           if (hasData) ...[
-            // Hero Card: Credit Score Gauge
-            CreditScoreGauge(score: dashProv.creditScore),
+            // Hero Card: Credit Score Gauge with Education Info
+            Stack(
+              alignment: Alignment.topRight,
+              children: [
+                CreditScoreGauge(score: dashProv.creditScore),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, right: 8),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.info_outline_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                    onPressed: () => CreditScoreInfoSheet.show(context),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
-            
-            // Native Bar Chart: Sales vs. Expenses
-            CashflowBarChart(
-              totalSales: dashProv.totalMonthlySales,
-              totalExpenses: dashProv.totalMonthlyExpenses,
+
+            // Net Profit Trend Analysis Card
+            _buildNetProfitTrendCard(theme, dashProv),
+            const SizedBox(height: 24),
+
+            // High-Performance Line Chart: Cashflow Analysis
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Cashflow Analysis',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    _buildChartToggle(),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 220,
+                  child: CashflowChart(
+                    period: _chartPeriod,
+                    salesSpots: dashProv.getSalesSpots(_chartPeriod),
+                    expenseSpots: dashProv.getExpenseSpots(_chartPeriod),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             
@@ -258,6 +300,100 @@ class _DashboardScreenState extends State<DashboardScreen> {
   },
 );
 }
+
+  Widget _buildNetProfitTrendCard(ThemeData theme, DashboardProvider dashProv) {
+    final isPositive = dashProv.netProfit >= 0;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Prestasi Bersih (Net Profit)',
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'RM ${dashProv.netProfit.toStringAsFixed(2)}',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isPositive 
+                      ? const Color(0xFF00FF85) 
+                      : theme.colorScheme.error,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (isPositive ? const Color(0xFF00FF85) : theme.colorScheme.error)
+                      .withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  dashProv.profitMarginLabel,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isPositive ? const Color(0xFF00FF85) : theme.colorScheme.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartToggle() {
+    return Container(
+      height: 36,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: ChartPeriod.values.map((period) {
+          final isSelected = _chartPeriod == period;
+          final label = period.name[0].toUpperCase() + period.name.substring(1);
+          return GestureDetector(
+            onTap: () => setState(() => _chartPeriod = period),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected 
+                      ? Theme.of(context).colorScheme.onPrimary 
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   /// Builds a header button with 48dp touch target as per requirements
   Widget _buildHeaderButton(BuildContext context, {required IconData icon, required VoidCallback onPressed}) {

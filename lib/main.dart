@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'core/app_theme.dart';
 import 'providers/onboarding_provider.dart';
@@ -10,7 +9,6 @@ import 'providers/sales_provider.dart';
 import 'providers/customer_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'screens/splash_screen.dart';
-import 'screens/auth/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -55,6 +55,10 @@ class ExpenseRecord {
     );
   }
 
+  factory ExpenseRecord.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    return ExpenseRecord.fromMap(doc.data()!, doc.id);
+  }
+
   ExpenseRecord copyWith({
     String? id,
     DateTime? date,
