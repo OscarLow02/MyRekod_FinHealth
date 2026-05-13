@@ -6,10 +6,10 @@ import '../models/expense_record.dart';
 import '../models/business_profile.dart';
 import '../services/firestore_service.dart';
 
-/// Aggregates monthly financial data directly from Firestore for the 
+/// Aggregates monthly financial data directly from Firestore for the
 /// Dashboard Hero Card and chart visualisations.
 ///
-/// This provider executes independent queries to ensure all data for the 
+/// This provider executes independent queries to ensure all data for the
 /// current month is captured, bypassing any pagination limits in the UI providers.
 class DashboardProvider with ChangeNotifier {
   // ── Dependencies ────────────────────────────────────────────────────────
@@ -94,7 +94,10 @@ class DashboardProvider with ChangeNotifier {
 
   /// Fetches and aggregates monthly data directly from Firestore to avoid
   /// pagination bugs from the UI-level providers.
-  Future<void> aggregateMonthlyData(String userId, {BusinessProfile? profile}) async {
+  Future<void> aggregateMonthlyData(
+    String userId, {
+    BusinessProfile? profile,
+  }) async {
     _isLoading = true;
     notifyListeners();
 
@@ -133,16 +136,16 @@ class DashboardProvider with ChangeNotifier {
 
       // ── Compute Credit Readiness Score ─────────────────────────────────────
       final activeDays = _countActiveDays(sales, expenses);
-      
+
       // Using the rubric: Base(300) + Profile(100) + Activity(300) + Cashflow(300)
-      int newScore = 300; 
+      int newScore = 300;
       if (_isProfileComplete(profile)) newScore += 100;
       newScore += (activeDays * 10).clamp(0, 300);
-      
+
       if (netProfit > 0) {
         newScore += (netProfit * 0.1).round().clamp(0, 300);
       }
-      
+
       _creditScore = newScore.clamp(0, 1000);
     } catch (e) {
       debugPrint('Error aggregating monthly data: $e');
@@ -189,8 +192,7 @@ class DashboardProvider with ChangeNotifier {
     final breakdown = <int, double>{};
 
     for (final sale in sales) {
-      if (sale.saleDate.month == now.month &&
-          sale.saleDate.year == now.year) {
+      if (sale.saleDate.month == now.month && sale.saleDate.year == now.year) {
         final day = sale.saleDate.day;
         breakdown[day] = (breakdown[day] ?? 0.0) + sale.totalPayable;
       }
@@ -204,8 +206,7 @@ class DashboardProvider with ChangeNotifier {
     final breakdown = <int, double>{};
 
     for (final expense in expenses) {
-      if (expense.date.month == now.month &&
-          expense.date.year == now.year) {
+      if (expense.date.month == now.month && expense.date.year == now.year) {
         final day = expense.date.day;
         breakdown[day] = (breakdown[day] ?? 0.0) + expense.amount;
       }
@@ -224,8 +225,7 @@ class DashboardProvider with ChangeNotifier {
     final breakdown = <String, double>{};
 
     for (final expense in expenses) {
-      if (expense.date.month == now.month &&
-          expense.date.year == now.year) {
+      if (expense.date.month == now.month && expense.date.year == now.year) {
         breakdown[expense.category] =
             (breakdown[expense.category] ?? 0.0) + expense.amount;
       }
@@ -236,7 +236,12 @@ class DashboardProvider with ChangeNotifier {
   // ── Chart Spot Generation ───────────────────────────────────────────────
 
   List<FlSpot> getSalesSpots(ChartPeriod period) {
-    return _generateSpots(_allSales, period, (s) => s.saleDate, (s) => s.totalPayable);
+    return _generateSpots(
+      _allSales,
+      period,
+      (s) => s.saleDate,
+      (s) => s.totalPayable,
+    );
   }
 
   List<FlSpot> getExpenseSpots(ChartPeriod period) {
@@ -252,11 +257,11 @@ class DashboardProvider with ChangeNotifier {
     if (records.isEmpty) return [const FlSpot(0, 0)];
 
     final Map<int, double> grouped = {};
-    
+
     for (final record in records) {
       final date = getDate(record);
       int key = 0;
-      
+
       if (period == ChartPeriod.daily) {
         key = date.day;
       } else if (period == ChartPeriod.weekly) {
@@ -265,13 +270,13 @@ class DashboardProvider with ChangeNotifier {
       } else {
         key = date.month;
       }
-      
+
       grouped[key] = (grouped[key] ?? 0.0) + getAmount(record);
     }
 
     final List<FlSpot> spots = [];
     final sortedKeys = grouped.keys.toList()..sort();
-    
+
     if (sortedKeys.isEmpty) return [const FlSpot(0, 0)];
 
     for (final key in sortedKeys) {

@@ -130,7 +130,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
 
         final hasData = !dashProv.hasNoData;
-        final String greetingText = "Selamat Pagi, $displayName!"; 
+        final String greetingText = "Welcome, $displayName!"; 
         const String zeroStateText = "No sales recorded today!\nTap the '+' to start your streak."; // TODO: Implement i18n
 
     return SingleChildScrollView(
@@ -143,29 +143,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  greetingText,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              Text(
+                greetingText,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              Row(
-                children: [
-                  _buildHeaderButton(
-                    context, 
-                    icon: Icons.language_rounded, 
-                    onPressed: () {}, // TODO: Implement Language Settings
-                  ),
-                  const SizedBox(width: 12),
-                  _buildHeaderButton(
-                    context, 
-                    icon: Icons.settings_rounded, 
-                    onPressed: () {}, // TODO: Implement Settings
-                  ),
-                ],
-              ),
+              // Header buttons removed for simplified English-only phase
             ],
           ),
           const SizedBox(height: 32),
@@ -317,7 +301,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Prestasi Bersih (Net Profit)',
+            'Net Profit',
             style: theme.textTheme.titleSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -395,24 +379,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// Builds a header button with 48dp touch target as per requirements
-  Widget _buildHeaderButton(BuildContext context, {required IconData icon, required VoidCallback onPressed}) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-      ),
-      child: IconButton(
-        iconSize: 24,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        icon: Icon(icon, color: Theme.of(context).colorScheme.onSurface),
-        onPressed: onPressed,
-      ),
-    );
-  }
+
 
   /// Generates and shares the monthly PDF report via native share dialog.
   Future<void> _generatePdfReport({
