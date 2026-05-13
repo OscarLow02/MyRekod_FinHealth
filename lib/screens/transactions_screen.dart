@@ -32,6 +32,12 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   void _handleTabSelection() {
+    if (_tabController.indexIsChanging) {
+      _searchController.clear();
+      // Reset providers when switching tabs
+      context.read<SalesProvider>().resetFilters();
+      context.read<ExpenseProvider>().resetFilters();
+    }
     setState(() {});
   }
 
@@ -45,9 +51,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   // ── Expenses Logic ──────────────────────────────────────────────────────
 
-  double _calculateExpensesTotal(List<ExpenseRecord> expenses) {
-    return expenses.fold(0.0, (sum, item) => sum + item.amount);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,27 +106,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       ),
       body: Column(
         children: [
-          // Summary Cards (Only for Expenses)
-          if (isExpenseTab)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 16.0,
-              ),
-              child: Consumer<ExpenseProvider>(
-                builder: (context, provider, _) {
-                  final total = _calculateExpensesTotal(provider.expenses);
-                  // TODO: Implement i18n
-                  final String labelTotalExpenses = 'Total Expenses';
-                  return _buildSummaryCard(
-                    title: labelTotalExpenses,
-                    amount: 'RM ${total.toStringAsFixed(2)}',
-                    color: Colors.orange.shade700,
-                    icon: Icons.trending_down_rounded,
-                  );
-                },
-              ),
-            ),
 
 
           // Tab Views
@@ -138,17 +120,108 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    if (provider.expenses.isEmpty) {
-                      // TODO: Implement i18n
-                      final String msgNoExpenses = 'No expenses recorded yet';
-                      return _buildEmptyState(
-                        icon: Icons.receipt_long_rounded,
-                        message: msgNoExpenses,
-                        color: Colors.orange.shade700,
-                      );
-                    }
+                    final expenses = provider.expenseRecords;
 
-                    return _buildExpenseList(provider.expenses);
+                    return NotificationListener<ScrollNotification>(
+                      onNotification: (ScrollNotification scrollInfo) {
+                        if (scrollInfo.metrics.pixels >=
+                            scrollInfo.metrics.maxScrollExtent - 200) {
+                          provider.loadMore();
+                        }
+                        return true;
+                      },
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          provider.resetFilters();
+                        },
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            // 1. Unified Hero Card
+                            SliverToBoxAdapter(
+                              child: _buildExpenseHeroCard(provider),
+                            ),
+
+                            // 2. Search & Filter Row
+                            SliverToBoxAdapter(
+                              child: _buildExpenseSearchAndFilter(provider),
+                            ),
+
+                            // 3. Header
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'RECENT EXPENSES',
+                                      style: theme.textTheme.labelLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.6),
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${provider.totalFilteredCount} EXPENSES',
+                                      style: theme.textTheme.labelLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange.shade800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // 4. List of Expenses
+                            if (expenses.isEmpty)
+                              SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: _buildEmptyState(
+                                  icon: Icons.receipt_long_rounded,
+                                  message: 'No expenses found matching filters',
+                                  color: Colors.orange.shade700,
+                                ),
+                              )
+                            else ...[
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, index) {
+                                      return _buildExpenseCard(context, expenses[index]);
+                                    },
+                                    childCount: expenses.length,
+                                  ),
+                                ),
+                              ),
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 32),
+                                  child: Center(
+                                    child: provider.hasMore
+                                        ? const CircularProgressIndicator()
+                                        : Text(
+                                            'End of results',
+                                            style: theme.textTheme.bodySmall?.copyWith(
+                                              color: theme.colorScheme.onSurfaceVariant
+                                                  .withValues(alpha: 0.5),
+                                              letterSpacing: 1.1,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                              const SliverToBoxAdapter(
+                                child: SizedBox(height: 100),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
                   },
                 ),
                 // 2. Sales Tab
@@ -234,7 +307,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                       '${provider.totalFilteredCount} SALES',
                                       style: theme.textTheme.labelLarge?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: AppTheme.primary,
+                                        color: AppTheme.neonGreenDark,
                                       ),
                                     ),
                                   ],
@@ -313,79 +386,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   // ── UI Components ───────────────────────────────────────────────────────
 
-  Widget _buildSummaryCard({
-    required String title,
-    required String amount,
-    required Color color,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.withValues(alpha: 0.15),
-            color.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.05),
-            blurRadius: 20,
-            spreadRadius: -5,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  amount,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: color,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildEmptyState({
     required IconData icon,
     required String message,
@@ -419,75 +419,104 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
-  Widget _buildExpenseList(List<ExpenseRecord> expenses) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: expenses.length,
-      itemBuilder: (context, index) {
-        final expense = expenses[index];
-        final dateStr = DateFormat('yyyy-MM-dd').format(expense.date);
+  Widget _buildExpenseCard(BuildContext context, ExpenseRecord expense) {
+    final theme = Theme.of(context);
+    final dateStr = DateFormat('yyyy-MM-dd').format(expense.date);
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ExpenseDetailScreen(expense: expense),
-                ),
-              );
-            },
-            leading: CircleAvatar(
-              backgroundColor: Colors.orange.shade700.withValues(alpha: 0.2),
-              child: Icon(
-                expense.imagePath != null
-                    ? Icons.receipt_long_rounded
-                    : Icons.edit_note_rounded,
-                color: Colors.orange.shade700,
-              ),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ExpenseDetailScreen(expense: expense),
             ),
-            title: Text(
-              expense.vendor.isNotEmpty ? expense.vendor : 'Unknown Vendor', // TODO: Implement i18n
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            subtitle: Text(
-              '$dateStr • ${expense.category}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            trailing: Text(
-              '-RM ${expense.amount.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.redAccent,
-              ),
-            ),
+          );
+        },
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade700.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           ),
-        );
-      },
+          child: Icon(
+            expense.imagePath != null
+                ? Icons.receipt_long_rounded
+                : Icons.edit_note_rounded,
+            color: Colors.orange.shade700,
+          ),
+        ),
+        title: Text(
+          expense.vendor.isNotEmpty ? expense.vendor : 'Unknown Vendor',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          '$dateStr • ${expense.category}',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        trailing: Text(
+          '-RM ${expense.amount.toStringAsFixed(2)}',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.redAccent,
+          ),
+        ),
+      ),
     );
   }
 
-  // ── Sales Helpers ───────────────────────────────────────────────────────
+  // ── Expenses Helpers ──────────────────────────────────────────────────
 
-  Widget _buildSalesHeroCard(SalesProvider provider) {
+  Widget _buildExpenseHeroCard(ExpenseProvider provider) {
     final theme = Theme.of(context);
-    final pendingPayment = provider.getStatusCount(commStatus: CommercialStatus.pendingPayment);
-    final paid = provider.getStatusCount(commStatus: CommercialStatus.paid);
-    final pendingConsolidation = provider.getStatusCount(compStatus: ComplianceStatus.pendingConsolidation);
-    final valid = provider.getStatusCount(compStatus: ComplianceStatus.valid);
+    final totalCount = provider.totalFilteredCount;
+    final accentColor = Colors.orange.shade700;
+    
+    // Calculate category summary for badges
+    final Map<String, int> categoryCounts = {};
+    for (var exp in provider.allFilteredRecords) {
+      categoryCounts[exp.category] = (categoryCounts[exp.category] ?? 0) + 1;
+    }
+    final sortedCategories = categoryCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final topCategories = sortedCategories.take(3).toList();
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        gradient: LinearGradient(
+          colors: [
+            accentColor.withValues(alpha: 0.15),
+            accentColor.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: accentColor.withValues(alpha: 0.3),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.05),
+            blurRadius: 20,
+            spreadRadius: -5,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -495,46 +524,273 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    provider.startDate != null && provider.endDate != null
-                        ? 'TOTAL SALES (${DateFormat('d MMM yy').format(provider.startDate!)} - ${DateFormat('d MMM yy').format(provider.endDate!)})'
-                        : 'TOTAL SALES (THIS MONTH)',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 1.1,
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      provider.startDate != null && provider.endDate != null
+                          ? 'TOTAL EXPENSES (${DateFormat('d MMM').format(provider.startDate!)} - ${DateFormat('d MMM').format(provider.endDate!)})'
+                          : 'TOTAL EXPENSES (THIS MONTH)',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        letterSpacing: 1.1,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'RM ${provider.filteredSalesTotal.toStringAsFixed(2)}',
-                    style: theme.textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                    const SizedBox(height: 8),
+                    Text(
+                      'RM ${provider.filteredExpensesTotal.toStringAsFixed(2)}',
+                      style: theme.textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: accentColor,
+                        letterSpacing: -1,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Icon(
-                Icons.auto_graph_rounded,
-                size: 40,
-                color: AppTheme.primary.withValues(alpha: 0.2),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.2),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.trending_down_rounded,
+                  size: 28,
+                  color: accentColor,
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          Divider(color: accentColor.withValues(alpha: 0.1), height: 1),
           const SizedBox(height: 16),
+          Text(
+            'CATEGORY SUMMARY',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              // TODO: Implement i18n
-              _buildSimpleBadge('$pendingPayment Pending Payment', Colors.orange),
+              _buildSimpleBadge('$totalCount Transactions', accentColor),
+              ...topCategories.map((cat) => _buildSimpleBadge('${cat.key}: ${cat.value}', Colors.grey.shade600)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpenseSearchAndFilter(ExpenseProvider provider) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              onChanged: (val) {
+                provider.setSearchQuery(val);
+                setState(() {});
+              },
+              decoration: InputDecoration(
+                hintText: 'Search vendor or category', // TODO: Implement i18n
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 20),
+                        onPressed: () {
+                          _searchController.clear();
+                          provider.setSearchQuery('');
+                          setState(() {});
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            ),
+            child: IconButton(
+              icon: Icon(
+                provider.startDate != null
+                    ? Icons.date_range_rounded
+                    : Icons.calendar_month_rounded,
+                color: provider.startDate != null ? Colors.orange.shade700 : null,
+              ),
+              onPressed: () async {
+                final range = await showDateRangePicker(
+                  context: context,
+                  firstDate: DateTime(2024),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                  initialDateRange:
+                      provider.startDate != null && provider.endDate != null
+                          ? DateTimeRange(
+                              start: provider.startDate!,
+                              end: provider.endDate!,
+                            )
+                          : null,
+                );
+                if (range != null) {
+                  provider.setDateRange(range.start, range.end);
+                }
+              },
+            ),
+          ),
+          if (provider.startDate != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.clear_rounded, color: Colors.redAccent, size: 20),
+                onPressed: () => provider.setDateRange(null, null),
+                tooltip: 'Clear Date Filter', // TODO: Implement i18n
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── Sales Helpers ───────────────────────────────────────────────────────
+
+  Widget _buildSalesHeroCard(SalesProvider provider) {
+    final theme = Theme.of(context);
+    final accentColor = AppTheme.neonGreenDark;
+    
+    final pendingPayment = provider.getStatusCount(commStatus: CommercialStatus.pendingPayment);
+    final paid = provider.getStatusCount(commStatus: CommercialStatus.paid);
+    final pendingConsolidation = provider.getStatusCount(compStatus: ComplianceStatus.pendingConsolidation);
+    final valid = provider.getStatusCount(compStatus: ComplianceStatus.valid);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            accentColor.withValues(alpha: 0.15),
+            accentColor.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.05),
+            blurRadius: 20,
+            spreadRadius: -5,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      provider.startDate != null && provider.endDate != null
+                          ? 'TOTAL SALES (${DateFormat('d MMM').format(provider.startDate!)} - ${DateFormat('d MMM').format(provider.endDate!)})'
+                          : 'TOTAL SALES (THIS MONTH)',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        letterSpacing: 1.1,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'RM ${provider.filteredSalesTotal.toStringAsFixed(2)}',
+                      style: theme.textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: accentColor,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.2),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.auto_graph_rounded,
+                  size: 28,
+                  color: accentColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Divider(color: accentColor.withValues(alpha: 0.1), height: 1),
+          const SizedBox(height: 16),
+          Text(
+            'STATUS BREAKDOWN',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildSimpleBadge('$pendingPayment Pending Pay', Colors.orange),
               _buildSimpleBadge('$paid Paid', AppTheme.neonGreenDark),
-              _buildSimpleBadge('$pendingConsolidation Pending Consolidation', Colors.purple),
-              _buildSimpleBadge('$valid Valid', AppTheme.neonGreenDark),
+              _buildSimpleBadge('$pendingConsolidation Unconsolidated', Colors.purple),
+              _buildSimpleBadge('$valid Validated', AppTheme.neonGreenDark),
             ],
           ),
         ],
@@ -544,18 +800,19 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   Widget _buildSimpleBadge(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         label,
         style: TextStyle(
           color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
         ),
       ),
     );
@@ -604,10 +861,23 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           Expanded(
             child: TextField(
               controller: _searchController,
-              onChanged: (val) => provider.setSearchQuery(val),
+              onChanged: (val) {
+                provider.setSearchQuery(val);
+                setState(() {});
+              },
               decoration: InputDecoration(
                 hintText: 'Search by item or customer', // TODO: Implement i18n
                 prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 20),
+                        onPressed: () {
+                          _searchController.clear();
+                          provider.setSearchQuery('');
+                          setState(() {});
+                        },
+                      )
+                    : null,
                 filled: true,
                 fillColor: Theme.of(
                   context,
@@ -654,6 +924,20 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               },
             ),
           ),
+          if (provider.startDate != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.clear_rounded, color: Colors.redAccent, size: 20),
+                onPressed: () => provider.setDateRange(null, null),
+                tooltip: 'Clear Date Filter', // TODO: Implement i18n
+              ),
+            ),
+          ],
         ],
       ),
     );

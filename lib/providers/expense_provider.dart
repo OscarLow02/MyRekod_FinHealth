@@ -21,6 +21,83 @@ class ExpenseProvider extends ChangeNotifier {
   String? get error => _error;
   List<String> get categories => _categories;
 
+  // ── Analytics, Filtering & Pagination State ─────────────────────────────
+  int _limit = 10;
+  String _searchQuery = '';
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  DateTime? get startDate => _startDate;
+  DateTime? get endDate => _endDate;
+
+  void setSearchQuery(String query) {
+    _searchQuery = query.toLowerCase();
+    notifyListeners();
+  }
+
+  void setDateRange(DateTime? start, DateTime? end) {
+    _startDate = start;
+    _endDate = end;
+    notifyListeners();
+  }
+
+  void resetFilters() {
+    _searchQuery = '';
+    _startDate = null;
+    _endDate = null;
+    _limit = 10;
+    if (_currentUserId != null) {
+      _initialize(_currentUserId!);
+    }
+    notifyListeners();
+  }
+
+  void loadMore() {
+    if (!hasMore) return;
+    _limit += 10;
+    notifyListeners();
+  }
+
+  // 1. The Paginated List (For UI)
+  List<ExpenseRecord> get expenseRecords {
+    return _allFilteredRecords.take(_limit).toList();
+  }
+
+  /// Returns ALL filtered records without the pagination limit.
+  List<ExpenseRecord> get allFilteredRecords => _allFilteredRecords;
+
+  // 2. Internal Helper for ALL filtered records
+  List<ExpenseRecord> get _allFilteredRecords {
+    return _expenses.where((expense) {
+      // Search Logic
+      bool matchesSearch = true;
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery;
+        matchesSearch = expense.vendor.toLowerCase().contains(q) ||
+            expense.category.toLowerCase().contains(q);
+      }
+
+      // Date Logic
+      bool matchesDate = true;
+      if (_startDate != null && _endDate != null) {
+        final start = DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
+        final end = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
+        matchesDate = (expense.date.isAtSameMomentAs(start) || expense.date.isAfter(start)) &&
+                      (expense.date.isAtSameMomentAs(end) || expense.date.isBefore(end));
+      }
+      return matchesSearch && matchesDate;
+    }).toList();
+  }
+
+  // 3. Dynamic Totals based on current Filter
+  double get filteredExpensesTotal {
+    return _allFilteredRecords.fold(0.0, (sum, expense) => sum + expense.amount);
+  }
+
+  int get totalFilteredCount => _allFilteredRecords.length;
+
+  bool get hasMore => _allFilteredRecords.length > _limit;
+
   ExpenseProvider() {
     // Listen to auth state changes to auto-initialize or clear
     FirebaseAuth.instance.authStateChanges().listen((user) {

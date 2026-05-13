@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
@@ -202,6 +203,25 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
   Widget _buildChartCard(ThemeData theme, DashboardProvider dashProv) {
     final salesSpots = dashProv.getSalesSpots(_selectedPeriod);
     final expenseSpots = dashProv.getExpenseSpots(_selectedPeriod);
+    final allSpots = [...salesSpots, ...expenseSpots];
+
+    // Explicitly calculate axis limits to prevent fl_chart estimation glitches
+    double minX = 1;
+    double maxX = 1;
+    if (_selectedPeriod == ChartPeriod.daily) {
+      maxX = 31;
+    } else if (_selectedPeriod == ChartPeriod.weekly) {
+      maxX = 5;
+    } else {
+      maxX = 12;
+    }
+
+    double minY = 0;
+    double maxY = 100;
+    if (allSpots.isNotEmpty) {
+      final dataMaxY = allSpots.map((s) => s.y).reduce(math.max);
+      maxY = dataMaxY > 0 ? dataMaxY * 1.2 : 100;
+    }
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 24, 16, 12),
@@ -235,7 +255,12 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
           SizedBox(
             height: 220,
             child: LineChart(
+              key: ValueKey(_selectedPeriod),
               LineChartData(
+                minX: minX,
+                maxX: maxX,
+                minY: minY,
+                maxY: maxY,
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
@@ -278,7 +303,11 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 28,
+                      interval: 1,
                       getTitlesWidget: (value, meta) {
+                        // Only show labels for integer values to avoid overlaps
+                        if (value % 1 != 0) return const SizedBox.shrink();
+                        
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
