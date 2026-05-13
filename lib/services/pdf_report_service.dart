@@ -104,6 +104,10 @@ class PdfReportService {
       endDate: end,
     );
 
+    // ── Load Fonts (Fixes apostrophe rendering) ───────────────────────────
+    final fontRegular = await PdfGoogleFonts.interRegular();
+    final fontBold = await PdfGoogleFonts.interBold();
+
     // ── Load App Logo (best-effort) ───────────────────────────────────────
     pw.MemoryImage? logoImage;
     try {
@@ -119,6 +123,10 @@ class PdfReportService {
     final pdf = pw.Document(
       title: 'Financial Report – $businessName',
       author: 'MyRekod FinHealth',
+      theme: pw.ThemeData.withFont(
+        base: fontRegular,
+        bold: fontBold,
+      ),
     );
 
     pdf.addPage(
@@ -273,93 +281,7 @@ class PdfReportService {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════════════
-  // Summary Block (Hero KPIs)
-  // ════════════════════════════════════════════════════════════════════════
-
-  static pw.Widget _buildSummaryBlock({
-    required double totalSales,
-    required double totalExpenses,
-    required double netProfit,
-  }) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(16),
-      decoration: pw.BoxDecoration(
-        color: _brandPurpleLight,
-        borderRadius: pw.BorderRadius.circular(8),
-        border: pw.Border.all(color: _brandPurple, width: 0.5),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-        children: [
-          _buildKpiColumn(
-            label: 'Total Sales',
-            value: _currencyFmt.format(totalSales),
-            valueColor: PdfColors.green800,
-          ),
-          _buildKpiDivider(),
-          _buildKpiColumn(
-            label: 'Total Expenses',
-            value: _currencyFmt.format(totalExpenses),
-            valueColor: PdfColors.red800,
-          ),
-          _buildKpiDivider(),
-          _buildKpiColumn(
-            label: 'Net Profit',
-            value: _currencyFmt.format(netProfit),
-            valueColor: netProfit >= 0
-                ? PdfColors.green900
-                : PdfColors.red900,
-            isBold: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _buildKpiColumn({
-    required String label,
-    required String value,
-    PdfColor valueColor = PdfColors.black,
-    bool isBold = false,
-  }) {
-    return pw.Column(
-      children: [
-        pw.Text(
-          label.toUpperCase(),
-          style: pw.TextStyle(
-            fontSize: 8,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.grey700,
-            letterSpacing: 0.8,
-          ),
-        ),
-        pw.SizedBox(height: 6),
-        pw.Text(
-          value,
-          style: pw.TextStyle(
-            fontSize: isBold ? 14 : 12,
-            fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
-            color: valueColor,
-          ),
-        ),
-      ],
-    );
-  }
-
-  static pw.Widget _buildKpiDivider() {
-    return pw.Container(
-      width: 1,
-      height: 36,
-      color: _brandPurple,
-    );
-  }
-
-  // ════════════════════════════════════════════════════════════════════════
-  // Transaction Table
-  // ════════════════════════════════════════════════════════════════════════
-
-  static pw.Widget _buildTransactionTable(List<_TransactionRow> rows) {
+  // ═══════════════════════════════════════════════════════════════════════�  static pw.Widget _buildTransactionTable(List<_TransactionRow> rows) {
     if (rows.isEmpty) {
       return pw.Container(
         padding: const pw.EdgeInsets.symmetric(vertical: 30),
@@ -380,6 +302,77 @@ class PdfReportService {
       children: [
         // Section title
         pw.Text(
+          'Transaction Details',
+          style: pw.TextStyle(
+            fontSize: 12,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+        pw.SizedBox(height: 8),
+
+        // Table using fromTextArray for automatic page breaks
+        pw.Table.fromTextArray(
+          border: const pw.TableBorder(
+            bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+            horizontalInside:
+                pw.BorderSide(color: PdfColors.grey200, width: 0.3),
+            verticalInside: pw.BorderSide.none,
+            top: pw.BorderSide.none,
+            left: pw.BorderSide.none,
+            right: pw.BorderSide.none,
+          ),
+          headerDecoration: const pw.BoxDecoration(color: _brandPurple),
+          headerHeight: 25,
+          cellHeight: 20,
+          headerStyle: pw.TextStyle(
+            color: PdfColors.white,
+            fontWeight: pw.FontWeight.bold,
+            fontSize: 8,
+          ),
+          cellStyle: const pw.TextStyle(
+            fontSize: 9,
+            color: PdfColors.grey900,
+          ),
+          rowDecoration: const pw.BoxDecoration(
+            border: pw.Border(
+              bottom: pw.BorderSide(color: PdfColors.grey200, width: 0.3),
+            ),
+          ),
+          headers: <String>['#', 'DATE', 'TYPE', 'DESCRIPTION', 'AMOUNT (RM)'],
+          columnWidths: {
+            0: const pw.FixedColumnWidth(28), // #
+            1: const pw.FixedColumnWidth(72), // Date
+            2: const pw.FixedColumnWidth(55), // Type
+            3: const pw.FlexColumnWidth(4),   // Description
+            4: const pw.FixedColumnWidth(80), // Amount
+          },
+          cellAlignment: pw.Alignment.centerLeft,
+          cellAlignments: {
+            0: pw.Alignment.center,
+            4: pw.Alignment.centerRight,
+          },
+          data: rows.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final row = entry.value;
+            return [
+              '${idx + 1}',
+              _dateFmt.format(row.date),
+              row.type,
+              row.description,
+              _currencyFmt.format(row.amount),
+            ];
+          }).toList(),
+        ),
+
+        // ── Row count annotation ──────────────────────────────────────
+        pw.SizedBox(height: 6),
+        pw.Text(
+          '${rows.length} transaction${rows.length == 1 ? '' : 's'} listed.',
+          style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+        ),
+      ],
+    );
+  }
           'Transaction Details',
           style: pw.TextStyle(
             fontSize: 12,

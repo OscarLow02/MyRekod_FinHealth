@@ -117,6 +117,18 @@ class ExpenseProvider extends ChangeNotifier {
     return _expenses.where((e) => e.category == category).toList();
   }
 
+  /// Filter records by date range (inclusive).
+  List<ExpenseRecord> getRecordsInRange(DateTime start, DateTime end) {
+    // Normalize to start and end of day
+    final s = DateTime(start.year, start.month, start.day);
+    final e = DateTime(end.year, end.month, end.day, 23, 59, 59);
+
+    return _expenses.where((r) {
+      return (r.date.isAtSameMomentAs(s) || r.date.isAfter(s)) &&
+             (r.date.isAtSameMomentAs(e) || r.date.isBefore(e));
+    }).toList();
+  }
+
   // ── Categories Management ────────────────────────────────────────────────
   Future<void> loadCategories() async {
     final prefs = await SharedPreferences.getInstance();

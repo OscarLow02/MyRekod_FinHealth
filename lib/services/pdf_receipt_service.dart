@@ -6,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import '../models/sale_record.dart';
 import '../models/business_profile.dart';
@@ -18,7 +19,16 @@ class PdfReceiptService {
     BusinessProfile profile,
     BuildContext context,
   ) async {
-    final pdf = pw.Document();
+    // Load Fonts (Fixes apostrophe rendering)
+    final fontRegular = await PdfGoogleFonts.interRegular();
+    final fontBold = await PdfGoogleFonts.interBold();
+
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: fontRegular,
+        bold: fontBold,
+      ),
+    );
 
     // Load App Logo
     pw.MemoryImage? logoImage;

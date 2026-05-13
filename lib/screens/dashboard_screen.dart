@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../core/app_theme.dart';
 import '../services/firestore_service.dart';
 import '../models/business_profile.dart';
@@ -537,17 +538,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final totalExpenses = dashProv.totalMonthlyExpenses;
     final maxValue = totalSales > totalExpenses ? totalSales : totalExpenses;
 
+    final String currentMonth = DateFormat('MMMM yyyy').format(DateTime.now());
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Header row
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              overviewTitle,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  overviewTitle,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                Text(
+                  currentMonth,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
             TextButton(
               onPressed: () {
@@ -560,6 +577,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               },
               style: TextButton.styleFrom(
                 minimumSize: const Size(0, AppTheme.minTouchTarget),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -583,7 +601,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        // Mini Bar Chart
+        // Horizontal Bar Chart Card
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -593,28 +611,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               color: Colors.white.withValues(alpha: 0.05),
             ),
           ),
-          child: Row(
+          child: Column(
             children: [
-              // Sales bar
-              Expanded(
-                child: _buildMiniBar(
-                  theme,
-                  label: 'Sales',
-                  value: totalSales,
-                  maxValue: maxValue,
-                  color: AppTheme.neonGreenDark,
-                ),
+              _buildHorizontalBar(
+                theme,
+                label: 'Total Sales',
+                value: totalSales,
+                maxValue: maxValue,
+                color: AppTheme.neonGreenDark,
               ),
-              const SizedBox(width: 32),
-              // Expenses bar
-              Expanded(
-                child: _buildMiniBar(
-                  theme,
-                  label: 'Expenses',
-                  value: totalExpenses,
-                  maxValue: maxValue,
-                  color: Colors.redAccent,
-                ),
+              const SizedBox(height: 20),
+              _buildHorizontalBar(
+                theme,
+                label: 'Total Expenses',
+                value: totalExpenses,
+                maxValue: maxValue,
+                color: Colors.redAccent,
               ),
             ],
           ),
@@ -623,52 +635,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildMiniBar(
+  Widget _buildHorizontalBar(
     ThemeData theme, {
     required String label,
     required double value,
     required double maxValue,
     required Color color,
   }) {
-    final barHeight = maxValue > 0 ? (value / maxValue) * 100.0 : 4.0;
-    final valueLabel = value >= 1000
-        ? '${(value / 1000).toStringAsFixed(1)}k'
-        : value.toStringAsFixed(0);
+    final percentage = maxValue > 0 ? (value / maxValue) : 0.0;
+    final valueString = 'RM ${_formatWithCommas(value.toStringAsFixed(0))}';
 
     return Column(
       children: [
-        Text(
-          valueLabel,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: color,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 110,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeOutCubic,
-              width: 48,
-              height: barHeight.clamp(4.0, 110.0),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.8),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(8)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
               ),
             ),
-          ),
+            Text(
+              valueString,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
-        Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontSize: 12,
-          ),
+        Stack(
+          children: [
+            Container(
+              height: 12,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(100),
+              ),
+            ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOutCubic,
+                  height: 12,
+                  width: constraints.maxWidth * percentage.clamp(0.0, 1.0),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(100),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ],
     );
@@ -688,14 +718,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     setState(() => _isGeneratingPdf = true);
     try {
-      // Aggregate data for the specific period
-      final filteredSales = salesProv.saleRecords.where((s) => 
-        s.saleDate.isAfter(startDate.subtract(const Duration(seconds: 1))) && 
-        s.saleDate.isBefore(endDate.add(const Duration(seconds: 1)))).toList();
-      
-      final filteredExpenses = expProv.expenses.where((e) => 
-        e.date.isAfter(startDate.subtract(const Duration(seconds: 1))) && 
-        e.date.isBefore(endDate.add(const Duration(seconds: 1)))).toList();
+      // Aggregate data for the specific period (bypassing UI pagination limits)
+      final filteredSales = salesProv.getRecordsInRange(startDate, endDate);
+      final filteredExpenses = expProv.getRecordsInRange(startDate, endDate);
 
       final totalSales = filteredSales.fold(0.0, (sum, s) => sum + s.totalPayable);
       final totalExpenses = filteredExpenses.fold(0.0, (sum, e) => sum + e.amount);

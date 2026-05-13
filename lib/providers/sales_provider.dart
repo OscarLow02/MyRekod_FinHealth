@@ -66,6 +66,10 @@ class SalesProvider extends ChangeNotifier {
     return _allFilteredRecords.take(_limit).toList();
   }
 
+  /// Returns ALL filtered records without the pagination limit.
+  /// Used for reporting and full-export scenarios.
+  List<SaleRecord> get allFilteredRecords => _allFilteredRecords;
+
   // 2. Internal Helper for ALL filtered records (Used for totals)
   List<SaleRecord> get _allFilteredRecords {
     return _saleRecords.where((sale) {
@@ -217,11 +221,19 @@ class SalesProvider extends ChangeNotifier {
         .fold(0.0, (sum, r) => sum + r.totalPayable);
   }
 
-  /// Filter records by date range.
+  /// Unfiltered list of all sale records currently in memory.
+  List<SaleRecord> get allRecords => _saleRecords;
+
+  /// Filter records by date range (inclusive).
   List<SaleRecord> getRecordsInRange(DateTime start, DateTime end) {
-    return _saleRecords
-        .where((r) => r.saleDate.isAfter(start) && r.saleDate.isBefore(end))
-        .toList();
+    // Normalize to start and end of day
+    final s = DateTime(start.year, start.month, start.day);
+    final e = DateTime(end.year, end.month, end.day, 23, 59, 59);
+
+    return _saleRecords.where((r) {
+      return (r.saleDate.isAtSameMomentAs(s) || r.saleDate.isAfter(s)) &&
+             (r.saleDate.isAtSameMomentAs(e) || r.saleDate.isBefore(e));
+    }).toList();
   }
 
   /// Filter records by compliance status.
