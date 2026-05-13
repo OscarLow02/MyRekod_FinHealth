@@ -69,31 +69,39 @@ class PdfReportService {
   // Public API
   // ════════════════════════════════════════════════════════════════════════
 
-  /// Builds the monthly report PDF and opens the native share / print sheet.
+  /// Builds a financial report PDF for a specific period and opens the native share / print sheet.
   ///
   /// [businessName] – The display name shown in the report header.
-  /// [totalSales]   – Pre-aggregated monthly sales total.
-  /// [totalExpenses] – Pre-aggregated monthly expenses total.
-  /// [sales]        – Full list of [SaleRecord]s (filtered to month internally).
-  /// [expenses]     – Full list of [ExpenseRecord]s (filtered to month internally).
-  /// [reportMonth]  – The month to report on. Defaults to the current month.
-  static Future<void> generateAndShareMonthlyReport({
+  /// [totalSales]   – Pre-aggregated sales total for the period.
+  /// [totalExpenses] – Pre-aggregated expenses total for the period.
+  /// [sales]        – Full list of [SaleRecord]s (filtered internally).
+  /// [expenses]     – Full list of [ExpenseRecord]s (filtered internally).
+  /// [startDate]    – Start of the period. Defaults to start of current month if null.
+  /// [endDate]      – End of the period. Defaults to end of current month if null.
+  static Future<void> generateAndShareReport({
     required String businessName,
     required double totalSales,
     required double totalExpenses,
     List<SaleRecord> sales = const [],
     List<ExpenseRecord> expenses = const [],
-    DateTime? reportMonth,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
-    final now = reportMonth ?? DateTime.now();
+    final now = DateTime.now();
+    // Default to current month if no range provided
+    final start = startDate ?? DateTime(now.year, now.month, 1);
+    final end = endDate ??
+        DateTime(now.year, now.month + 1, 1)
+            .subtract(const Duration(seconds: 1));
+
     final netProfit = totalSales - totalExpenses;
 
     // ── Flatten transactions into table rows ──────────────────────────────
     final rows = _buildTransactionRows(
       sales: sales,
       expenses: expenses,
-      month: now.month,
-      year: now.year,
+      startDate: start,
+      endDate: end,
     );
 
     // ── Load App Logo (best-effort) ───────────────────────────────────────
@@ -109,7 +117,7 @@ class PdfReportService {
 
     // ── Build PDF Document ────────────────────────────────────────────────
     final pdf = pw.Document(
-      title: 'Monthly Report – $businessName',
+      title: 'Financial Report – $businessName',
       author: 'MyRekod FinHealth',
     );
 
@@ -119,7 +127,8 @@ class PdfReportService {
         margin: const pw.EdgeInsets.all(40),
         header: (pw.Context ctx) => _buildPageHeader(
           businessName: businessName,
-          reportMonth: now,
+          startDate: start,
+          endDate: end,
           logoImage: logoImage,
         ),
         footer: (pw.Context ctx) => _buildPageFooter(ctx),
@@ -140,7 +149,7 @@ class PdfReportService {
 
     // ── Trigger native share / print dialog ───────────────────────────────
     final fileName =
-        'MyRekod_Monthly_Report_${DateFormat('yyyy_MM').format(now)}.pdf';
+        'MyRekod_Report_${DateFormat('yyyyMMdd').format(start)}_to_${DateFormat('yyyyMMdd').format(end)}.pdf';
 
     await Printing.sharePdf(
       bytes: await pdf.save(),
@@ -154,7 +163,8 @@ class PdfReportService {
 
   static pw.Widget _buildPageHeader({
     required String businessName,
-    required DateTime reportMonth,
+    required DateTime startDate,
+    required DateTime endDate,
     pw.MemoryImage? logoImage,
   }) {
     return pw.Container(
@@ -205,7 +215,9 @@ class PdfReportService {
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
               pw.Text(
-                _monthYearFmt.format(reportMonth),
+                startDate.year == endDate.year && startDate.month == endDate.month
+                    ? _monthYearFmt.format(startDate)
+                    : '${_dateFmt.format(startDate)} - ${_dateFmt.format(endDate)}',
                 style: pw.TextStyle(
                   fontSize: 12,
                   fontWeight: pw.FontWeight.bold,
@@ -475,14 +487,15 @@ class PdfReportService {
   static List<_TransactionRow> _buildTransactionRows({
     required List<SaleRecord> sales,
     required List<ExpenseRecord> expenses,
-    required int month,
-    required int year,
+    required DateTime startDate,
+    required DateTime endDate,
   }) {
     final rows = <_TransactionRow>[];
 
     // ── Sales ──────────────────────────────────────────────────────────────
     for (final sale in sales) {
-      if (sale.saleDate.month == month && sale.saleDate.year == year) {
+      if (sale.saleDate.isAfter(startDate.subtract(const Duration(seconds: 1))) &&
+          sale.saleDate.isBefore(endDate.add(const Duration(seconds: 1)))) {
         // Build a human-readable description from line items
         final itemNames = sale.lineItems
             .map((l) => l.item.name)
@@ -502,7 +515,8 @@ class PdfReportService {
 
     // ── Expenses ───────────────────────────────────────────────────────────
     for (final expense in expenses) {
-      if (expense.date.month == month && expense.date.year == year) {
+      if (expense.date.isAfter(startDate.subtract(const Duration(seconds: 1))) &&
+          expense.date.isBefore(endDate.add(const Duration(seconds: 1)))) {
         final description = expense.vendor.isNotEmpty
             ? '${expense.vendor} (${expense.category})'
             : expense.category;

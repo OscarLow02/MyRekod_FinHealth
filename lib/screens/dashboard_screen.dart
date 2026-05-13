@@ -19,6 +19,7 @@ import 'expenses/scanner_screen.dart';
 import 'sales/record_sale_screen.dart';
 import 'customers/customer_list_screen.dart';
 import 'cashflow_analysis_screen.dart';
+import '../widgets/report_filter_bottom_sheet.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -150,32 +151,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     // ── Section 1: Header on wave ──────────────────────────
                     Padding(
                       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  welcomeLabel,
-                                  style: theme.textTheme.labelMedium?.copyWith(
-                                    color: theme.colorScheme.secondary,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  businessName,
-                                  style: theme.textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                          Text(
+                            welcomeLabel,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.secondary,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.5,
                             ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            businessName,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -252,7 +246,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               const SizedBox(width: 16),
                               _buildQuickAction(
                                 context,
-                                icon: Icons.document_scanner_outlined,
+                                icon: Icons.qr_code_scanner_rounded,
                                 label: 'Record\nExpense',
                                 color: Colors.redAccent,
                                 onTap: () {
@@ -680,20 +674,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// Generates and shares the monthly PDF report via native share dialog.
+  /// Generates and shares a PDF report for a selected date range.
   Future<void> _generatePdfReport({
     required DashboardProvider dashProv,
     required SalesProvider salesProv,
     required ExpenseProvider expProv,
   }) async {
+    final result = await ReportFilterBottomSheet.show(context);
+    if (result == null) return;
+
+    final startDate = result['start']!;
+    final endDate = result['end']!;
+
     setState(() => _isGeneratingPdf = true);
     try {
-      await PdfReportService.generateAndShareMonthlyReport(
+      // Aggregate data for the specific period
+      final filteredSales = salesProv.saleRecords.where((s) => 
+        s.saleDate.isAfter(startDate.subtract(const Duration(seconds: 1))) && 
+        s.saleDate.isBefore(endDate.add(const Duration(seconds: 1)))).toList();
+      
+      final filteredExpenses = expProv.expenses.where((e) => 
+        e.date.isAfter(startDate.subtract(const Duration(seconds: 1))) && 
+        e.date.isBefore(endDate.add(const Duration(seconds: 1)))).toList();
+
+      final totalSales = filteredSales.fold(0.0, (sum, s) => sum + s.totalPayable);
+      final totalExpenses = filteredExpenses.fold(0.0, (sum, e) => sum + e.amount);
+
+      await PdfReportService.generateAndShareReport(
         businessName: _profile?.businessName ?? 'My Business',
-        totalSales: dashProv.totalMonthlySales,
-        totalExpenses: dashProv.totalMonthlyExpenses,
-        sales: salesProv.saleRecords,
-        expenses: expProv.expenses,
+        totalSales: totalSales,
+        totalExpenses: totalExpenses,
+        sales: filteredSales,
+        expenses: filteredExpenses,
+        startDate: startDate,
+        endDate: endDate,
       );
       if (mounted) {
         // TODO: Implement i18n
