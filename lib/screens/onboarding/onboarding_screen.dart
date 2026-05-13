@@ -57,6 +57,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _onSubmit(OnboardingProvider provider) async {
+    // TODO: Implement i18n
+    final failedToSavePrefix = 'Failed to save profile:';
+
     try {
       await provider.submit();
       if (!mounted) return;
@@ -68,8 +71,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        // TODO: Implement i18n
-        SnackBar(content: Text('Failed to save profile: $e')),
+        SnackBar(content: Text('$failedToSavePrefix $e')),
       );
     }
   }
@@ -85,6 +87,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
         // TODO: Implement i18n
         const brandName = 'MyRekod';
+        const logoutTooltip = 'Cancel Registration / Log Out';
+        const continueText = 'CONTINUE';
+        const confirmText = 'Confirm & Go to Dashboard  →';
 
         return Scaffold(
           body: SafeArea(
@@ -153,7 +158,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         },
                         icon: const Icon(Icons.logout_rounded),
                         color: theme.colorScheme.onSurfaceVariant,
-                        tooltip: 'Cancel Registration / Log Out',
+                        tooltip: logoutTooltip,
                       ),
                     ],
                   ),
@@ -222,9 +227,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: isLastStep
                         ? () => _onSubmit(provider)
                         : () => _onNextPressed(provider),
-                    text: isLastStep
-                        ? 'Confirm & Go to Dashboard  →'
-                        : 'CONTINUE',
+                    text: isLastStep ? confirmText : continueText,
                     isLoading: provider.isSubmitting,
                   ),
                 ),

@@ -104,12 +104,16 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     return false;
   }
 
-  void _showDuplicateError() {
+  void _showDuplicateError({
+    required String title,
+    required String body,
+    required String buttonText,
+  }) {
     AppDialogs.showActionModal(
       context,
-      title: 'Already Added',
-      body: 'You have already added this item to the current sale.',
-      primaryButtonText: 'Got it',
+      title: title,
+      body: body,
+      primaryButtonText: buttonText,
       onPrimaryPressed: () {},
       icon: Icons.info_outline_rounded,
       iconColor: AppTheme.primary,
@@ -162,7 +166,12 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
   // ── Back Press / Discard Guard ──────────────────────────────────────────
 
-  void _handleBackPress() {
+  void _handleBackPress({
+    required String discardTitle,
+    required String discardBody,
+    required String discardButton,
+    required String cancelButton,
+  }) {
     final calc = context.read<SaleCalculatorProvider>();
     if (!calc.canSubmit && calc.selectedItem == null) {
       Navigator.pop(context);
@@ -171,11 +180,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
     AppDialogs.showActionModal(
       context,
-      title: 'Discard Changes?',
-      body: 'You have unsaved changes. Are you sure you want to go back?',
-      primaryButtonText: 'Discard',
+      title: discardTitle,
+      body: discardBody,
+      primaryButtonText: discardButton,
       onPrimaryPressed: () => Navigator.pop(context),
-      secondaryButtonText: 'Cancel',
+      secondaryButtonText: cancelButton,
       icon: Icons.warning_amber_rounded,
       iconColor: Colors.orange,
     );
@@ -189,7 +198,25 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
   // ── Preview Bottom Sheet ────────────────────────────────────────────────
 
-  void _showPreviewSheet() {
+  void _showPreviewSheet({
+    required String title,
+    required String subtitle,
+    required String eInvoiceLabel,
+    required String standardInvoiceLabel,
+    required String subtotalLabel,
+    required String discountLabel,
+    required String feeChargeLabel,
+    required String taxAmountLabel,
+    required String taxAmountUnitLabel,
+    required String roundingLabel,
+    required String totalPayableLabel,
+    required String recordReceiptLabel,
+    required String confirmPaymentLabel,
+    required String submitLhdnOnlyLabel,
+    required String saveAsPendingLabel,
+    required String incompleteFormTitle,
+    required String incompleteFormBody,
+  }) {
     try {
       final calc = context.read<SaleCalculatorProvider>();
       
@@ -201,8 +228,8 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
       if (formState != null && !formState.validate()) {
         AppDialogs.showSystemAlert(
           context, 
-          title: 'Incomplete Form', 
-          body: 'Please correct the errors in the form before proceeding.',
+          title: incompleteFormTitle, 
+          body: incompleteFormBody,
           icon: Icons.warning_amber_rounded,
         );
         return;
@@ -233,9 +260,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Review & Submit', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                      Text(title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                       const SizedBox(height: 4),
-                      Text('Verify details before LHDN submission', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                   IconButton(
@@ -262,14 +289,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-                          child: Icon(Icons.receipt_long_rounded, color: AppTheme.primary, size: 24),
+                          child: Icon(Icons.receipt_long_rounded, color: AppTheme.primary),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('e-Invoice', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                              Text(eInvoiceLabel, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                               Text(calc.previewInvoiceNumber ?? 'INV-....', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                             ],
                           ),
@@ -285,7 +312,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Text('Standard Invoice', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                            Text(standardInvoiceLabel, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                           ],
                         ),
                       ],
@@ -294,11 +321,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       child: Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.1), height: 1),
                     ),
-                    _buildSummaryRow('Subtotal', 'RM ${calc.subtotal.toStringAsFixed(2)}', theme),
+                    _buildSummaryRow(subtotalLabel, 'RM ${calc.subtotal.toStringAsFixed(2)}', theme),
                     if (calc.actualDiscountAmount > 0) ...[
                       const SizedBox(height: 12),
                       _buildSummaryRow(
-                        calc.discountRate > 0 ? 'Discount (${calc.discountRate.toStringAsFixed(0)}%)' : 'Discount',
+                        calc.discountRate > 0 ? '$discountLabel (${calc.discountRate.toStringAsFixed(0)}%)' : discountLabel,
                         '-RM ${calc.actualDiscountAmount.toStringAsFixed(2)}', 
                         theme, 
                         isNegative: true,
@@ -307,7 +334,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     if (calc.actualFeeAmount > 0) ...[
                       const SizedBox(height: 12),
                       _buildSummaryRow(
-                        calc.feeRate > 0 ? 'Fee/Charge (${calc.feeRate.toStringAsFixed(0)}%)' : 'Fee/Charge',
+                        calc.feeRate > 0 ? '$feeChargeLabel (${calc.feeRate.toStringAsFixed(0)}%)' : feeChargeLabel,
                         '+RM ${calc.actualFeeAmount.toStringAsFixed(2)}', 
                         theme,
                       ),
@@ -315,13 +342,13 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     const SizedBox(height: 12),
                     _buildSummaryRow(
                       calc.taxConfig.numUnits != null && calc.taxConfig.ratePerUnit != null
-                          ? 'Tax Amount (Unit-Based)'
-                          : 'Tax Amount (${calc.taxRate.toStringAsFixed(0)}%)',
+                          ? taxAmountUnitLabel
+                          : '$taxAmountLabel (${calc.taxRate.toStringAsFixed(0)}%)',
                       'RM ${calc.taxAmount.toStringAsFixed(2)}',
                       theme,
                     ),
                     const SizedBox(height: 12),
-                    _buildSummaryRow('Rounding Adjustment', '${calc.roundingAmount >= 0 ? '+' : '-'}RM ${calc.roundingAmount.abs().toStringAsFixed(2)}', theme, isNegative: calc.roundingAmount < 0),
+                    _buildSummaryRow(roundingLabel, '${calc.roundingAmount >= 0 ? '+' : '-'}RM ${calc.roundingAmount.abs().toStringAsFixed(2)}', theme, isNegative: calc.roundingAmount < 0),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       child: Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.1), height: 1),
@@ -329,7 +356,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Total Payable', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                        Text(totalPayableLabel, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                         Text('RM ${calc.totalPayable.toStringAsFixed(2)}', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, color: theme.colorScheme.primary)),
                       ],
                     ),
@@ -363,7 +390,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                         const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20),
                         const SizedBox(width: 10),
                         Text(
-                          'Record Receipt (For Consolidation)',
+                          recordReceiptLabel,
                           style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -389,7 +416,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       children: [
                         const Icon(Icons.check_circle, color: Colors.white, size: 20),
                         const SizedBox(width: 10),
-                        Text('Confirm Payment & Submit', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                        Text(confirmPaymentLabel, style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -412,7 +439,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       children: [
                         Icon(Icons.cloud_upload, color: theme.colorScheme.onSurfaceVariant, size: 20),
                         const SizedBox(width: 10),
-                        Text('Submit to LHDN Only', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                        Text(submitLhdnOnlyLabel, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                       ],
                     ),
                   ),
@@ -425,7 +452,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       _submitSaleWithParams(calc, CommercialStatus.pendingPayment, false);
                     },
                     icon: Icon(Icons.save_rounded, color: theme.colorScheme.onSurfaceVariant, size: 18),
-                    label: Text('Save as Pending', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    label: Text(saveAsPendingLabel, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   ),
                 ),
               ],
@@ -516,20 +543,121 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // --- UI Strings (Local Constants for i18n Readiness) ---
+    // TODO: Implement i18n
+    const String appBarTitle = 'Record Sale';
+    const String sectionCustomerType = 'CUSTOMER TYPE';
+    const String typeIndividual = 'Individual';
+    const String typeBusiness = 'Business';
+    const String selectFromContactList = 'Select Customer from Contact List';
+    const String walkInCustomer = 'Walk-in Customer';
+    
+    // Walk-In Card
+    const String walkInDetailsTitle = 'Walk-In Customer Details';
+    const String labelCustomerName = 'Customer Name';
+    const String valueGeneralPublic = 'General Public';
+    const String labelTin = 'Tax Identification Number (TIN)';
+    const String labelTinShort = 'TIN';
+    
+    // Selected Customer Card
+    const String existingCustomer = 'Existing Customer';
+    const String labelAddress = 'Address';
+
+    // Item Details
+    const String sectionItemDetails = 'Item Details';
+    const String labelSelectItem = 'Select Item';
+    const String hintSelectFromCatalog = 'Select from catalog';
+    const String labelQuantity = 'Quantity';
+    const String labelUnitPrice = 'Unit Price (RM)';
+    const String buttonAddAnotherItem = 'Add Another Item';
+    
+    // Additional Details
+    const String sectionAdditionalDetails = 'Additional Details (Optional)';
+    const String subHeaderDiscounts = 'Discounts & Charges';
+    const String tabRate = 'Rate (%)';
+    const String tabAmount = 'Amount (RM)';
+    const String labelDiscountRate = 'Discount Rate';
+    const String labelFeeRate = 'Fee/Charge Rate';
+    const String labelDiscountAmount = 'Discount Amount';
+    const String labelFeeAmount = 'Fee/Charge Amount';
+    
+    const String subHeaderPaymentInfo = 'Payment Information';
+    const String labelPaymentMode = 'Payment Mode';
+    const String labelBankAccount = "Supplier's Bank Account Number";
+    const String labelPaymentTerms = 'Payment Terms';
+    const String labelBillRef = 'Bill Reference';
+    
+    const String subHeaderPrepayment = 'Prepayment Details';
+    const String labelPrepayAmount = 'Amount (RM)';
+    const String labelPrepayDate = 'Date';
+    const String labelPrepayRef = 'Prepayment Reference No.';
+    
+    const String subHeaderBilling = 'Billing';
+    const String labelFrequency = 'Frequency';
+    const String labelBillingPeriod = 'Billing Period';
+    const String hintSelectPeriod = 'Select Period';
+
+    // Bottom Summary
+    const String labelTotalPayable = 'Total Payable';
+    const String totalPayableLabel = 'Total Payable';
+    const String buttonReviewSale = 'Review Sale';
+
+    // Preview Sheet
+    const String previewTitle = 'Review & Submit';
+    const String previewSubtitle = 'Verify details before LHDN submission';
+    const String eInvoiceLabel = 'e-Invoice';
+    const String standardInvoiceLabel = 'Standard Invoice';
+    const String subtotalLabel = 'Subtotal';
+    const String discountLabel = 'Discount';
+    const String feeChargeLabel = 'Fee/Charge';
+    const String taxAmountLabel = 'Tax Amount';
+    const String taxAmountUnitLabel = 'Tax Amount (Unit-Based)';
+    const String roundingLabel = 'Rounding Adjustment';
+    const String recordReceiptLabel = 'Record Receipt (For Consolidation)';
+    const String confirmPaymentLabel = 'Confirm Payment & Submit';
+    const String submitLhdnOnlyLabel = 'Submit to LHDN Only';
+    const String saveAsPendingLabel = 'Save as Pending';
+    const String incompleteFormTitle = 'Incomplete Form';
+    const String incompleteFormBody = 'Please correct the errors in the form before proceeding.';
+
+    // Dialogs & Alerts
+    const String discardTitle = 'Discard Changes?';
+    const String discardBody = 'You have unsaved changes. Are you sure you want to go back?';
+    const String discardButton = 'Discard';
+    const String cancelButton = 'Cancel';
+    const String applyButton = 'Apply';
+    const String editQuantityTitle = 'Edit Quantity';
+    const String editQuantityLabel = 'New Quantity';
+    const String editPriceTitle = 'Edit Unit Price';
+    const String editPriceLabel = 'New Unit Price (RM)';
+    const String duplicateItemTitle = 'Already Added';
+    const String duplicateItemBody = 'You have already added this item to the current sale.';
+    const String duplicateItemButton = 'Got it';
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        _handleBackPress();
+        _handleBackPress(
+          discardTitle: discardTitle,
+          discardBody: discardBody,
+          discardButton: discardButton,
+          cancelButton: cancelButton,
+        );
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Record Sale'),
+          title: Text(appBarTitle),
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: _handleBackPress,
+            onPressed: () => _handleBackPress(
+              discardTitle: discardTitle,
+              discardBody: discardBody,
+              discardButton: discardButton,
+              cancelButton: cancelButton,
+            ),
           ),
         ),
         body: Consumer<SaleCalculatorProvider>(
@@ -546,20 +674,99 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildCustomerTypeSection(calc, theme),
+                          _buildCustomerTypeSection(
+                            calc, 
+                            theme,
+                            sectionTitle: sectionCustomerType,
+                            typeIndividual: typeIndividual,
+                            typeBusiness: typeBusiness,
+                            selectFromContactList: selectFromContactList,
+                            walkInCustomer: walkInCustomer,
+                            walkInDetailsTitle: walkInDetailsTitle,
+                            labelCustomerName: labelCustomerName,
+                            valueGeneralPublic: valueGeneralPublic,
+                            labelTin: labelTin,
+                            existingCustomer: existingCustomer,
+                            labelTinShort: labelTinShort,
+                            labelAddress: labelAddress,
+                          ),
                           const SizedBox(height: 28),
 
-                          _buildItemDetailsSection(calc, theme),
+                            _buildItemDetailsSection(
+                              calc, 
+                              theme,
+                              title: sectionItemDetails,
+                              labelSelectItem: labelSelectItem,
+                              hintSelectFromCatalog: hintSelectFromCatalog,
+                              labelQuantity: labelQuantity,
+                              labelUnitPrice: labelUnitPrice,
+                              buttonAddAnotherItem: buttonAddAnotherItem,
+                              editQuantityTitle: editQuantityTitle,
+                              editQuantityLabel: editQuantityLabel,
+                              editPriceTitle: editPriceTitle,
+                              editPriceLabel: editPriceLabel,
+                              applyButton: applyButton,
+                              cancelButton: cancelButton,
+                              duplicateItemTitle: duplicateItemTitle,
+                              duplicateItemBody: duplicateItemBody,
+                              duplicateItemButton: duplicateItemButton,
+                            ),
                           const SizedBox(height: 28),
 
-                          _buildAdditionalDetails(calc, theme),
+                          _buildAdditionalDetails(
+                            calc, 
+                            theme,
+                            title: sectionAdditionalDetails,
+                            subHeaderDiscounts: subHeaderDiscounts,
+                            tabRate: tabRate,
+                            tabAmount: tabAmount,
+                            labelDiscountRate: labelDiscountRate,
+                            labelFeeRate: labelFeeRate,
+                            labelDiscountAmount: labelDiscountAmount,
+                            labelFeeAmount: labelFeeAmount,
+                            subHeaderPaymentInfo: subHeaderPaymentInfo,
+                            labelPaymentMode: labelPaymentMode,
+                            labelBankAccount: labelBankAccount,
+                            labelPaymentTerms: labelPaymentTerms,
+                            labelBillRef: labelBillRef,
+                            subHeaderPrepayment: subHeaderPrepayment,
+                            labelPrepayAmount: labelPrepayAmount,
+                            labelPrepayDate: labelPrepayDate,
+                            labelPrepayRef: labelPrepayRef,
+                            subHeaderBilling: subHeaderBilling,
+                            labelFrequency: labelFrequency,
+                            labelBillingPeriod: labelBillingPeriod,
+                            hintSelectPeriod: hintSelectPeriod,
+                          ),
                           const SizedBox(height: 32),
                         ],
                       ),
                     ),
                   ),
                 ),
-                _buildBottomSummary(calc, theme),
+                _buildBottomSummary(
+                  calc, 
+                  theme,
+                  labelTotalPayable: labelTotalPayable,
+                  buttonReviewSale: buttonReviewSale,
+                  previewTitle: previewTitle,
+                  previewSubtitle: previewSubtitle,
+                  eInvoiceLabel: eInvoiceLabel,
+                  standardInvoiceLabel: standardInvoiceLabel,
+                  subtotalLabel: subtotalLabel,
+                  discountLabel: discountLabel,
+                  feeChargeLabel: feeChargeLabel,
+                  taxAmountLabel: taxAmountLabel,
+                  taxAmountUnitLabel: taxAmountUnitLabel,
+                  roundingLabel: roundingLabel,
+                  totalPayableLabel: totalPayableLabel,
+                  recordReceiptLabel: recordReceiptLabel,
+                  confirmPaymentLabel: confirmPaymentLabel,
+                  submitLhdnOnlyLabel: submitLhdnOnlyLabel,
+                  saveAsPendingLabel: saveAsPendingLabel,
+                  incompleteFormTitle: incompleteFormTitle,
+                  incompleteFormBody: incompleteFormBody,
+                ),
               ],
             );
           },
@@ -570,27 +777,55 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
 
   // ── Widgets ──────────────────────────────────────────────────────────
 
-  Widget _buildCustomerTypeSection(SaleCalculatorProvider calc, ThemeData theme) {
+  Widget _buildCustomerTypeSection(
+    SaleCalculatorProvider calc, 
+    ThemeData theme, {
+    required String sectionTitle,
+    required String typeIndividual,
+    required String typeBusiness,
+    required String selectFromContactList,
+    required String walkInCustomer,
+    required String walkInDetailsTitle,
+    required String labelCustomerName,
+    required String valueGeneralPublic,
+    required String labelTin,
+    required String existingCustomer,
+    required String labelTinShort,
+    required String labelAddress,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'CUSTOMER TYPE',
+          sectionTitle,
           style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.2, color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _buildTypeCard(label: 'Individual', icon: Icons.person_rounded, isSelected: _selectedType == SaleCustomerType.individual, onTap: () => _onTypeChanged(SaleCustomerType.individual, calc), theme: theme)),
+            Expanded(child: _buildTypeCard(label: typeIndividual, icon: Icons.person_rounded, isSelected: _selectedType == SaleCustomerType.individual, onTap: () => _onTypeChanged(SaleCustomerType.individual, calc), theme: theme)),
             const SizedBox(width: 12),
-            Expanded(child: _buildTypeCard(label: 'Business', icon: Icons.store_rounded, isSelected: _selectedType == SaleCustomerType.business, onTap: () => _onTypeChanged(SaleCustomerType.business, calc), theme: theme)),
+            Expanded(child: _buildTypeCard(label: typeBusiness, icon: Icons.store_rounded, isSelected: _selectedType == SaleCustomerType.business, onTap: () => _onTypeChanged(SaleCustomerType.business, calc), theme: theme)),
           ],
         ),
         const SizedBox(height: 24),
         if (_isWalkIn)
-          _buildWalkInCard(calc, theme)
+          _buildWalkInCard(
+            calc, 
+            theme,
+            walkInDetailsTitle: walkInDetailsTitle,
+            labelCustomerName: labelCustomerName,
+            valueGeneralPublic: valueGeneralPublic,
+            labelTin: labelTin,
+          )
         else if (calc.selectedCustomer != null)
-          _buildSelectedCustomerCard(calc, theme)
+          _buildSelectedCustomerCard(
+            calc, 
+            theme,
+            existingCustomer: existingCustomer,
+            labelTinShort: labelTinShort,
+            labelAddress: labelAddress,
+          )
         else
           InkWell(
             onTap: () async {
@@ -622,7 +857,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   const Icon(Icons.contact_page_rounded, color: AppTheme.primary),
                   const SizedBox(width: 12),
                   Text(
-                    'Select Customer from Contact List',
+                    selectFromContactList,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: AppTheme.primary,
                       fontWeight: FontWeight.w600,
@@ -637,7 +872,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         if (_selectedType == SaleCustomerType.individual && !_isWalkIn) ...[
           const SizedBox(height: 12),
           AppButton(
-            text: 'Walk-in Customer',
+            text: walkInCustomer,
             isPrimary: false,
             onPressed: () => _selectWalkIn(calc),
             icon: Icon(Icons.person_add_alt_1_rounded, size: 20, color: theme.colorScheme.onSurface),
@@ -647,7 +882,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  Widget _buildWalkInCard(SaleCalculatorProvider calc, ThemeData theme) {
+  Widget _buildWalkInCard(
+    SaleCalculatorProvider calc, 
+    ThemeData theme, {
+    required String walkInDetailsTitle,
+    required String labelCustomerName,
+    required String valueGeneralPublic,
+    required String labelTin,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -665,7 +907,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 children: [
                   Icon(Icons.storefront_rounded, color: AppTheme.primary, size: 20),
                   const SizedBox(width: 8),
-                  Text('Walk-In Customer Details', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primary)),
+                  Text(walkInDetailsTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primary)),
                 ],
               ),
               IconButton(
@@ -680,7 +922,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          Text('Customer Name', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(labelCustomerName, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           const SizedBox(height: 4),
           Container(
             width: double.infinity,
@@ -689,14 +931,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
             ),
-            child: Text('General Public', style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+            child: Text(valueGeneralPublic, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Icon(Icons.badge_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 4),
-              Text('Tax Identification Number (TIN)', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              Text(labelTin, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               const Spacer(),
               Icon(Icons.lock_outline_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
             ],
@@ -716,7 +958,13 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  Widget _buildSelectedCustomerCard(SaleCalculatorProvider calc, ThemeData theme) {
+  Widget _buildSelectedCustomerCard(
+    SaleCalculatorProvider calc, 
+    ThemeData theme, {
+    required String existingCustomer,
+    required String labelTinShort,
+    required String labelAddress,
+  }) {
     final customer = calc.selectedCustomer!;
     
     // Fallbacks
@@ -761,7 +1009,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Existing Customer',
+                      existingCustomer,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -789,7 +1037,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'TIN',
+                      labelTinShort,
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -810,7 +1058,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Address',
+                      labelAddress,
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -856,7 +1104,25 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  Widget _buildItemDetailsSection(SaleCalculatorProvider calc, ThemeData theme) {
+  Widget _buildItemDetailsSection(
+    SaleCalculatorProvider calc, 
+    ThemeData theme, {
+    required String title,
+    required String labelSelectItem,
+    required String hintSelectFromCatalog,
+    required String labelQuantity,
+    required String labelUnitPrice,
+    required String buttonAddAnotherItem,
+    required String editQuantityTitle,
+    required String editQuantityLabel,
+    required String editPriceTitle,
+    required String editPriceLabel,
+    required String applyButton,
+    required String cancelButton,
+    required String duplicateItemTitle,
+    required String duplicateItemBody,
+    required String duplicateItemButton,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -868,7 +1134,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Item Details',
+            title,
             style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
@@ -877,25 +1143,77 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             final line = entry.value;
             return Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
-              child: _buildItemBlock(calc, theme, idx, line),
+              child: _buildItemBlock(
+                calc, 
+                theme, 
+                idx, 
+                line,
+                labelSelectItem: labelSelectItem,
+                hintSelectFromCatalog: hintSelectFromCatalog,
+                labelQuantity: labelQuantity,
+                labelUnitPrice: labelUnitPrice,
+                editQuantityTitle: editQuantityTitle,
+                editQuantityLabel: editQuantityLabel,
+                editPriceTitle: editPriceTitle,
+                editPriceLabel: editPriceLabel,
+                applyButton: applyButton,
+                cancelButton: cancelButton,
+                duplicateItemTitle: duplicateItemTitle,
+                duplicateItemBody: duplicateItemBody,
+                duplicateItemButton: duplicateItemButton,
+              ),
             );
           }),
-          if (calc.lineItems.isEmpty) _buildItemPlaceholder(calc, theme),
+          if (calc.lineItems.isEmpty) _buildItemPlaceholder(
+            calc, 
+            theme,
+            labelSelectItem: labelSelectItem,
+            hintSelectFromCatalog: hintSelectFromCatalog,
+            duplicateItemTitle: duplicateItemTitle,
+            duplicateItemBody: duplicateItemBody,
+            duplicateItemButton: duplicateItemButton,
+          ),
           const SizedBox(height: 12),
-          _buildAddAnotherItemButton(calc, theme),
+          _buildAddAnotherItemButton(
+            calc, 
+            theme,
+            buttonAddAnotherItem: buttonAddAnotherItem,
+            labelSelectItem: labelSelectItem,
+            duplicateItemTitle: duplicateItemTitle,
+            duplicateItemBody: duplicateItemBody,
+            duplicateItemButton: duplicateItemButton,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildItemBlock(SaleCalculatorProvider calc, ThemeData theme, int index, SaleLineItem line) {
+  Widget _buildItemBlock(
+    SaleCalculatorProvider calc, 
+    ThemeData theme, 
+    int index, 
+    SaleLineItem line, {
+    required String labelSelectItem,
+    required String hintSelectFromCatalog,
+    required String labelQuantity,
+    required String labelUnitPrice,
+    required String editQuantityTitle,
+    required String editQuantityLabel,
+    required String editPriceTitle,
+    required String editPriceLabel,
+    required String applyButton,
+    required String cancelButton,
+    required String duplicateItemTitle,
+    required String duplicateItemBody,
+    required String duplicateItemButton,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Select Item', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(labelSelectItem, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             if (calc.lineItems.length > 1)
               IconButton(
                 icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 20),
@@ -909,13 +1227,17 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         CustomPremiumDropdown<String>(
           label: '',
           value: line.item.id,
-          hint: 'Select from catalog',
+          hint: hintSelectFromCatalog,
           items: calc.saleItems.map((item) => CustomDropdownItem<String>(label: item.name, value: item.id, icon: Icons.inventory_2_rounded)).toList(),
           isSearchable: true,
           onChanged: (val) {
             if (val != null) {
               if (_isItemAlreadyAdded(calc, val, excludeIndex: index)) {
-                _showDuplicateError();
+                _showDuplicateError(
+                  title: duplicateItemTitle,
+                  body: duplicateItemBody,
+                  buttonText: duplicateItemButton,
+                );
                 return;
               }
               final newItem = calc.saleItems.firstWhere((i) => i.id == val);
@@ -933,7 +1255,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Quantity', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  Text(labelQuantity, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 8),
                   Container(
                     height: 56,
@@ -949,7 +1271,15 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                           onPressed: () => calc.updateLineItemQuantity(index, line.quantity - 1),
                         ),
                         InkWell(
-                          onTap: () => _showQuantityEditDialog(calc, index, line),
+                          onTap: () => _showQuantityEditDialog(
+                            calc, 
+                            index, 
+                            line,
+                            title: editQuantityTitle,
+                            label: editQuantityLabel,
+                            applyButton: applyButton,
+                            cancelButton: cancelButton,
+                          ),
                           child: Text(
                             line.quantity.toStringAsFixed(0),
                             style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -971,7 +1301,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Unit Price (RM)', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  Text(labelUnitPrice, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 8),
                   Container(
                     height: 56,
@@ -989,7 +1319,15 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.edit_outlined, size: 20, color: AppTheme.secondaryDark),
-                          onPressed: () => _showPriceOverrideDialog(calc, index, line),
+                          onPressed: () => _showPriceOverrideDialog(
+                            calc, 
+                            index, 
+                            line,
+                            title: editPriceTitle,
+                            label: editPriceLabel,
+                            applyButton: applyButton,
+                            cancelButton: cancelButton,
+                          ),
                         ),
                       ],
                     ),
@@ -1003,17 +1341,29 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  Widget _buildItemPlaceholder(SaleCalculatorProvider calc, ThemeData theme) {
+  Widget _buildItemPlaceholder(
+    SaleCalculatorProvider calc, 
+    ThemeData theme, {
+    required String labelSelectItem,
+    required String hintSelectFromCatalog,
+    required String duplicateItemTitle,
+    required String duplicateItemBody,
+    required String duplicateItemButton,
+  }) {
     return CustomPremiumDropdown<String>(
-      label: 'Select Item',
+      label: labelSelectItem,
       value: null,
-      hint: 'Select from catalog',
+      hint: hintSelectFromCatalog,
       items: calc.saleItems.map((item) => CustomDropdownItem<String>(label: item.name, value: item.id, icon: Icons.inventory_2_rounded)).toList(),
       isSearchable: true,
       onChanged: (val) {
         if (val != null) {
           if (_isItemAlreadyAdded(calc, val)) {
-            _showDuplicateError();
+            _showDuplicateError(
+              title: duplicateItemTitle,
+              body: duplicateItemBody,
+              buttonText: duplicateItemButton,
+            );
             return;
           }
           final item = calc.saleItems.firstWhere((i) => i.id == val);
@@ -1025,9 +1375,24 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  Widget _buildAddAnotherItemButton(SaleCalculatorProvider calc, ThemeData theme) {
+  Widget _buildAddAnotherItemButton(
+    SaleCalculatorProvider calc, 
+    ThemeData theme, {
+    required String buttonAddAnotherItem,
+    required String labelSelectItem,
+    required String duplicateItemTitle,
+    required String duplicateItemBody,
+    required String duplicateItemButton,
+  }) {
     return InkWell(
-      onTap: () => _showItemPicker(calc, theme),
+      onTap: () => _showItemPicker(
+        calc, 
+        theme, 
+        labelSelectItem: labelSelectItem,
+        duplicateItemTitle: duplicateItemTitle,
+        duplicateItemBody: duplicateItemBody,
+        duplicateItemButton: duplicateItemButton,
+      ),
       child: Container(
         width: double.infinity,
         height: 56,
@@ -1041,7 +1406,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             const Icon(Icons.add_circle_outline, size: 20, color: AppTheme.secondaryDark),
             const SizedBox(width: 8),
             Text(
-              'Add Another Item',
+              buttonAddAnotherItem,
               style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: AppTheme.secondaryDark),
             ),
           ],
@@ -1050,10 +1415,17 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  void _showItemPicker(SaleCalculatorProvider calc, ThemeData theme) {
+  void _showItemPicker(
+    SaleCalculatorProvider calc, 
+    ThemeData theme, {
+    required String labelSelectItem,
+    required String duplicateItemTitle,
+    required String duplicateItemBody,
+    required String duplicateItemButton,
+  }) {
     CustomPremiumDropdown.showPicker<String>(
       context: context,
-      title: 'Select Item',
+      title: labelSelectItem,
       isSearchable: true,
       items: calc.saleItems
           .map((item) => CustomDropdownItem<String>(
@@ -1066,7 +1438,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     ).then((val) {
       if (val != null) {
         if (_isItemAlreadyAdded(calc, val)) {
-          _showDuplicateError();
+          _showDuplicateError(
+            title: duplicateItemTitle,
+            body: duplicateItemBody,
+            buttonText: duplicateItemButton,
+          );
           return;
         }
         final item = calc.saleItems.firstWhere((i) => i.id == val);
@@ -1075,17 +1451,25 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     });
   }
 
-  void _showQuantityEditDialog(SaleCalculatorProvider calc, int index, SaleLineItem line) {
+  void _showQuantityEditDialog(
+    SaleCalculatorProvider calc, 
+    int index, 
+    SaleLineItem line, {
+    required String title,
+    required String label,
+    required String applyButton,
+    required String cancelButton,
+  }) {
     final controller = TextEditingController(text: line.quantity.toStringAsFixed(0));
     AppDialogs.showFormModal(
       context,
-      title: 'Edit Quantity',
+      title: title,
       formBody: AppTextField(
         controller: controller,
-        label: 'New Quantity',
+        label: label,
         keyboardType: const TextInputType.numberWithOptions(decimal: false),
       ),
-      primaryButtonText: 'Apply',
+      primaryButtonText: applyButton,
       onPrimaryPressed: () async {
         final qty = double.tryParse(controller.text);
         if (qty != null && qty >= 0) {
@@ -1093,22 +1477,30 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         }
         return true;
       },
-      secondaryButtonText: 'Cancel',
+      secondaryButtonText: cancelButton,
       onSecondaryPressed: () {},
     );
   }
 
-  void _showPriceOverrideDialog(SaleCalculatorProvider calc, int index, SaleLineItem line) {
+  void _showPriceOverrideDialog(
+    SaleCalculatorProvider calc, 
+    int index, 
+    SaleLineItem line, {
+    required String title,
+    required String label,
+    required String applyButton,
+    required String cancelButton,
+  }) {
     final controller = TextEditingController(text: line.unitPrice.toStringAsFixed(2));
     AppDialogs.showFormModal(
       context,
-      title: 'Edit Unit Price',
+      title: title,
       formBody: AppTextField(
         controller: controller,
-        label: 'New Unit Price (RM)',
+        label: label,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
       ),
-      primaryButtonText: 'Apply',
+      primaryButtonText: applyButton,
       onPrimaryPressed: () async {
         final price = double.tryParse(controller.text);
         if (price != null) {
@@ -1116,12 +1508,34 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         }
         return true;
       },
-      secondaryButtonText: 'Cancel',
+      secondaryButtonText: cancelButton,
       onSecondaryPressed: () {},
     );
   }
 
-  Widget _buildBottomSummary(SaleCalculatorProvider calc, ThemeData theme) {
+  Widget _buildBottomSummary(
+    SaleCalculatorProvider calc, 
+    ThemeData theme, {
+    required String labelTotalPayable,
+    required String buttonReviewSale,
+    required String previewTitle,
+    required String previewSubtitle,
+    required String eInvoiceLabel,
+    required String standardInvoiceLabel,
+    required String subtotalLabel,
+    required String discountLabel,
+    required String feeChargeLabel,
+    required String taxAmountLabel,
+    required String taxAmountUnitLabel,
+    required String roundingLabel,
+    required String totalPayableLabel,
+    required String recordReceiptLabel,
+    required String confirmPaymentLabel,
+    required String submitLhdnOnlyLabel,
+    required String saveAsPendingLabel,
+    required String incompleteFormTitle,
+    required String incompleteFormBody,
+  }) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
       decoration: BoxDecoration(
@@ -1142,7 +1556,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'Total Payable', 
+                labelTotalPayable, 
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   letterSpacing: 0.5,
@@ -1168,8 +1582,8 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   if (!_formKey.currentState!.validate()) {
                     AppDialogs.showSystemAlert(
                       context, 
-                      title: 'Incomplete Form', 
-                      body: 'Please correct the errors in the form before proceeding.',
+                      title: incompleteFormTitle, 
+                      body: incompleteFormBody,
                       icon: Icons.warning_amber_rounded,
                     );
                     return;
@@ -1178,7 +1592,25 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   setState(() => _isSaving = true);
                   await calc.fetchPreviewInvoiceNumber();
                   setState(() => _isSaving = false);
-                  _showPreviewSheet();
+                  _showPreviewSheet(
+                    title: previewTitle,
+                    subtitle: previewSubtitle,
+                    eInvoiceLabel: eInvoiceLabel,
+                    standardInvoiceLabel: standardInvoiceLabel,
+                    subtotalLabel: subtotalLabel,
+                    discountLabel: discountLabel,
+                    feeChargeLabel: feeChargeLabel,
+                    taxAmountLabel: taxAmountLabel,
+                    taxAmountUnitLabel: taxAmountUnitLabel,
+                    roundingLabel: roundingLabel,
+                    totalPayableLabel: totalPayableLabel,
+                    recordReceiptLabel: recordReceiptLabel,
+                    confirmPaymentLabel: confirmPaymentLabel,
+                    submitLhdnOnlyLabel: submitLhdnOnlyLabel,
+                    saveAsPendingLabel: saveAsPendingLabel,
+                    incompleteFormTitle: incompleteFormTitle,
+                    incompleteFormBody: incompleteFormBody,
+                  );
                 },
             borderRadius: BorderRadius.circular(20),
             child: Container(
@@ -1205,7 +1637,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Review Sale', 
+                          buttonReviewSale, 
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: Colors.white, 
                             fontWeight: FontWeight.bold,
@@ -1246,7 +1678,31 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  Widget _buildAdditionalDetails(SaleCalculatorProvider provider, ThemeData theme) {
+  Widget _buildAdditionalDetails(
+    SaleCalculatorProvider provider, 
+    ThemeData theme, {
+    required String title,
+    required String subHeaderDiscounts,
+    required String tabRate,
+    required String tabAmount,
+    required String labelDiscountRate,
+    required String labelFeeRate,
+    required String labelDiscountAmount,
+    required String labelFeeAmount,
+    required String subHeaderPaymentInfo,
+    required String labelPaymentMode,
+    required String labelBankAccount,
+    required String labelPaymentTerms,
+    required String labelBillRef,
+    required String subHeaderPrepayment,
+    required String labelPrepayAmount,
+    required String labelPrepayDate,
+    required String labelPrepayRef,
+    required String subHeaderBilling,
+    required String labelFrequency,
+    required String labelBillingPeriod,
+    required String hintSelectPeriod,
+  }) {
     final isDark = theme.brightness == Brightness.dark;
     return Card(
       color: theme.colorScheme.surfaceContainerHighest,
@@ -1255,7 +1711,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         data: theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           title: Text(
-            'Additional Details (Optional)', 
+            title, 
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.bold,
@@ -1268,7 +1724,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           children: [
             // 1. Discounts & Charges
             _buildSubHeader(
-              'Discounts & Charges', 
+              subHeaderDiscounts, 
               Icons.local_offer_rounded, 
               theme,
               isChecked: _enableDiscountCharges,
@@ -1301,7 +1757,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   children: [
                     _buildSegmentTab(
                       theme,
-                      label: 'Rate (%)',
+                      label: tabRate,
                       isActive: _isDiscountRate,
                       onTap: () {
                         setState(() => _isDiscountRate = true);
@@ -1310,7 +1766,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     ),
                     _buildSegmentTab(
                       theme,
-                      label: 'Amount (RM)',
+                      label: tabAmount,
                       isActive: !_isDiscountRate,
                       onTap: () {
                         setState(() => _isDiscountRate = false);
@@ -1326,7 +1782,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   children: [
                     Expanded(
                       child: _buildLabeledField(
-                        'Discount Rate',
+                        labelDiscountRate,
                         TextFormField(
                           controller: _discountRateCtrl,
                           keyboardType: TextInputType.number,
@@ -1345,7 +1801,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildLabeledField(
-                        'Fee/Charge Rate',
+                        labelFeeRate,
                         TextFormField(
                           controller: _feeRateCtrl,
                           keyboardType: TextInputType.number,
@@ -1368,7 +1824,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   children: [
                     Expanded(
                       child: _buildLabeledField(
-                        'Discount Amount',
+                        labelDiscountAmount,
                         TextFormField(
                           controller: _discountController,
                           keyboardType: TextInputType.number,
@@ -1387,7 +1843,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildLabeledField(
-                        'Fee/Charge Amount',
+                        labelFeeAmount,
                         TextFormField(
                           controller: _feeAmountCtrl,
                           keyboardType: TextInputType.number,
@@ -1410,7 +1866,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             ],
             // 2. Payment Information
             _buildSubHeader(
-              'Payment Information', 
+              subHeaderPaymentInfo, 
               Icons.payment_rounded, 
               theme,
               isChecked: _enablePaymentInfo,
@@ -1422,7 +1878,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   _bankAccountCtrl.clear();
                   _paymentTermsCtrl.clear();
                   _billRefCtrl.clear();
-                  provider.setPaymentMode('01'); // Default back to Cash or clear? We leave '01' as default but maybe we should clear it. Wait, the user said "Otherwise, the field just set as null in firestore." So if unchecked, we probably need a way to say no payment mode, but LHDN requires it if there's payment info? We will handle omitting it in provider later.
+                  provider.setPaymentMode('01'); 
                   provider.setSupplierBankAccount('');
                   provider.setPaymentTerms('');
                   provider.setBillReference('');
@@ -1432,7 +1888,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             const SizedBox(height: 8),
             if (_enablePaymentInfo) ...[
               CustomPremiumDropdown<String>(
-                label: 'Payment Mode',
+                label: labelPaymentMode,
                 value: provider.paymentMode,
                 items: CustomDropdownBuilder.fromMap(
                   LhdnConstants.paymentModes,
@@ -1446,7 +1902,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     _bankAccountCtrl.text = provider.supplierBankAccount;
                   }
                 },
-                validator: (v) => AppValidators.requiredField(v, 'Payment Mode'),
+                validator: (v) => AppValidators.requiredField(v, labelPaymentMode),
                 fillColor: theme.colorScheme.surface,
               ),
               
@@ -1454,7 +1910,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               if (provider.paymentMode == '03') ...[
                 const SizedBox(height: 16),
                 _buildLabeledField(
-                  "Supplier's Bank Account Number",
+                  labelBankAccount,
                   TextFormField(
                     controller: _bankAccountCtrl,
                     style: TextStyle(color: theme.colorScheme.onSurface),
@@ -1471,7 +1927,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 children: [
                   Expanded(
                     child: _buildLabeledField(
-                      'Payment Terms',
+                      labelPaymentTerms,
                       TextFormField(
                         controller: _paymentTermsCtrl,
                         style: TextStyle(color: theme.colorScheme.onSurface),
@@ -1484,7 +1940,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: _buildLabeledField(
-                      'Bill Reference',
+                      labelBillRef,
                       TextFormField(
                         controller: _billRefCtrl,
                         style: TextStyle(color: theme.colorScheme.onSurface),
@@ -1500,7 +1956,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             ],
             // 3. Prepayment Details
             _buildSubHeader(
-              'Prepayment Details', 
+              subHeaderPrepayment, 
               Icons.account_balance_wallet_rounded, 
               theme,
               isChecked: _enablePrepayment,
@@ -1524,7 +1980,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 children: [
                   Expanded(
                     child: _buildLabeledField(
-                      'Amount (RM)',
+                      labelPrepayAmount,
                       TextFormField(
                         controller: _prepayAmountCtrl,
                         keyboardType: TextInputType.number,
@@ -1532,7 +1988,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                         textAlign: TextAlign.end,
                         style: TextStyle(color: theme.colorScheme.onSurface),
                         onChanged: (val) => provider.setPrepaymentAmount(double.tryParse(val) ?? 0.0),
-                        validator: (v) => AppValidators.positiveNumber(v, 'Prepayment Amount'),
+                        validator: (v) => AppValidators.positiveNumber(v, labelPrepayAmount),
                         decoration: const InputDecoration(prefixText: 'RM ', hintText: '0.00'),
                       ),
                       theme,
@@ -1541,7 +1997,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: _buildLabeledField(
-                      'Date',
+                      labelPrepayDate,
                       FormField<DateTime>(
                         initialValue: _prepaymentDate,
                         validator: (v) => v == null ? 'Please select a date' : null,
@@ -1584,7 +2040,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               ),
               const SizedBox(height: 16),
               _buildLabeledField(
-                'Prepayment Reference No.',
+                labelPrepayRef,
                 TextFormField(
                   controller: _prepayRefCtrl,
                   style: TextStyle(color: theme.colorScheme.onSurface),
@@ -1597,7 +2053,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             ],
             // 4. Billing
             _buildSubHeader(
-              'Billing', 
+              subHeaderBilling, 
               Icons.receipt_rounded, 
               theme,
               isChecked: _enableBillingExemption,
@@ -1620,7 +2076,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             const SizedBox(height: 8),
             if (_enableBillingExemption) ...[
               CustomPremiumDropdown<String>(
-                label: 'Frequency',
+                label: labelFrequency,
                 value: _billingFrequency,
                 items: CustomDropdownBuilder.fromList(
                   ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Annually'],
@@ -1630,13 +2086,13 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   setState(() => _billingFrequency = val);
                   provider.setBillingFrequency(val ?? '');
                 },
-                validator: (v) => AppValidators.requiredField(v, 'Frequency'),
+                validator: (v) => AppValidators.requiredField(v, labelFrequency),
                 fillColor: theme.colorScheme.surface,
               ),
               const SizedBox(height: 16),
 
               _buildLabeledField(
-                'Billing Period',
+                labelBillingPeriod,
                 FormField<DateTimeRange>(
                   initialValue: (_billingStartDate != null && _billingEndDate != null) 
                     ? DateTimeRange(start: _billingStartDate!, end: _billingEndDate!) 
@@ -1671,7 +2127,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                           child: Text(
                             (_billingStartDate != null && _billingEndDate != null)
                                 ? "${DateFormat('yyyy-MM-dd').format(_billingStartDate!)} to ${DateFormat('yyyy-MM-dd').format(_billingEndDate!)}"
-                                : 'Select Period',
+                                : hintSelectPeriod,
                             style: TextStyle(color: theme.colorScheme.onSurface),
                           ),
                         ),

@@ -319,45 +319,79 @@ class SaleRecord {
     };
 
     // Optional Fields - Exclude if null per requirement
-    if (discountAmount != null) data['discountAmount'] = discountAmount;
-    if (discountRate != null) data['discountRate'] = discountRate;
-    if (feeAmount != null) data['feeAmount'] = feeAmount;
-    if (feeRate != null) data['feeRate'] = feeRate;
-    if (discountDescription != null)
+    if (discountAmount != null) {
+      data['discountAmount'] = discountAmount;
+    }
+    if (discountRate != null) {
+      data['discountRate'] = discountRate;
+    }
+    if (feeAmount != null) {
+      data['feeAmount'] = feeAmount;
+    }
+    if (feeRate != null) {
+      data['feeRate'] = feeRate;
+    }
+    if (discountDescription != null) {
       data['discountDescription'] = discountDescription;
+    }
 
-    if (paymentMode != null) data['paymentMode'] = paymentMode;
-    if (paymentTerms != null) data['paymentTerms'] = paymentTerms;
-    if (supplierBankAccount != null)
+    if (paymentMode != null) {
+      data['paymentMode'] = paymentMode;
+    }
+    if (paymentTerms != null) {
+      data['paymentTerms'] = paymentTerms;
+    }
+    if (supplierBankAccount != null) {
       data['supplierBankAccount'] = supplierBankAccount;
+    }
 
-    if (prepaymentAmount != null) data['prepaymentAmount'] = prepaymentAmount;
-    if (prepaymentDate != null)
+    if (prepaymentAmount != null) {
+      data['prepaymentAmount'] = prepaymentAmount;
+    }
+    if (prepaymentDate != null) {
       data['prepaymentDate'] = Timestamp.fromDate(prepaymentDate!);
-    if (prepaymentReference != null)
+    }
+    if (prepaymentReference != null) {
       data['prepaymentReference'] = prepaymentReference;
+    }
 
-    if (billReference != null) data['billReference'] = billReference;
-    if (billingFrequency != null) data['billingFrequency'] = billingFrequency;
-    if (taxExemptionAmount != null)
+    if (billReference != null) {
+      data['billReference'] = billReference;
+    }
+    if (billingFrequency != null) {
+      data['billingFrequency'] = billingFrequency;
+    }
+    if (taxExemptionAmount != null) {
       data['taxExemptionAmount'] = taxExemptionAmount;
-    if (billingStartDate != null)
+    }
+    if (billingStartDate != null) {
       data['billingStartDate'] = Timestamp.fromDate(billingStartDate!);
-    if (billingEndDate != null)
+    }
+    if (billingEndDate != null) {
       data['billingEndDate'] = Timestamp.fromDate(billingEndDate!);
-    if (taxExemptionReason != null)
+    }
+    if (taxExemptionReason != null) {
       data['taxExemptionReason'] = taxExemptionReason;
+    }
 
-    if (lhdnUuid != null) data['lhdnUuid'] = lhdnUuid;
-    if (lhdnLongId != null) data['lhdnLongId'] = lhdnLongId;
-    if (lhdnValidatedAt != null)
+    if (lhdnUuid != null) {
+      data['lhdnUuid'] = lhdnUuid;
+    }
+    if (lhdnLongId != null) {
+      data['lhdnLongId'] = lhdnLongId;
+    }
+    if (lhdnValidatedAt != null) {
       data['lhdnValidatedAt'] = Timestamp.fromDate(lhdnValidatedAt!);
-    if (lastGeneratedPayload != null)
+    }
+    if (lastGeneratedPayload != null) {
       data['lastGeneratedPayload'] = lastGeneratedPayload;
-    if (lhdnValidationUrl != null)
+    }
+    if (lhdnValidationUrl != null) {
       data['lhdnValidationUrl'] = lhdnValidationUrl;
-    if (consolidatedInvoiceRef != null)
+    }
+    if (consolidatedInvoiceRef != null) {
       data['consolidatedInvoiceRef'] = consolidatedInvoiceRef;
+    }
 
     if (createdAt != null) {
       data['createdAt'] = Timestamp.fromDate(createdAt!);

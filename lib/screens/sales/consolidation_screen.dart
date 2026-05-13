@@ -149,7 +149,7 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
                         itemBuilder: (context, index) {
                           final masterRef = masterRefs[index];
                           final children = grouped[masterRef]!;
-                          final totalAmount = children.fold(0.0, (sum, r) => sum + r.totalPayable);
+                          final totalAmount = children.fold(0.0, (total, r) => total + r.totalPayable);
                           // Use the date of the first child as a reference for the group
                           final dateStr = DateFormat('MMM dd, yyyy').format(children.first.saleDate);
 
@@ -325,7 +325,7 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
       final selectedRecords = allPending.where((r) => _selectedSaleIds.contains(r.id)).toList();
       final result = await ConsolidationService().submitConsolidatedInvoice(selectedRecords);
 
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() => _isSubmitting = false);
 
       if (result.success) {
@@ -338,7 +338,7 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
           onDone: () {
             Navigator.pop(context); // Close dialog
             _selectedSaleIds.clear(); // Clear selection after success
-            if (mounted) Navigator.pop(context); // Go back to history/dashboard
+            if (context.mounted) Navigator.pop(context); // Go back to history/dashboard
           },
         );
       } else {
@@ -351,7 +351,7 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
         );
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() => _isSubmitting = false);
       AppDialogs.showSystemAlert(
         context,

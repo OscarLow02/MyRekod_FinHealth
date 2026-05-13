@@ -101,7 +101,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           );
           if (widget.isPickerMode && newCustomer != null) {
             // If in picker mode and a new customer was added, auto-select it
-            if (mounted) Navigator.pop(context, newCustomer);
+            if (context.mounted) Navigator.pop(context, newCustomer);
           }
         },
         backgroundColor: AppTheme.primary,

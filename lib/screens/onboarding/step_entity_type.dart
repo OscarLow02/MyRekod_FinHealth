@@ -23,6 +23,7 @@ class StepEntityType extends StatelessWidget {
     const smeTitle = 'Business (Registered SME)';
     const smeDesc =
         'Formally registered entity with a\nbusiness registration number and\nstaff.';
+    const securityLabel = 'SECURE 256-BIT ENCRYPTED REGISTRATION';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -70,8 +71,7 @@ class StepEntityType extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  // TODO: Implement i18n
-                  'SECURE 256-BIT ENCRYPTED REGISTRATION',
+                  securityLabel,
                   style: theme.textTheme.labelMedium?.copyWith(
                     fontSize: 11,
                     letterSpacing: 0.5,

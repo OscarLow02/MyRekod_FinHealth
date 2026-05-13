@@ -266,7 +266,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                 Text(
                   'Last modified: $modifiedStr',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                     fontStyle: FontStyle.italic,
                   ),
                 ),

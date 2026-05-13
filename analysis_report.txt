@@ -1,0 +1,65 @@
+Analyzing MyRekod_FinHealth...                                  
+
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:327:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:332:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:336:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:338:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:343:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:345:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:347:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:349:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:354:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:356:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:358:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/models/sale_record.dart:360:7 • curly_braces_in_flow_control_structures
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/customers/customer_list_screen.dart:104:40 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/expenses/expense_detail_screen.dart:269:63 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/screens/expenses/record_expense_screen.dart:310:31 • use_build_context_synchronously
+   info • Unnecessary use of multiple underscores • lib/screens/expenses/record_expense_screen.dart:374:45 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/screens/expenses/record_expense_screen.dart:374:49 • unnecessary_underscores
+   info • Statements in an if should be enclosed in a block • lib/screens/expenses/record_expense_screen.dart:512:21 • curly_braces_in_flow_control_structures
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/expenses/scanner_screen.dart:250:28 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/expenses/scanner_screen.dart:317:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/expenses/scanner_screen.dart:323:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/expenses/scanner_screen.dart:347:67 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/expenses/scanner_screen.dart:374:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/expenses/scanner_screen.dart:387:57 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/screens/expenses/scanner_screen.dart:387:89 • deprecated_member_use
+   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor or activeTrackColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/screens/onboarding/step_business_details.dart:226:15 • deprecated_member_use
+   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor or activeTrackColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/screens/onboarding/step_business_details.dart:249:15 • deprecated_member_use
+   info • The parameter name 'sum' matches a visible type name • lib/screens/sales/consolidation_screen.dart:152:67 • avoid_types_as_parameter_names
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/consolidation_screen.dart:333:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/consolidation_screen.dart:346:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/consolidation_screen.dart:357:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/screens/sales/sale_detail_screen.dart:73:7 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:216:9 • use_build_context_synchronously
+   info • The private field _isExporting could be 'final' • lib/screens/transactions_screen.dart:24:8 • prefer_final_fields
+   info • Don't use 'BuildContext's across async gaps • lib/services/csv_export_service.dart:42:19 • use_build_context_synchronously
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/services/csv_export_service.dart:44:13 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/services/csv_export_service.dart:44:19 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/services/csv_export_service.dart:93:19 • use_build_context_synchronously
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/services/csv_export_service.dart:95:13 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/services/csv_export_service.dart:95:19 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/services/csv_export_service.dart:317:19 • use_build_context_synchronously
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/services/csv_export_service.dart:319:13 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/services/csv_export_service.dart:319:19 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/services/csv_export_service.dart:546:19 • use_build_context_synchronously
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/services/csv_export_service.dart:548:13 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/services/csv_export_service.dart:548:19 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/services/pdf_receipt_service.dart:237:28 • use_build_context_synchronously
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/services/pdf_receipt_service.dart:242:11 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/services/pdf_receipt_service.dart:242:17 • deprecated_member_use
+   info • 'Table.fromTextArray' is deprecated and shouldn't be used. Use TableHelper.fromTextArray() instead • lib/services/pdf_report_service.dart:386:7 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/cashflow_chart.dart:33:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/cashflow_chart.dart:88:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/cashflow_chart.dart:100:48 • deprecated_member_use
+   info • 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre • lib/widgets/cashflow_chart.dart:106:67 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/credit_score_info_sheet.dart:35:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/credit_score_info_sheet.dart:113:28 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/widgets/custom_widgets.dart:222:7 • deprecated_member_use
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/widgets/lhdn_qr_section.dart:49:5 • deprecated_member_use
+   info • 'share' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/widgets/lhdn_qr_section.dart:49:11 • deprecated_member_use
+   info • 'color' is deprecated and shouldn't be used. use colors in eyeStyle and dataModuleStyle instead • lib/widgets/lhdn_qr_section.dart:73:9 • deprecated_member_use
+   info • 'emptyColor' is deprecated and shouldn't be used. You should use the background color value of your container widget • lib/widgets/lhdn_qr_section.dart:74:9 • deprecated_member_use
+
+61 issues found. (ran in 5.0s)

@@ -21,7 +21,7 @@ class TransactionsScreen extends StatefulWidget {
 class _TransactionsScreenState extends State<TransactionsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _isExporting = false;
+  final bool _isExporting = false;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -54,9 +54,15 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     final theme = Theme.of(context);
     final isExpenseTab = _tabController.index == 0;
 
+    // TODO: Implement i18n
+    final String titleTransactions = 'Transactions';
+    final String tooltipExport = 'Export CSV';
+    final String tabExpenses = 'Expenses';
+    final String tabSales = 'Sales';
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transactions'),
+        title: Text(titleTransactions),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -68,7 +74,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.file_download_outlined),
-            tooltip: 'Export CSV',
+            tooltip: tooltipExport,
             onPressed: _isExporting
                 ? null
                 : () {
@@ -89,9 +95,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           indicatorColor: AppTheme.primary,
           labelColor: AppTheme.primary,
           unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-          tabs: const [
-            Tab(text: 'Expenses'),
-            Tab(text: 'Sales'),
+          tabs: [
+            Tab(text: tabExpenses),
+            Tab(text: tabSales),
           ],
         ),
       ),
@@ -107,8 +113,10 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               child: Consumer<ExpenseProvider>(
                 builder: (context, provider, _) {
                   final total = _calculateExpensesTotal(provider.expenses);
+                  // TODO: Implement i18n
+                  final String labelTotalExpenses = 'Total Expenses';
                   return _buildSummaryCard(
-                    title: 'Total Expenses',
+                    title: labelTotalExpenses,
                     amount: 'RM ${total.toStringAsFixed(2)}',
                     color: Colors.orange.shade700,
                     icon: Icons.trending_down_rounded,
@@ -131,9 +139,11 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     }
 
                     if (provider.expenses.isEmpty) {
+                      // TODO: Implement i18n
+                      final String msgNoExpenses = 'No expenses recorded yet';
                       return _buildEmptyState(
                         icon: Icons.receipt_long_rounded,
-                        message: 'No expenses recorded yet',
+                        message: msgNoExpenses,
                         color: Colors.orange.shade700,
                       );
                     }
@@ -149,11 +159,13 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     }
 
                     if (provider.error != null) {
+                      // TODO: Implement i18n
+                      final String errorMsg = 'Error fetching sales:\n${provider.error}';
                       return Center(
                         child: Padding(
                           padding: const EdgeInsets.all(24.0),
                           child: Text(
-                            'Error fetching sales:\n${provider.error}',
+                            errorMsg,
                             style: const TextStyle(color: Colors.red),
                             textAlign: TextAlign.center,
                           ),
@@ -208,6 +220,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
+                                    // TODO: Implement i18n
                                     Text(
                                       'RECENT SALES',
                                       style: theme.textTheme.labelLarge?.copyWith(
@@ -235,7 +248,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                 hasScrollBody: false,
                                 child: _buildEmptyState(
                                   icon: Icons.point_of_sale_rounded,
-                                  message: 'No sales found matching filters',
+                                  message: 'No sales found matching filters', // TODO: Implement i18n
                                   color: AppTheme.primary,
                                 ),
                               )
@@ -265,7 +278,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                     child: provider.hasMore
                                         ? const CircularProgressIndicator()
                                         : Text(
-                                            'End of results',
+                                            'End of results', // TODO: Implement i18n
                                             style: theme.textTheme.bodySmall
                                                 ?.copyWith(
                                                   color: theme
@@ -435,7 +448,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               ),
             ),
             title: Text(
-              expense.vendor.isNotEmpty ? expense.vendor : 'Unknown Vendor',
+              expense.vendor.isNotEmpty ? expense.vendor : 'Unknown Vendor', // TODO: Implement i18n
               style: Theme.of(context).textTheme.titleMedium,
             ),
             subtitle: Text(
@@ -517,6 +530,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             spacing: 8,
             runSpacing: 8,
             children: [
+              // TODO: Implement i18n
               _buildSimpleBadge('$pendingPayment Pending Payment', Colors.orange),
               _buildSimpleBadge('$paid Paid', AppTheme.neonGreenDark),
               _buildSimpleBadge('$pendingConsolidation Pending Consolidation', Colors.purple),
@@ -566,7 +580,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             );
           },
           icon: const Icon(Icons.fact_check_rounded),
-          label: Text('Process Consolidation ($count Items)'),
+          label: Text('Process Consolidation ($count Items)'), // TODO: Implement i18n
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primary,
             foregroundColor: Colors.white,
@@ -592,7 +606,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               controller: _searchController,
               onChanged: (val) => provider.setSearchQuery(val),
               decoration: InputDecoration(
-                hintText: 'Search by item or customer',
+                hintText: 'Search by item or customer', // TODO: Implement i18n
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
                 fillColor: Theme.of(
@@ -689,7 +703,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             Expanded(
               child: Text(
                 sale.lineItems.isEmpty
-                    ? 'Sale'
+                    ? 'Sale' // TODO: Implement i18n
                     : sale.lineItems.first.item.name,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,

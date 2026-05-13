@@ -68,18 +68,23 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       return;
     }
 
-    // Confirm submission
+    // TODO: Implement i18n
+    final String titleConfirm = 'Confirm & Submit?';
+    final String bodyConfirm = 'This will submit invoice ${_currentSale.invoiceNumber} to LHDN for validation and mark it as Paid.\n\n'
+        'Amount: RM ${_currentSale.totalPayable.toStringAsFixed(2)}\n'
+        'Customer: ${_currentSale.customerName}';
+    final String btnConfirm = 'Confirm & Submit';
+    final String btnCancel = 'Cancel';
+
+    if (!mounted) return;
     AppDialogs.showActionModal(
       context,
-      // TODO: Implement i18n
-      title: 'Confirm & Submit?',
-      body: 'This will submit invoice ${_currentSale.invoiceNumber} to LHDN for validation and mark it as Paid.\n\n'
-          'Amount: RM ${_currentSale.totalPayable.toStringAsFixed(2)}\n'
-          'Customer: ${_currentSale.customerName}',
-      primaryButtonText: 'Confirm & Submit',
+      title: titleConfirm,
+      body: bodyConfirm,
+      primaryButtonText: btnConfirm,
       primaryButtonColor: AppTheme.primary,
       onPrimaryPressed: () => _performSubmission(profile),
-      secondaryButtonText: 'Cancel',
+      secondaryButtonText: btnCancel,
       icon: Icons.send_rounded,
       iconColor: AppTheme.primary,
     );
@@ -109,6 +114,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       });
 
       // TODO: Implement i18n
+      if (!mounted) return;
       AppDialogs.showMockLhdnSuccessDialog(
         context,
         invoiceNumber: _currentSale.invoiceNumber,
@@ -122,14 +128,18 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       );
     } else {
       // TODO: Implement i18n
+      final String titleFailed = 'Submission Failed';
+      final String btnRetry = 'Retry';
+      final String btnCancel = 'Cancel';
+
       AppDialogs.showActionModal(
         context,
-        title: 'Submission Failed',
+        title: titleFailed,
         body: result.errorMessage ?? 'Unknown error occurred.',
-        primaryButtonText: 'Retry',
+        primaryButtonText: btnRetry,
         primaryButtonColor: Colors.redAccent,
         onPrimaryPressed: () => _performSubmission(profile),
-        secondaryButtonText: 'Cancel',
+        secondaryButtonText: btnCancel,
         icon: Icons.error_outline_rounded,
         iconColor: Colors.redAccent,
       );
@@ -238,11 +248,15 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     if (profile == null) {
       if (!mounted) return;
       // TODO: Implement i18n
+      final String titleProfileReq = 'Profile Required';
+      final String bodyProfileReq = 'Complete your Business Profile first.';
+      final String btnOk = 'OK';
+
       AppDialogs.showActionModal(
         context,
-        title: 'Profile Required',
-        body: 'Complete your Business Profile first.',
-        primaryButtonText: 'OK',
+        title: titleProfileReq,
+        body: bodyProfileReq,
+        primaryButtonText: btnOk,
         onPrimaryPressed: () {},
         icon: Icons.info_outline_rounded,
         iconColor: AppTheme.primary,
@@ -348,22 +362,26 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
   void _deleteSale() {
     // TODO: Implement i18n
+    final String titleDelete = 'Delete Sale Record';
+    final String bodyDelete = 'Are you sure you want to delete invoice ${_currentSale.invoiceNumber}? '
+        'This action cannot be undone.';
+    final String btnDelete = 'Delete';
+    final String btnCancel = 'Cancel';
+
     AppDialogs.showActionModal(
       context,
-      title: 'Delete Sale Record',
-      body:
-          'Are you sure you want to delete invoice ${_currentSale.invoiceNumber}? '
-          'This action cannot be undone.',
-      primaryButtonText: 'Delete',
+      title: titleDelete,
+      body: bodyDelete,
+      primaryButtonText: btnDelete,
       primaryButtonColor: Colors.redAccent,
       icon: Icons.warning_rounded,
       iconColor: Colors.redAccent,
       onPrimaryPressed: () async {
         try {
           await context.read<SalesProvider>().deleteSaleRecord(_currentSale.id);
-          if (mounted) Navigator.pop(context);
+          if (context.mounted) Navigator.pop(context);
         } catch (e) {
-          if (mounted) {
+          if (context.mounted) {
             AppDialogs.showActionModal(
               context,
               title: 'Delete Failed',
@@ -377,7 +395,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           }
         }
       },
-      secondaryButtonText: 'Cancel',
+      secondaryButtonText: btnCancel,
     );
   }
 
@@ -470,11 +488,45 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       CommercialStatus.pendingPayment => Colors.orange,
     };
 
+    // TODO: Implement i18n
+    const String labelInvoiceDetails = 'Invoice Details';
+    const String labelLhdnValidation = 'LHDN Validation';
+    const String labelUuid = 'UUID';
+    const String labelLongId = 'Long ID';
+    const String labelValidatedAt = 'Validated At';
+    const String labelTransactionInfo = 'Transaction Info';
+    const String labelDate = 'Date';
+    const String labelCustomer = 'Customer';
+    const String labelCustomerType = 'Customer Type';
+    const String labelPaymentMethod = 'Payment Method';
+    const String labelPaymentTerms = 'Payment Terms';
+    const String labelSupplierBankAccount = 'Supplier Bank Account';
+    const String labelBillReference = 'Bill Reference';
+    const String labelPrepaymentDetails = 'Prepayment Details';
+    const String labelPrepaymentAmount = 'Prepayment Amount';
+    const String labelPrepaymentDate = 'Prepayment Date';
+    const String labelPrepaymentReference = 'Prepayment Reference';
+    const String labelBilling = 'Billing';
+    const String labelBillingFrequency = 'Billing Frequency';
+    const String labelBillingPeriod = 'Billing Period';
+    const String labelItemBreakdown = 'Item Breakdown';
+    const String labelPricing = 'Pricing';
+    const String labelSubtotal = 'Subtotal';
+    const String labelDiscount = 'Discount';
+    const String labelFeeCharge = 'Fee/Charge';
+    const String labelRounding = 'Rounding (5-sen)';
+    const String labelTotalPayable = 'Total Payable';
+    const String labelNotes = 'Notes';
+    const String labelExportCsv = 'Export to CSV';
+    const String labelBusinessB2B = 'Business (B2B)';
+    const String labelConsumerB2C = 'Consumer (B2C)';
+    final String labelIndividualPayloadDisabled =
+        'This receipt was consolidated under Master Invoice:\n${_currentSale.consolidatedInvoiceRef}\n\nIndividual payload generation is disabled.';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          // TODO: Implement i18n
-          'Invoice Details',
+          labelInvoiceDetails,
           style: TextStyle(
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.w700,
@@ -652,7 +704,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'This receipt was consolidated under Master Invoice:\n${_currentSale.consolidatedInvoiceRef}\n\nIndividual payload generation is disabled.',
+                        labelIndividualPayloadDisabled,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onErrorContainer,
                           fontWeight: FontWeight.w600,
@@ -664,7 +716,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               ),
             ] else if (_currentSale.lhdnUuid != null) ...[
               // TODO: Implement i18n
-              _buildSectionHeader(theme, 'LHDN Validation'),
+              _buildSectionHeader(theme, labelLhdnValidation),
               const SizedBox(height: 12),
 
               if (_currentSale.lhdnValidationUrl != null)
@@ -676,21 +728,21 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               _buildDetailCard(
                 theme,
                 icon: Icons.fingerprint_rounded,
-                label: 'UUID',
+                label: labelUuid,
                 value: _currentSale.lhdnUuid!,
               ),
               if (_currentSale.lhdnLongId != null)
                 _buildDetailCard(
                   theme,
                   icon: Icons.key_rounded,
-                  label: 'Long ID',
+                  label: labelLongId,
                   value: _currentSale.lhdnLongId!,
                 ),
               if (_currentSale.lhdnValidatedAt != null)
                 _buildDetailCard(
                   theme,
                   icon: Icons.access_time_rounded,
-                  label: 'Validated At',
+                  label: labelValidatedAt,
                   value: DateFormat('dd MMM yyyy, hh:mm a')
                       .format(_currentSale.lhdnValidatedAt!),
                 ),
@@ -699,84 +751,84 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
             // ── Transaction Info ──────────────────────────────────────
             // TODO: Implement i18n
-            _buildSectionHeader(theme, 'Transaction Info'),
+            _buildSectionHeader(theme, labelTransactionInfo),
             const SizedBox(height: 12),
             _buildDetailCard(theme,
                 icon: Icons.calendar_today_rounded,
-                label: 'Date',
+                label: labelDate,
                 value: '$dateStr at $timeStr'),
             _buildDetailCard(theme,
                 icon: Icons.person_outline_rounded,
-                label: 'Customer',
+                label: labelCustomer,
                 value: _currentSale.customerName),
             _buildDetailCard(theme,
                 icon: Icons.badge_outlined,
-                label: 'Customer Type',
+                label: labelCustomerType,
                 value: _currentSale.customerType == CustomerType.b2b
-                    ? 'Business (B2B)'
-                    : 'Consumer (B2C)'),
+                    ? labelBusinessB2B
+                    : labelConsumerB2C),
             _buildDetailCard(theme,
                 icon: Icons.payment_rounded,
-                label: 'Payment Method',
+                label: labelPaymentMethod,
                 value: LhdnConstants.paymentModes[_currentSale.paymentMode] ?? 'Cash'),
             if (_currentSale.paymentTerms != null && _currentSale.paymentTerms!.isNotEmpty)
               _buildDetailCard(theme,
                   icon: Icons.handshake_rounded,
-                  label: 'Payment Terms',
+                  label: labelPaymentTerms,
                   value: _currentSale.paymentTerms!),
             if (_currentSale.supplierBankAccount != null && _currentSale.supplierBankAccount!.isNotEmpty)
               _buildDetailCard(theme,
                   icon: Icons.account_balance_rounded,
-                  label: 'Supplier Bank Account',
+                  label: labelSupplierBankAccount,
                   value: _currentSale.supplierBankAccount!),
             if (_currentSale.billReference != null && _currentSale.billReference!.isNotEmpty)
               _buildDetailCard(theme,
                   icon: Icons.receipt_long_rounded,
-                  label: 'Bill Reference',
+                  label: labelBillReference,
                   value: _currentSale.billReference!),
             
             // Prepayment Details
             if ((_currentSale.prepaymentAmount ?? 0) > 0) ...[
               const SizedBox(height: 12),
-              _buildSectionHeader(theme, 'Prepayment Details'),
+              _buildSectionHeader(theme, labelPrepaymentDetails),
               const SizedBox(height: 12),
               _buildDetailCard(theme,
                   icon: Icons.payments_rounded,
-                  label: 'Prepayment Amount',
+                  label: labelPrepaymentAmount,
                   value: 'RM ${_currentSale.prepaymentAmount!.toStringAsFixed(2)}'),
               if (_currentSale.prepaymentDate != null)
                 _buildDetailCard(theme,
                     icon: Icons.event_available_rounded,
-                    label: 'Prepayment Date',
+                    label: labelPrepaymentDate,
                     value: DateFormat('dd MMM yyyy').format(_currentSale.prepaymentDate!)),
               if (_currentSale.prepaymentReference != null && _currentSale.prepaymentReference!.isNotEmpty)
                 _buildDetailCard(theme,
                     icon: Icons.tag_rounded,
-                    label: 'Prepayment Reference',
+                    label: labelPrepaymentReference,
                     value: _currentSale.prepaymentReference!),
             ],
 
             // Billing
             if (_currentSale.billingFrequency != null || _currentSale.billingStartDate != null) ...[
               const SizedBox(height: 12),
-              _buildSectionHeader(theme, 'Billing'),
+              _buildSectionHeader(theme, labelBilling),
               const SizedBox(height: 12),
               if (_currentSale.billingFrequency != null && _currentSale.billingFrequency!.isNotEmpty)
                 _buildDetailCard(theme,
                     icon: Icons.update_rounded,
-                    label: 'Billing Frequency',
+                    label: labelBillingFrequency,
                     value: _currentSale.billingFrequency!),
               if (_currentSale.billingStartDate != null && _currentSale.billingEndDate != null)
                 _buildDetailCard(theme,
                     icon: Icons.date_range_rounded,
-                    label: 'Billing Period',
+                    label: labelBillingPeriod,
                     value: '${DateFormat('dd MMM yyyy').format(_currentSale.billingStartDate!)} - ${DateFormat('dd MMM yyyy').format(_currentSale.billingEndDate!)}'),
             ],
 
             const SizedBox(height: 24),
 
             // TODO: Implement i18n
-            _buildSectionHeader(theme, 'Item Breakdown'),
+            _buildSectionHeader(theme, labelItemBreakdown),
             const SizedBox(height: 12),
             ..._currentSale.lineItems.map((line) => Container(
                   margin: const EdgeInsets.only(bottom: 8),
@@ -789,16 +841,16 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
             // ── Pricing Breakdown ─────────────────────────────────────
             // TODO: Implement i18n
-            _buildSectionHeader(theme, 'Pricing'),
+            _buildSectionHeader(theme, labelPricing),
             const SizedBox(height: 12),
-            _buildPricingRow(theme, 'Subtotal',
+            _buildPricingRow(theme, labelSubtotal,
                 'RM ${_currentSale.subtotal.toStringAsFixed(2)}'),
             if ((_currentSale.discountAmount ?? 0) > 0)
               _buildPricingRow(
                   theme,
                   (_currentSale.discountRate ?? 0) > 0
                       ? 'Discount (${(_currentSale.discountRate ?? 0).toStringAsFixed(0)}%)'
-                      : 'Discount',
+                      : labelDiscount,
                   '- RM ${(_currentSale.discountAmount ?? 0).toStringAsFixed(2)}',
                   isNegative: true),
             if ((_currentSale.feeAmount ?? 0) > 0)
@@ -806,18 +858,18 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   theme,
                   (_currentSale.feeRate ?? 0) > 0
                       ? 'Fee/Charge (${(_currentSale.feeRate ?? 0).toStringAsFixed(0)}%)'
-                      : 'Fee/Charge',
+                      : labelFeeCharge,
                   '+ RM ${(_currentSale.feeAmount ?? 0).toStringAsFixed(2)}'),
             _buildPricingRow(theme, 'Tax (${_currentSale.taxRate.toStringAsFixed(0)}%)',
                 'RM ${_currentSale.taxAmount.toStringAsFixed(2)}'),
             if (_currentSale.roundingAmount != 0)
               _buildPricingRow(
                 theme,
-                'Rounding (5-sen)',
+                labelRounding,
                 '${_currentSale.roundingAmount >= 0 ? '+' : ''}RM ${_currentSale.roundingAmount.toStringAsFixed(2)}',
               ),
             const Divider(height: 24),
-            _buildPricingRow(theme, 'Total Payable',
+            _buildPricingRow(theme, labelTotalPayable,
                 'RM ${_currentSale.totalPayable.toStringAsFixed(2)}',
                 isBold: true),
             const SizedBox(height: 24),
@@ -826,7 +878,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             if (_currentSale.notes.isNotEmpty) ...[
               _buildDetailCard(theme,
                   icon: Icons.notes_rounded,
-                  label: 'Notes',
+                  label: labelNotes,
                   value: _currentSale.notes),
               const SizedBox(height: 24),
             ],
@@ -834,7 +886,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             // ── Bottom Actions ────────────────────────────────────────
             AppButton(
               // TODO: Implement i18n
-              text: 'Export to CSV',
+              text: labelExportCsv,
               icon: const Icon(Icons.download_rounded, size: 20),
               onPressed: () async => await CsvExportService.exportSingleSaleToCSV(context, _currentSale),
             ),

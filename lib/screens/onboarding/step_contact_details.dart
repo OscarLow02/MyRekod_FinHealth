@@ -66,6 +66,7 @@ class _StepContactDetailsState extends State<StepContactDetails> {
     const emailHint = 'name@business.com (Optional)';
     const bankAccountLabel = 'Bank Account Number';
     const bankAccountHint = 'e.g. 114000112233 (Optional)';
+    const phoneHint = '12 345 6789';
 
     return Form(
       key: provider.stepContactKey,
@@ -86,7 +87,7 @@ class _StepContactDetailsState extends State<StepContactDetails> {
             PhoneInputField(
               label: phoneLabel,
               controller: _phoneController,
-              hint: '12 345 6789',
+              hint: phoneHint,
             ),
             const SizedBox(height: 24),
 
@@ -109,7 +110,7 @@ class _StepContactDetailsState extends State<StepContactDetails> {
             AppTextField(
               controller: _bankAccountController,
               keyboardType: TextInputType.number,
-              validator: (v) => AppValidators.numeric(v, bankAccountLabel),
+              validator: (v) => AppValidators.numeric(v, bankAccountLabel.replaceAll(' (Optional)', '')),
               hintText: bankAccountHint,
               onChanged: provider.setBankAccountNumber,
             ),

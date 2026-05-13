@@ -192,7 +192,7 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
               isSearchable: true,
               hint: msicHint,
               validator: (v) =>
-                  AppValidators.requiredField(v, 'Industry Sector'),
+                  AppValidators.requiredField(v, msicLabel.replaceAll('*', '')),
             ),
             const SizedBox(height: 24),
 
@@ -223,7 +223,7 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
                 style: theme.textTheme.bodyLarge,
               ),
               value: provider.hasSst,
-              activeColor: AppTheme.primary,
+              activeTrackColor: AppTheme.primary,
               onChanged: provider.setHasSst,
             ),
             if (provider.hasSst) ...[
@@ -246,7 +246,7 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
                 style: theme.textTheme.bodyLarge,
               ),
               value: provider.hasTourismTax,
-              activeColor: AppTheme.primary,
+              activeTrackColor: AppTheme.primary,
               onChanged: provider.setHasTourismTax,
             ),
             if (provider.hasTourismTax) ...[

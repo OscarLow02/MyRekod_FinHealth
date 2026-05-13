@@ -39,14 +39,17 @@ class CsvExportService {
       final file = File('${directory.path}/$fileName');
       await file.writeAsString(csvData);
 
+      if (!context.mounted) return;
       final box = context.findRenderObject() as RenderBox?;
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'MyRekod Expense - ${expense.vendor}',
-        sharePositionOrigin: box != null
-            ? box.localToGlobal(Offset.zero) & box.size
-            : null,
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'MyRekod Expense - ${expense.vendor}',
+          sharePositionOrigin: box != null
+              ? box.localToGlobal(Offset.zero) & box.size
+              : null,
+        ),
       );
     } catch (e) {
       if (context.mounted) {
@@ -90,14 +93,17 @@ class CsvExportService {
       final file = File(path);
       await file.writeAsString(csvData);
 
+      if (!context.mounted) return;
       final box = context.findRenderObject() as RenderBox?;
 
-      await Share.shareXFiles(
-        [XFile(path)],
-        text: 'MyRekod Expense Report ($reportSuffix)',
-        sharePositionOrigin: box != null
-            ? box.localToGlobal(Offset.zero) & box.size
-            : null,
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(path)],
+          text: 'MyRekod Expense Report ($reportSuffix)',
+          sharePositionOrigin: box != null
+              ? box.localToGlobal(Offset.zero) & box.size
+              : null,
+        ),
       );
     } catch (e) {
       if (context.mounted) {
@@ -314,14 +320,17 @@ class CsvExportService {
       await file.writeAsString(csvData);
 
       // 7. Trigger the Share Sheet
+      if (!context.mounted) return;
       final box = context.findRenderObject() as RenderBox?;
 
-      await Share.shareXFiles(
-        [XFile(path)],
-        text: 'LHDN e-Invoice Data for $safeInvoiceNum',
-        sharePositionOrigin: box != null
-            ? box.localToGlobal(Offset.zero) & box.size
-            : null,
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(path)],
+          text: 'LHDN e-Invoice Data for $safeInvoiceNum',
+          sharePositionOrigin: box != null
+              ? box.localToGlobal(Offset.zero) & box.size
+              : null,
+        ),
       );
     } catch (e) {
       if (context.mounted) {
@@ -543,14 +552,17 @@ class CsvExportService {
       await file.writeAsString(csvData);
 
       // 8. Trigger the Share Sheet
+      if (!context.mounted) return;
       final box = context.findRenderObject() as RenderBox?;
 
-      await Share.shareXFiles(
-        [XFile(path)],
-        text: 'LHDN Sales Report ($reportSuffix)',
-        sharePositionOrigin: box != null
-            ? box.localToGlobal(Offset.zero) & box.size
-            : null,
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(path)],
+          text: 'LHDN Sales Report ($reportSuffix)',
+          sharePositionOrigin: box != null
+              ? box.localToGlobal(Offset.zero) & box.size
+              : null,
+        ),
       );
     } catch (e) {
       if (context.mounted) {

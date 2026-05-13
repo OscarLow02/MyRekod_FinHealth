@@ -63,7 +63,7 @@ class PdfReceiptService {
                       pw.Image(logoImage, height: 60),
                     pw.SizedBox(height: 10),
                     pw.Text(
-                      profile.businessName.toUpperCase(),
+                      _sanitize(profile.businessName).toUpperCase(),
                       style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
                     ),
                     pw.SizedBox(height: 4),
@@ -147,7 +147,7 @@ class PdfReceiptService {
                   // Table Rows
                   ...sale.lineItems.map((lineItem) => pw.TableRow(
                     children: [
-                      _buildTableCell(lineItem.item.name),
+                      _buildTableCell(_sanitize(lineItem.item.name)),
                       _buildTableCell(lineItem.quantity.toStringAsFixed(0), align: pw.TextAlign.center),
                       _buildTableCell(currencyFormat.format(lineItem.unitPrice), align: pw.TextAlign.right),
                       _buildTableCell(sale.taxRate > 0 ? '${sale.taxRate}%' : '0%', align: pw.TextAlign.right),
@@ -234,16 +234,33 @@ class PdfReceiptService {
     await file.writeAsBytes(await pdf.save());
 
     // Share via share_plus
+    if (!context.mounted) return;
     final RenderBox? box = context.findRenderObject() as RenderBox?;
     final sharePositionOrigin = box != null 
         ? box.localToGlobal(Offset.zero) & box.size 
         : null;
 
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: 'Receipt - ${sale.invoiceNumber}',
-      sharePositionOrigin: sharePositionOrigin,
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        subject: 'Receipt - ${sale.invoiceNumber}',
+        sharePositionOrigin: sharePositionOrigin,
+      ),
     );
+  }
+
+  static String _sanitize(String input) {
+    // Replace common unicode punctuation with ASCII equivalents to prevent rendering issues
+    var s = input
+        .replaceAll('’', "'")
+        .replaceAll('‘', "'")
+        .replaceAll('”', '"')
+        .replaceAll('“', '"')
+        .replaceAll('—', '-')
+        .replaceAll('–', '-');
+    
+    // Strip everything else that isn't ASCII
+    return s.replaceAll(RegExp(r'[^\x00-\x7F]'), '');
   }
 
   static pw.Widget _buildInfoRow(String label, String value) {

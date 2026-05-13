@@ -30,7 +30,7 @@ class CashflowChart extends StatelessWidget {
             horizontalInterval: 1000,
             getDrawingHorizontalLine: (value) {
               return FlLine(
-                color: theme.dividerColor.withOpacity(0.1),
+                color: theme.dividerColor.withValues(alpha: 0.1),
                 strokeWidth: 1,
               );
             },
@@ -85,7 +85,7 @@ class CashflowChart extends StatelessWidget {
               dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
-                color: const Color(0xFF00FF85).withOpacity(0.1),
+                color: const Color(0xFF00FF85).withValues(alpha: 0.1),
               ),
             ),
             LineChartBarData(
@@ -97,13 +97,13 @@ class CashflowChart extends StatelessWidget {
               dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
-                color: theme.colorScheme.error.withOpacity(0.1),
+                color: theme.colorScheme.error.withValues(alpha: 0.1),
               ),
             ),
           ],
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (touchedSpot) => theme.colorScheme.surfaceVariant,
+              getTooltipColor: (touchedSpot) => theme.colorScheme.surfaceContainerHighest,
               tooltipRoundedRadius: 8,
               getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
                 return touchedBarSpots.map((barSpot) {

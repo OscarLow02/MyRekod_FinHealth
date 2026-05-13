@@ -62,9 +62,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final theme = Theme.of(context);
     final user = FirebaseAuth.instance.currentUser;
 
+    // TODO: Implement i18n
+    final String labelDefaultUser = 'User';
+
     final displayName = _profile?.businessName ??
         user?.displayName ??
-        'User';
+        labelDefaultUser;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -151,27 +154,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     // ── Section 1: Header on wave ──────────────────────────
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      padding: const EdgeInsets.fromLTRB(24, 16, 16, 0),
+                      child: Row(
                         children: [
-                          Text(
-                            welcomeLabel,
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: theme.colorScheme.secondary,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.5,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  welcomeLabel,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  businessName,
+                                  style: theme.textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            businessName,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          const SizedBox(width: 48), // Spacer to balance the header if needed, or just remove
                         ],
                       ),
                     ),
@@ -189,7 +199,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
                               border: Border.all(
                                 color: Colors.white.withValues(alpha: 0.05),
-                              ),
+                                ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.3),
@@ -230,7 +240,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               _buildQuickAction(
                                 context,
                                 icon: Icons.add_circle_outline_rounded,
-                                label: 'Record\nSale',
+                                label: 'Record\nSale', // TODO: Implement i18n
                                 color: theme.colorScheme.secondary,
                                 onTap: () {
                                   Navigator.push(
@@ -244,25 +254,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   );
                                 },
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: 12),
                               _buildQuickAction(
                                 context,
-                                icon: Icons.qr_code_scanner_rounded,
-                                label: 'Record\nExpense',
-                                color: Colors.redAccent,
+                                icon: Icons.document_scanner_outlined,
+                                label: 'Record\nExpense', // TODO: Implement i18n
+                                color: Colors.orange,
                                 onTap: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (_) => const ScannerScreen()),
+                                      builder: (context) => const ScannerScreen()),
                                   );
                                 },
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: 12),
                               _buildQuickAction(
                                 context,
                                 icon: Icons.description_outlined,
-                                label: 'Generate\nReport',
+                                label: 'Generate\nReport', // TODO: Implement i18n
                                 color: Colors.white,
                                 isPrimary: true,
                                 isLoading: _isGeneratingPdf,
@@ -615,7 +625,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _buildHorizontalBar(
                 theme,
-                label: 'Total Sales',
+                label: 'Total Sales', // TODO: Implement i18n
                 value: totalSales,
                 maxValue: maxValue,
                 color: AppTheme.neonGreenDark,
@@ -623,7 +633,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 20),
               _buildHorizontalBar(
                 theme,
-                label: 'Total Expenses',
+                label: 'Total Expenses', // TODO: Implement i18n
                 value: totalExpenses,
                 maxValue: maxValue,
                 color: Colors.redAccent,
@@ -718,9 +728,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     setState(() => _isGeneratingPdf = true);
     try {
-      // Aggregate data for the specific period (bypassing UI pagination limits)
-      final filteredSales = salesProv.getRecordsInRange(startDate, endDate);
-      final filteredExpenses = expProv.getRecordsInRange(startDate, endDate);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('No authenticated user');
+
+      // Aggregate data for the specific period (direct fetch for maximum accuracy)
+      final firestore = FirestoreService();
+      final filteredSales = await firestore.getSaleRecordsInDateRange(
+        user.uid,
+        startDate,
+        endDate,
+      );
+
+      final filteredExpenses = await firestore.getExpensesInDateRange(
+        user.uid,
+        startDate,
+        endDate,
+      );
 
       final totalSales = filteredSales.fold(0.0, (sum, s) => sum + s.totalPayable);
       final totalExpenses = filteredExpenses.fold(0.0, (sum, e) => sum + e.amount);
@@ -734,16 +757,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         startDate: startDate,
         endDate: endDate,
       );
+      final String successMsg = 'PDF report generated successfully!';
       if (mounted) {
         // TODO: Implement i18n
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF report generated successfully!')),
+          SnackBar(content: Text(successMsg)),
         );
       }
     } catch (e) {
       if (mounted) {
+        // TODO: Implement i18n
+        final String errorMsg = 'Failed to generate report: $e';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to generate report: $e')),
+          SnackBar(content: Text(errorMsg)),
         );
       }
     } finally {

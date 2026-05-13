@@ -1,0 +1,40 @@
+Analyzing MyRekod_FinHealth...                                  
+
+   info • Unnecessary use of multiple underscores • lib/screens/expenses/record_expense_screen.dart:374:45 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/screens/expenses/record_expense_screen.dart:374:49 • unnecessary_underscores
+   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor or activeTrackColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/screens/onboarding/step_business_details.dart:226:15 • deprecated_member_use
+   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor or activeTrackColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/screens/onboarding/step_business_details.dart:249:15 • deprecated_member_use
+   info • The parameter name 'sum' matches a visible type name • lib/screens/sales/consolidation_screen.dart:152:67 • avoid_types_as_parameter_names
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:58:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:73:7 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:113:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:126:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:157:30 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:159:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:171:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:198:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:222:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:242:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:260:28 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:263:7 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:364:46 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/sales/sale_detail_screen.dart:368:15 • use_build_context_synchronously
+   info • The private field _isExporting could be 'final' • lib/screens/transactions_screen.dart:24:8 • prefer_final_fields
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/services/csv_export_service.dart:45:13 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/services/csv_export_service.dart:45:19 • deprecated_member_use
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/services/csv_export_service.dart:97:13 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/services/csv_export_service.dart:97:19 • deprecated_member_use
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/services/csv_export_service.dart:322:13 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/services/csv_export_service.dart:322:19 • deprecated_member_use
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/services/csv_export_service.dart:552:13 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/services/csv_export_service.dart:552:19 • deprecated_member_use
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/services/pdf_receipt_service.dart:243:11 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/services/pdf_receipt_service.dart:243:17 • deprecated_member_use
+   info • 'Table.fromTextArray' is deprecated and shouldn't be used. Use TableHelper.fromTextArray() instead • lib/services/pdf_report_service.dart:386:7 • deprecated_member_use
+   info • 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre • lib/widgets/cashflow_chart.dart:106:67 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/widgets/custom_widgets.dart:222:7 • deprecated_member_use
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/widgets/lhdn_qr_section.dart:49:5 • deprecated_member_use
+   info • 'share' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/widgets/lhdn_qr_section.dart:49:11 • deprecated_member_use
+   info • 'color' is deprecated and shouldn't be used. use colors in eyeStyle and dataModuleStyle instead • lib/widgets/lhdn_qr_section.dart:73:9 • deprecated_member_use
+   info • 'emptyColor' is deprecated and shouldn't be used. You should use the background color value of your container widget • lib/widgets/lhdn_qr_section.dart:74:9 • deprecated_member_use
+

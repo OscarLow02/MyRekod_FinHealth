@@ -307,7 +307,7 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                     () => _selectedCategory = val,
                   ); // Auto-select the newly created category
                 }
-                Navigator.pop(ctx);
+                if (ctx.mounted) Navigator.pop(ctx);
               },
               child: const Text('Add'),
             ),
@@ -371,7 +371,7 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                           height: 180,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
+                          errorBuilder: (_, _, _) => const Icon(
                             Icons.broken_image,
                             size: 50,
                             color: Colors.grey,
@@ -508,8 +508,9 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                 validator: (val) {
                   if (val == null || val.isEmpty) return 'Amount is required';
                   final amount = double.tryParse(val);
-                  if (amount == null || amount <= 0)
+                  if (amount == null || amount <= 0) {
                     return 'Enter a valid amount';
+                  }
                   return null;
                 },
               ),

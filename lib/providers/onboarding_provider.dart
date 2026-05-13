@@ -202,19 +202,23 @@ class OnboardingProvider extends ChangeNotifier {
   // ──────────────────────────────────────────────
 
   /// Returns a user-friendly progress label.
-  // TODO: Implement i18n
   String get stepLabel {
+    // TODO: Implement i18n
+    const step1of3 = 'STEP 1 OF 3';
+    const step2of3 = 'STEP 2 OF 3';
+    const step3of3 = 'STEP 3 OF 3';
+
     switch (_currentStep) {
       case 0:
-        return 'STEP 1 OF 3';
+        return step1of3;
       case 1:
-        return 'STEP 1 OF 3';
+        return step1of3;
       case 2:
-        return 'STEP 2 OF 3';
+        return step2of3;
       case 3:
-        return 'STEP 3 OF 3';
+        return step3of3;
       case 4:
-        return 'STEP 3 OF 3';
+        return step3of3;
       default:
         return '';
     }
@@ -239,8 +243,10 @@ class OnboardingProvider extends ChangeNotifier {
   }
 
   /// Returns a friendly progress hint.
-  // TODO: Implement i18n
   String get progressHint {
+    // TODO: Implement i18n
+    const almostThere = 'Almost there';
+
     switch (_currentStep) {
       case 0:
         return '17%';
@@ -251,7 +257,7 @@ class OnboardingProvider extends ChangeNotifier {
       case 3:
         return '75%';
       case 4:
-        return 'Almost there';
+        return almostThere;
       default:
         return '';
     }
@@ -263,6 +269,7 @@ class OnboardingProvider extends ChangeNotifier {
 
   /// Submits the completed profile to Firestore.
   Future<void> submit() async {
+    // TODO: Implement i18n
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('No authenticated user found.');
 

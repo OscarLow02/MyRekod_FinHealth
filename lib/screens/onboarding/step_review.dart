@@ -20,26 +20,42 @@ class StepReview extends StatelessWidget {
     const securityText = 'Bank-grade data encryption';
     const termsText =
         'By confirming, you agree to the Merchant\nTerms of Service';
+    const soleTraderDisplay = 'Sole Proprietorship';
+    const smeDisplay = 'Registered SME';
+    const msicPrefix = 'MSIC:';
+    const actPrefix = 'Act:';
+    const sstPrefix = 'SST:';
+    const ttxPrefix = 'TTx:';
+    const bankPrefix = 'Bank:';
+    const tinPrefix = 'TIN:';
+    const brnPrefix = 'BRN:';
+    const entityLabel = 'ENTITY TYPE';
+    const businessLabel = 'BUSINESS NAME';
+    const taxLabel = 'TAX & REGISTRATION';
+    const contactLabel = 'CONTACT';
+    const addressLabel = 'ADDRESS';
+    const naText = 'NA';
+    const emptyPlaceholder = '—';
 
     // Format entity type for display
     final entityDisplay = provider.entityType == 'sole_trader'
-        ? 'Sole Proprietorship'
-        : 'Registered SME';
+        ? soleTraderDisplay
+        : smeDisplay;
 
     final taxDetails = [
-      'MSIC: ${provider.msicCode.isEmpty ? '—' : provider.msicCode}',
-      'Act: ${provider.businessActivityDescription.isEmpty ? '—' : provider.businessActivityDescription}',
-      'SST: ${provider.hasSst ? provider.sstNumber : 'NA'}',
-      'TTx: ${provider.hasTourismTax ? provider.tourismTaxNumber : 'NA'}',
+      '$msicPrefix ${provider.msicCode.isEmpty ? emptyPlaceholder : provider.msicCode}',
+      '$actPrefix ${provider.businessActivityDescription.isEmpty ? emptyPlaceholder : provider.businessActivityDescription}',
+      '$sstPrefix ${provider.hasSst ? provider.sstNumber : naText}',
+      '$ttxPrefix ${provider.hasTourismTax ? provider.tourismTaxNumber : naText}',
     ].join('\n');
 
     final contactDetails = [
       if (provider.phoneNumber.isNotEmpty) provider.phoneNumber,
       if (provider.email.isNotEmpty) provider.email,
       if (provider.bankAccountNumber.isNotEmpty)
-        'Bank: ${provider.bankAccountNumber}'
+        '$bankPrefix ${provider.bankAccountNumber}'
       else
-        'Bank: —',
+        '$bankPrefix $emptyPlaceholder',
     ].join('\n');
 
     return SingleChildScrollView(
@@ -58,7 +74,7 @@ class StepReview extends StatelessWidget {
           // ── Entity Type Card ──
           _ReviewCard(
             icon: Icons.person_outline_rounded,
-            label: 'ENTITY TYPE',
+            label: entityLabel,
             value: entityDisplay,
           ),
           const SizedBox(height: 12),
@@ -66,18 +82,18 @@ class StepReview extends StatelessWidget {
           // ── Business Name Card ──
           _ReviewCard(
             icon: Icons.storefront_outlined,
-            label: 'BUSINESS NAME',
-            value: provider.businessName.isEmpty ? '—' : provider.businessName,
+            label: businessLabel,
+            value: provider.businessName.isEmpty ? emptyPlaceholder : provider.businessName,
           ),
           const SizedBox(height: 12),
 
           // ── Taxes & Legal Card ──
           _ReviewCard(
             icon: Icons.badge_outlined,
-            label: 'TAX & REGISTRATION',
+            label: taxLabel,
             value:
-                'TIN: ${provider.tinNumber.isEmpty ? '—' : provider.tinNumber}\n'
-                'BRN: ${provider.brnNumber.isEmpty ? '—' : provider.brnNumber}\n'
+                '$tinPrefix ${provider.tinNumber.isEmpty ? emptyPlaceholder : provider.tinNumber}\n'
+                '$brnPrefix ${provider.brnNumber.isEmpty ? emptyPlaceholder : provider.brnNumber}\n'
                 '$taxDetails',
           ),
           const SizedBox(height: 12),
@@ -85,16 +101,16 @@ class StepReview extends StatelessWidget {
           // ── Contact Card ──
           _ReviewCard(
             icon: Icons.phone_outlined,
-            label: 'CONTACT',
-            value: contactDetails.isEmpty ? '—' : contactDetails,
+            label: contactLabel,
+            value: contactDetails.isEmpty ? emptyPlaceholder : contactDetails,
           ),
           const SizedBox(height: 12),
 
           // ── Address Card ──
           _ReviewCard(
             icon: Icons.location_on_outlined,
-            label: 'ADDRESS',
-            value: _formatAddress(provider),
+            label: addressLabel,
+            value: _formatAddress(provider, emptyPlaceholder),
           ),
           const SizedBox(height: 24),
 
@@ -136,7 +152,7 @@ class StepReview extends StatelessWidget {
     );
   }
 
-  String _formatAddress(OnboardingProvider provider) {
+  String _formatAddress(OnboardingProvider provider, String emptyPlaceholder) {
     final parts = <String>[];
     if (provider.addressLine1.isNotEmpty) parts.add(provider.addressLine1);
     if (provider.addressLine2.isNotEmpty) parts.add(provider.addressLine2);
@@ -149,7 +165,7 @@ class StepReview extends StatelessWidget {
 
     if (cityState.isNotEmpty) parts.add(cityState.join(', '));
 
-    return parts.isEmpty ? '—' : parts.join('\n');
+    return parts.isEmpty ? emptyPlaceholder : parts.join('\n');
   }
 }
 

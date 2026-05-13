@@ -46,9 +46,11 @@ class _LhdnQrSectionState extends State<LhdnQrSection> {
   }
 
   void _shareValidationUrl() {
-    Share.share(
-      'Here is your official e-Invoice receipt: ${widget.lhdnValidationUrl}',
-      subject: 'e-Invoice ${widget.invoiceNumber}',
+    SharePlus.instance.share(
+      ShareParams(
+        text: 'Here is your official e-Invoice receipt: ${widget.lhdnValidationUrl}',
+        subject: 'e-Invoice ${widget.invoiceNumber}',
+      ),
     );
   }
 
@@ -70,8 +72,14 @@ class _LhdnQrSectionState extends State<LhdnQrSection> {
         version: QrVersions.auto,
         errorCorrectionLevel: QrErrorCorrectLevel.M,
         gapless: true,
-        color: Colors.black,
-        emptyColor: Colors.white,
+        eyeStyle: const QrEyeStyle(
+          eyeShape: QrEyeShape.square,
+          color: Colors.black,
+        ),
+        dataModuleStyle: const QrDataModuleStyle(
+          dataModuleShape: QrDataModuleShape.square,
+          color: Colors.black,
+        ),
       );
 
       const size = 512.0;
@@ -156,6 +164,14 @@ class _LhdnQrSectionState extends State<LhdnQrSection> {
               data: widget.lhdnValidationUrl,
               version: QrVersions.auto,
               size: 160.0,
+              eyeStyle: const QrEyeStyle(
+                eyeShape: QrEyeShape.square,
+                color: Colors.black,
+              ),
+              dataModuleStyle: const QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.square,
+                color: Colors.black,
+              ),
               backgroundColor: Colors.white,
               padding: const EdgeInsets.all(12),
             ),

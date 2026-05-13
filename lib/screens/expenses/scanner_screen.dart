@@ -247,7 +247,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
           // Semi-transparent overlay to darken everything except the viewfinder
           ColorFiltered(
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.6),
+              Colors.black.withValues(alpha: 0.6),
               BlendMode.srcOut,
             ),
             child: Stack(
@@ -314,13 +314,13 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
               height: size.height * 0.55,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: AppTheme.neonGreenDark.withOpacity(_isScanning ? 0.8 : 0.5),
+                  color: AppTheme.neonGreenDark.withValues(alpha: _isScanning ? 0.8 : 0.5),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
                 boxShadow: _isScanning ? [
                   BoxShadow(
-                    color: AppTheme.neonGreenDark.withOpacity(0.2),
+                    color: AppTheme.neonGreenDark.withValues(alpha: 0.2),
                     blurRadius: 30,
                     spreadRadius: 5,
                   )
@@ -344,7 +344,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                                 color: AppTheme.neonGreenLight,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.neonGreenDark.withOpacity(0.8),
+                                    color: AppTheme.neonGreenDark.withValues(alpha: 0.8),
                                     blurRadius: 10,
                                     spreadRadius: 2,
                                   ),
@@ -371,7 +371,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                   // TODO: Implement i18n
                   _isScanning ? 'Analyzing Receipt...' : 'Align receipt within the frame',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -384,7 +384,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 4),
-                      color: _isScanning ? Colors.white.withOpacity(0.5) : Colors.white.withOpacity(0.2),
+                      color: _isScanning ? Colors.white.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.2),
                     ),
                     child: Center(
                       child: Container(
