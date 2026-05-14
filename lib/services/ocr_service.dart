@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import '../core/error_logger.dart';
 
 /// On-device OCR service for extracting structured data from Malaysian receipts.
 ///
@@ -70,7 +71,15 @@ class OcrService {
         'vendor': vendor,
         'rawText': rawText,
       };
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // UC-12: Log non-fatal OCR failures to Crashlytics
+      await logSystemError(
+        errorType: 'OCR_Failure',
+        reason: 'Failed to process image or extract data from receipt',
+        error: e,
+        stackTrace: stackTrace,
+      );
+
       // Graceful degradation — return nulls instead of crashing.
       return {
         'amount': null,

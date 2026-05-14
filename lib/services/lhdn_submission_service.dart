@@ -6,6 +6,7 @@ import '../models/sale_record.dart';
 import '../models/business_profile.dart';
 import '../services/firestore_service.dart';
 import '../services/lhdn_serializer.dart';
+import '../core/error_logger.dart';
 
 /// Result of an LHDN e-Invoice submission attempt.
 class LhdnSubmissionResult {
@@ -84,8 +85,17 @@ class LhdnSubmissionService {
       }
 
       return result;
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('LHDN submission error: $e');
+
+      // UC-12: Log non-fatal API failures to Crashlytics
+      await logSystemError(
+        errorType: 'API_Error',
+        reason: 'Failed to submit e-Invoice to LHDN',
+        error: e,
+        stackTrace: stackTrace,
+      );
+
       return LhdnSubmissionResult(
         success: false,
         errorMessage: e.toString(),
@@ -161,10 +171,19 @@ class LhdnSubmissionService {
         payload: payload,
       );
     } else {
+      const errorMessage = 'LHDN API Error: Document validation failed. '
+          'Please verify supplier TIN and BRN numbers. (Mock Error)';
+      
+      // UC-12: Log simulated API failures to Crashlytics for testing observability
+      await logSystemError(
+        errorType: 'API_Validation_Failure',
+        reason: errorMessage,
+        error: errorMessage,
+      );
+
       return const LhdnSubmissionResult(
         success: false,
-        errorMessage: 'LHDN API Error: Document validation failed. '
-            'Please verify supplier TIN and BRN numbers. (Mock Error)',
+        errorMessage: errorMessage,
       );
     }
   }
