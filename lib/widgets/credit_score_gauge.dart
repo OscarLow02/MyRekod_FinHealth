@@ -118,11 +118,12 @@ class CreditScoreGauge extends StatelessWidget {
               color: _gaugeColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Icon(_healthIcon, size: 18, color: _gaugeColor),
-                const SizedBox(width: 8),
                 Text(
                   _healthLabel,
                   style: theme.textTheme.labelLarge?.copyWith(

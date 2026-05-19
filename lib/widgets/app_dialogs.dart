@@ -928,11 +928,12 @@ class AppDialogs {
         return Dialog(
           backgroundColor: theme.colorScheme.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                 Icon(
                   isLhdnSubmitted ? Icons.check_circle_outline_rounded : Icons.cloud_done_rounded,
                   size: 64,
@@ -1032,7 +1033,7 @@ class AppDialogs {
               ],
             ),
           ),
-        );
+        ),);
       },
     );
   }

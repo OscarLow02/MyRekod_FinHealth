@@ -257,14 +257,17 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-                      const SizedBox(height: 4),
-                      Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                        const SizedBox(height: 4),
+                        Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(Icons.close, color: theme.colorScheme.onSurfaceVariant),
@@ -356,7 +359,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(totalPayableLabel, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                        Expanded(
+                          child: Text(totalPayableLabel, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                        ),
+                        const SizedBox(width: 8),
                         Text('RM ${calc.totalPayable.toStringAsFixed(2)}', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, color: theme.colorScheme.primary)),
                       ],
                     ),
@@ -480,8 +486,17 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        Text(value, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: isNegative ? Colors.redAccent : theme.colorScheme.onSurface)),
+        Expanded(
+          child: Text(
+            label, 
+            style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          value, 
+          style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: isNegative ? Colors.redAccent : theme.colorScheme.onSurface),
+        ),
       ],
     );
   }
@@ -856,14 +871,16 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 children: [
                   const Icon(Icons.contact_page_rounded, color: AppTheme.primary),
                   const SizedBox(width: 12),
-                  Text(
-                    selectFromContactList,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Text(
+                      selectFromContactList,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   const Icon(Icons.chevron_right_rounded, color: AppTheme.primary),
                 ],
               ),
@@ -901,15 +918,16 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.storefront_rounded, color: AppTheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Text(walkInDetailsTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primary)),
-                ],
+              Icon(Icons.storefront_rounded, color: AppTheme.primary, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  walkInDetailsTitle, 
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primary),
+                ),
               ),
+              const SizedBox(width: 8),
               IconButton(
                 icon: Icon(Icons.edit_rounded, color: AppTheme.primary, size: 20),
                 onPressed: () {
@@ -938,8 +956,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             children: [
               Icon(Icons.badge_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 4),
-              Text(labelTin, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              const Spacer(),
+              Expanded(
+                child: Text(labelTin, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ),
+              const SizedBox(width: 8),
               Icon(Icons.lock_outline_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
             ],
           ),
@@ -1087,7 +1107,8 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
       child: Container(
-        height: 100,
+        constraints: const BoxConstraints(minHeight: 100),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppTheme.primary : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
@@ -1097,7 +1118,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           children: [
             Icon(icon, size: 32, color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant),
             const SizedBox(height: 8),
-            Text(label, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant)),
+            Text(
+              label, 
+              style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -1213,7 +1238,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(labelSelectItem, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Expanded(
+              child: Text(labelSelectItem, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            ),
+            const SizedBox(width: 8),
             if (calc.lineItems.length > 1)
               IconButton(
                 icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 20),
@@ -1395,7 +1423,8 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
       ),
       child: Container(
         width: double.infinity,
-        height: 56,
+        constraints: const BoxConstraints(minHeight: 56),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           border: Border.all(color: AppTheme.secondaryDark.withValues(alpha: 0.5), style: BorderStyle.solid),
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -1405,9 +1434,11 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           children: [
             const Icon(Icons.add_circle_outline, size: 20, color: AppTheme.secondaryDark),
             const SizedBox(width: 8),
-            Text(
-              buttonAddAnotherItem,
-              style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: AppTheme.secondaryDark),
+            Flexible(
+              child: Text(
+                buttonAddAnotherItem,
+                style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: AppTheme.secondaryDark),
+              ),
             ),
           ],
         ),
@@ -1555,13 +1586,16 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                labelTotalPayable, 
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  letterSpacing: 0.5,
+              Expanded(
+                child: Text(
+                  labelTotalPayable, 
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 'RM ${calc.totalPayable.toStringAsFixed(2)}', 
                 style: theme.textTheme.headlineMedium?.copyWith(
@@ -1635,13 +1669,16 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          buttonReviewSale, 
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: Colors.white, 
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
+                        Flexible(
+                          child: Text(
+                            buttonReviewSale, 
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.white, 
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1672,7 +1709,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
           if (isChecked != null && onChanged != null) const SizedBox(width: 8),
           Icon(icon, color: theme.colorScheme.primary, size: 18),
           const SizedBox(width: 8),
-          Text(title, style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+          Expanded(
+            child: Text(title, style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
     );
@@ -2171,7 +2210,8 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          height: 36,
+          constraints: const BoxConstraints(minHeight: 36),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isActive ? AppTheme.primary : Colors.transparent,
@@ -2184,6 +2224,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
               fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               fontSize: 13,
             ),
+            textAlign: TextAlign.center,
           ),
         ),
       ),
