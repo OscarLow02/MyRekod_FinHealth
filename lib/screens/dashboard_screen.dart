@@ -44,8 +44,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final profile =
-          await FirestoreService().getBusinessProfile(user.uid);
+      final profile = await FirestoreService().getBusinessProfile(user.uid);
       if (mounted) {
         setState(() {
           _profile = profile;
@@ -65,9 +64,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // TODO: Implement i18n
     final String labelDefaultUser = 'User';
 
-    final displayName = _profile?.businessName ??
-        user?.displayName ??
-        labelDefaultUser;
+    final displayName =
+        _profile?.businessName ?? user?.displayName ?? labelDefaultUser;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -100,8 +98,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
         child: const Icon(Icons.add_rounded, size: 28),
       ),
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
@@ -171,17 +168,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   businessName,
-                                  style: theme.textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 48), // Spacer to balance the header if needed, or just remove
+                          const SizedBox(
+                            width: 48,
+                          ), // Spacer to balance the header if needed, or just remove
                         ],
                       ),
                     ),
@@ -195,11 +195,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppTheme.darkSurfaceContainer.withValues(alpha: 0.85),
-                              borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+                              color: AppTheme.darkSurfaceContainer.withValues(
+                                alpha: 0.85,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusXLarge,
+                              ),
                               border: Border.all(
                                 color: Colors.white.withValues(alpha: 0.05),
-                                ),
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.3),
@@ -258,13 +262,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               _buildQuickAction(
                                 context,
                                 icon: Icons.document_scanner_outlined,
-                                label: 'Record\nExpense', // TODO: Implement i18n
+                                label:
+                                    'Record\nExpense', // TODO: Implement i18n
                                 color: Colors.orange,
                                 onTap: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const ScannerScreen()),
+                                      builder: (context) =>
+                                          const ScannerScreen(),
+                                    ),
                                   );
                                 },
                               ),
@@ -272,7 +279,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               _buildQuickAction(
                                 context,
                                 icon: Icons.description_outlined,
-                                label: 'Generate\nReport', // TODO: Implement i18n
+                                label:
+                                    'Generate\nReport', // TODO: Implement i18n
                                 color: Colors.white,
                                 isPrimary: true,
                                 isLoading: _isGeneratingPdf,
@@ -311,23 +319,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               width: 220,
                               height: 220,
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.05),
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.05,
+                                ),
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
                                 child: Icon(
                                   Icons.insights_rounded,
                                   size: 100,
-                                  color: theme.colorScheme.primary
-                                      .withValues(alpha: 0.3),
+                                  color: theme.colorScheme.primary.withValues(
+                                    alpha: 0.3,
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 40),
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 24),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
                               child: Text(
                                 zeroStateText,
                                 textAlign: TextAlign.center,
@@ -381,14 +392,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   shape: BoxShape.circle,
                   border: isPrimary
                       ? null
-                      : Border.all(
-                          color: Colors.white.withValues(alpha: 0.05),
-                        ),
+                      : Border.all(color: Colors.white.withValues(alpha: 0.05)),
                   boxShadow: isPrimary
                       ? [
                           BoxShadow(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.3),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.3,
+                            ),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
@@ -443,9 +453,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: AppTheme.darkSurfaceContainer,
         borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Stack(
         children: [
@@ -500,12 +508,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 16),
               // Trend pill chip
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: (isPositive
-                          ? AppTheme.neonGreenDark
-                          : theme.colorScheme.error)
-                      .withValues(alpha: 0.15),
+                  color:
+                      (isPositive
+                              ? AppTheme.neonGreenDark
+                              : theme.colorScheme.error)
+                          .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Row(
@@ -617,9 +629,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           decoration: BoxDecoration(
             color: AppTheme.darkSurfaceContainer,
             borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.05),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: Column(
             children: [
@@ -745,8 +755,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         endDate,
       );
 
-      final totalSales = filteredSales.fold(0.0, (sum, s) => sum + s.totalPayable);
-      final totalExpenses = filteredExpenses.fold(0.0, (sum, e) => sum + e.amount);
+      final totalSales = filteredSales.fold(
+        0.0,
+        (sum, s) => sum + s.totalPayable,
+      );
+      final totalExpenses = filteredExpenses.fold(
+        0.0,
+        (sum, e) => sum + e.amount,
+      );
 
       await PdfReportService.generateAndShareReport(
         businessName: _profile?.businessName ?? 'My Business',
@@ -760,17 +776,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final String successMsg = 'PDF report generated successfully!';
       if (mounted) {
         // TODO: Implement i18n
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMsg)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(successMsg)));
       }
     } catch (e) {
       if (mounted) {
         // TODO: Implement i18n
         final String errorMsg = 'Failed to generate report: $e';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMsg)));
       }
     } finally {
       if (mounted) setState(() => _isGeneratingPdf = false);
@@ -803,30 +819,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(theme, Icons.home_outlined, Icons.home_rounded,
-              homeLabel, 0),
           _buildNavItem(
-              theme,
-              Icons.receipt_long_outlined,
-              Icons.receipt_long_rounded,
-              transactionsLabel,
-              1),
+            theme,
+            Icons.home_outlined,
+            Icons.home_rounded,
+            homeLabel,
+            0,
+          ),
+          _buildNavItem(
+            theme,
+            Icons.receipt_long_outlined,
+            Icons.receipt_long_rounded,
+            transactionsLabel,
+            1,
+          ),
           const SizedBox(width: 48), // Space for FAB
-          _buildNavItem(theme, Icons.people_outline_rounded,
-              Icons.people_rounded, customersLabel, 2),
           _buildNavItem(
-              theme,
-              Icons.person_outline_rounded,
-              Icons.person_rounded,
-              profileLabel,
-              3),
+            theme,
+            Icons.people_outline_rounded,
+            Icons.people_rounded,
+            customersLabel,
+            2,
+          ),
+          _buildNavItem(
+            theme,
+            Icons.person_outline_rounded,
+            Icons.person_rounded,
+            profileLabel,
+            3,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(ThemeData theme, IconData icon,
-      IconData activeIcon, String label, int index) {
+  Widget _buildNavItem(
+    ThemeData theme,
+    IconData icon,
+    IconData activeIcon,
+    String label,
+    int index,
+  ) {
     final isActive = _currentIndex == index;
     final color = isActive
         ? AppTheme.primary
@@ -842,18 +875,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: color,
-              size: 24,
-            ),
+            Icon(isActive ? activeIcon : icon, color: color, size: 24),
             const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
                 fontSize: 10,
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                 color: color,
               ),
             ),
