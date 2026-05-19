@@ -10,6 +10,7 @@ import 'providers/expense_provider.dart';
 import 'providers/sales_provider.dart';
 import 'providers/customer_provider.dart';
 import 'providers/dashboard_provider.dart';
+import 'providers/settings_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -37,27 +38,32 @@ class MyRekodApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => OnboardingProvider()),
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
         ChangeNotifierProvider(create: (_) => SalesProvider()),
         ChangeNotifierProvider(create: (_) => CustomerProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
       ],
-      child: MaterialApp(
-        title: 'MyRekod',
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.system,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        builder: (context, child) {
-          return GestureDetector(
-            onTap: () {
-              FocusManager.instance.primaryFocus?.unfocus();
+      child: Consumer<SettingsProvider>(
+        builder: (context, settings, child) {
+          return MaterialApp(
+            title: 'MyRekod',
+            debugShowCheckedModeBanner: false,
+            themeMode: ThemeMode.system,
+            theme: settings.isHighContrast ? AppTheme.highContrastTheme : AppTheme.lightTheme,
+            darkTheme: settings.isHighContrast ? AppTheme.highContrastTheme : AppTheme.darkTheme,
+            builder: (context, child) {
+              return GestureDetector(
+                onTap: () {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                },
+                child: child,
+              );
             },
-            child: child,
+            home: const SplashScreen(),
           );
         },
-        home: const SplashScreen(),
       ),
     );
   }

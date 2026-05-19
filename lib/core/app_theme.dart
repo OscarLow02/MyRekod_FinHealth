@@ -59,62 +59,62 @@ class AppTheme {
   // Typography (Inter — DESIGN.md §3)
   // ──────────────────────────────────────────────
 
-  static TextTheme _buildTextTheme(TextTheme base, Color onSurface, Color onSurfaceVariant) {
+  static TextTheme _buildTextTheme(TextTheme base, Color onSurface, Color onSurfaceVariant, {double fontScale = 0.0}) {
     return GoogleFonts.interTextTheme(base).copyWith(
       displayLarge: GoogleFonts.inter(
-        fontSize: 40,
+        fontSize: 40 + fontScale,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.8, // -2% letter spacing
         color: onSurface,
       ),
       displayMedium: GoogleFonts.inter(
-        fontSize: 32,
+        fontSize: 32 + fontScale,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.64,
         color: onSurface,
       ),
       headlineLarge: GoogleFonts.inter(
-        fontSize: 28,
+        fontSize: 28 + fontScale,
         fontWeight: FontWeight.w700,
         color: onSurface,
       ),
       headlineMedium: GoogleFonts.inter(
-        fontSize: 24,
+        fontSize: 24 + fontScale,
         fontWeight: FontWeight.w700,
         color: onSurface,
       ),
       headlineSmall: GoogleFonts.inter(
-        fontSize: 20,
+        fontSize: 20 + fontScale,
         fontWeight: FontWeight.w600,
         color: onSurface,
       ),
       titleLarge: GoogleFonts.inter(
-        fontSize: 18,
+        fontSize: 18 + fontScale,
         fontWeight: FontWeight.w600,
         color: onSurface,
       ),
       titleMedium: GoogleFonts.inter(
-        fontSize: 16,
+        fontSize: 16 + fontScale,
         fontWeight: FontWeight.w600,
         color: onSurface,
       ),
       bodyLarge: GoogleFonts.inter(
-        fontSize: 16, // Min 16sp — Radical Accessibility
+        fontSize: 16 + fontScale, // Min 16sp — Radical Accessibility
         fontWeight: FontWeight.w400,
         color: onSurfaceVariant,
       ),
       bodyMedium: GoogleFonts.inter(
-        fontSize: 16, // Never go below 16sp
+        fontSize: 16 + fontScale, // Never go below 16sp
         fontWeight: FontWeight.w400,
         color: onSurfaceVariant,
       ),
       labelLarge: GoogleFonts.inter(
-        fontSize: 16,
+        fontSize: 16 + fontScale,
         fontWeight: FontWeight.w600,
         color: onSurface,
       ),
       labelMedium: GoogleFonts.inter(
-        fontSize: 14,
+        fontSize: 14 + fontScale,
         fontWeight: FontWeight.w500,
         color: onSurfaceVariant,
       ),
@@ -357,6 +357,112 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         backgroundColor: lightSurfaceContainer,
         contentTextStyle: GoogleFonts.inter(color: lightOnSurface, fontSize: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusMedium),
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  static ThemeData get highContrastTheme {
+    final base = ThemeData.dark(useMaterial3: true);
+    final primaryHc = const Color(0xFFFFFF00); // Pure Yellow
+    final surfaceHc = const Color(0xFF000000); // Pure Black
+    final onSurfaceHc = const Color(0xFFFFFFFF); // Pure White
+    final surfaceContainerHc = const Color(0xFF1A1A1A);
+    final onSurfaceVariantHc = const Color(0xFFCCCCCC);
+
+    return base.copyWith(
+      colorScheme: ColorScheme.dark(
+        primary: primaryHc,
+        primaryContainer: const Color(0xFFCCCC00),
+        secondary: onSurfaceHc,
+        tertiary: onSurfaceHc,
+        surface: surfaceHc,
+        surfaceContainerHighest: surfaceContainerHc,
+        onSurface: onSurfaceHc,
+        onSurfaceVariant: onSurfaceVariantHc,
+        error: Colors.redAccent,
+      ),
+      scaffoldBackgroundColor: surfaceHc,
+      textTheme: _buildTextTheme(
+        base.textTheme, 
+        onSurfaceHc, 
+        onSurfaceVariantHc,
+        fontScale: 4.0, // Scale up fonts for accessibility
+      ),
+      inputDecorationTheme: _inputDecorationTheme(
+        fillColor: surfaceContainerHc,
+        hintColor: onSurfaceVariantHc,
+        focusedBorderColor: primaryHc,
+        borderColor: primaryHc.withValues(alpha: 0.5),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: surfaceHc,
+          backgroundColor: primaryHc,
+          minimumSize: const Size(double.infinity, minTouchTarget),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radiusMedium),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 16 + 4.0,
+            fontWeight: FontWeight.w700,
+          ),
+          elevation: 0,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: onSurfaceHc,
+          minimumSize: const Size(double.infinity, minTouchTarget),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radiusMedium),
+          ),
+          side: BorderSide(color: primaryHc),
+          textStyle: GoogleFonts.inter(
+            fontSize: 16 + 4.0,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      cardTheme: _cardTheme(color: surfaceContainerHc),
+      appBarTheme: AppBarTheme(
+        backgroundColor: surfaceHc,
+        foregroundColor: onSurfaceHc,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: GoogleFonts.inter(
+          fontSize: 18 + 4.0,
+          fontWeight: FontWeight.w700,
+          color: onSurfaceHc,
+        ),
+        iconTheme: IconThemeData(color: onSurfaceHc),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: surfaceContainerHc,
+        selectedItemColor: primaryHc,
+        unselectedItemColor: onSurfaceVariantHc,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryHc,
+        foregroundColor: surfaceHc,
+        elevation: 4,
+        shape: const CircleBorder(),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Colors.transparent,
+        thickness: 0,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: surfaceContainerHc,
+        contentTextStyle: GoogleFonts.inter(color: onSurfaceHc, fontSize: 16 + 4.0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusMedium),
         ),

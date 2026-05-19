@@ -8,7 +8,11 @@ import '../auth/auth_wrapper.dart';
 import 'business_profile_screen.dart';
 import 'item_settings_screen.dart';
 import 'tax_settings_screen.dart';
+import 'settings_screen.dart';
 import '../../widgets/app_dialogs.dart';
+import 'package:provider/provider.dart';
+import '../../providers/settings_provider.dart';
+import '../../core/app_strings.dart';
 
 /// Main Profile menu screen — matches the "Luminescent Vault" design.
 /// Shows user header card, navigation tiles, and logout button.
@@ -69,6 +73,8 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final user = FirebaseAuth.instance.currentUser;
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final lang = settingsProvider.currentLanguage;
 
     final displayName =
         _profile?.businessName ?? user?.displayName ?? 'User';
@@ -131,12 +137,12 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
           const SizedBox(height: 12),
           _buildMenuTile(
             theme,
-            icon: Icons.translate_rounded,
-            title: 'Language',
-            subtitle: 'Bahasa Melayu',
+            icon: Icons.settings_rounded,
+            title: AppStrings.get('settings', lang),
+            subtitle: AppStrings.get('language', lang),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => _buildPlaceholderScreen('Language / Bahasa'),
+                builder: (_) => const SettingsScreen(),
               ),
             ),
           ),
