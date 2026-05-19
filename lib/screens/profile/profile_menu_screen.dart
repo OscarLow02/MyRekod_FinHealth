@@ -10,6 +10,7 @@ import 'item_settings_screen.dart';
 import 'tax_settings_screen.dart';
 import 'theme_settings_screen.dart';
 import '../../widgets/app_dialogs.dart';
+
 /// Main Profile menu screen — matches the "Luminescent Vault" design.
 /// Shows user header card, navigation tiles, and logout button.
 class ProfileMenuScreen extends StatefulWidget {
@@ -62,7 +63,6 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
       secondaryButtonText: 'Cancel',
       onSecondaryPressed: () {},
     );
-
   }
 
   @override
@@ -70,8 +70,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
     final theme = Theme.of(context);
     final user = FirebaseAuth.instance.currentUser;
 
-    final displayName =
-        _profile?.businessName ?? user?.displayName ?? 'User';
+    final displayName = _profile?.businessName ?? user?.displayName ?? 'User';
     final tinDisplay = _profile?.tinNumber ?? '—';
 
     return SingleChildScrollView(
@@ -82,10 +81,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
           const SizedBox(height: 8),
 
           // ── Section Title ──
-          Text(
-            'Profile',
-            style: theme.textTheme.headlineMedium,
-          ),
+          Text('Profile', style: theme.textTheme.headlineMedium),
           const SizedBox(height: 24),
 
           // ── User Header Card ──
@@ -112,9 +108,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
             icon: Icons.inventory_2_outlined,
             title: 'Item Settings',
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const ItemSettingsScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const ItemSettingsScreen()),
             ),
           ),
           const SizedBox(height: 12),
@@ -123,9 +117,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
             icon: Icons.account_balance_outlined,
             title: 'Tax Settings',
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const TaxSettingsScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const TaxSettingsScreen()),
             ),
           ),
           const SizedBox(height: 12),
@@ -134,22 +126,10 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
             icon: Icons.settings_rounded,
             title: 'App Theme Settings',
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const ThemeSettingsScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const ThemeSettingsScreen()),
             ),
           ),
-          const SizedBox(height: 12),
-          _buildMenuTile(
-            theme,
-            icon: Icons.help_outline_rounded,
-            title: 'Help & Support',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => _buildPlaceholderScreen('Help & Support'),
-              ),
-            ),
-          ),
+
           const SizedBox(height: 32),
 
           // ── Log Out Button ──
@@ -178,7 +158,9 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
               style: theme.textTheme.labelMedium?.copyWith(
                 fontSize: 11,
                 letterSpacing: 1.0,
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.5,
+                ),
               ),
             ),
           ),
@@ -190,7 +172,10 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
 
   // ── User Header Card ──
   Widget _buildHeaderCard(
-      ThemeData theme, String displayName, String tinDisplay) {
+    ThemeData theme,
+    String displayName,
+    String tinDisplay,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
@@ -204,8 +189,8 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
           CircleAvatar(
             radius: 36,
             backgroundColor: AppTheme.primary.withValues(alpha: 0.2),
-            backgroundImage: _profile?.imageUrl != null 
-                ? NetworkImage(_profile!.imageUrl!) 
+            backgroundImage: _profile?.imageUrl != null
+                ? NetworkImage(_profile!.imageUrl!)
                 : null,
             child: _profile?.imageUrl == null
                 ? Icon(
@@ -252,7 +237,9 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         child: Container(
-          constraints: const BoxConstraints(minHeight: AppTheme.minTouchTarget + 8),
+          constraints: const BoxConstraints(
+            minHeight: AppTheme.minTouchTarget + 8,
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
@@ -270,10 +257,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleMedium,
-                    ),
+                    Text(title, style: theme.textTheme.titleMedium),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
                       Text(
@@ -294,41 +278,6 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  // ── Placeholder screen for unimplemented menu items ──
-  Widget _buildPlaceholderScreen(String title) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.construction_rounded,
-              size: 64,
-              color: AppTheme.primary.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Coming soon',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[500],
-              ),
-            ),
-          ],
         ),
       ),
     );

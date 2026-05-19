@@ -27,20 +27,12 @@ class AppTheme {
   static const Color darkSurfaceContainerHigh = Color(0xFF2A2A32);
   static const Color surface = darkSurface; // Compatibility
 
-  // Light Theme Surfaces
-  static const Color lightSurface = Color(0xFFFCFBFF);
-  static const Color lightSurfaceContainer = Color(0xFFF2F1F9);
-  static const Color lightSurfaceContainerHigh = Color(0xFFE8E7F0);
-
   // Text
   static const Color darkOnSurface = Color(0xFFFFFFFF);
   static const Color darkOnSurfaceVariant = Color(0xFFC8C4D5);
-  static const Color lightOnSurface = Color(0xFF131319);
-  static const Color lightOnSurfaceVariant = Color(0xFF5A5A66);
 
   // Status Accents (Neon Status Visibility)
   static const Color neonGreenDark = Color(0xFF00FF85);
-  static const Color neonGreenLight = Color(0xFF00B35D);
   static const Color amber = Color(0xFFFFB800);
 
   // ──────────────────────────────────────────────
@@ -298,76 +290,6 @@ class AppTheme {
     );
   }
 
-  static ThemeData get lightTheme {
-    final base = ThemeData.light(useMaterial3: true);
-    return base.copyWith(
-      colorScheme: const ColorScheme.light(
-        primary: primary,
-        onPrimary: Colors.white,
-        primaryContainer: primaryContainer,
-        secondary: secondaryLight,
-        tertiary: tertiary,
-        surface: lightSurface,
-        surfaceContainer: lightSurfaceContainer,
-        surfaceContainerHighest: lightSurfaceContainerHigh,
-        onSurface: lightOnSurface,
-        onSurfaceVariant: lightOnSurfaceVariant,
-        error: Colors.redAccent,
-      ),
-      scaffoldBackgroundColor: lightSurface,
-      textTheme: _buildTextTheme(base.textTheme, lightOnSurface, lightOnSurfaceVariant),
-      inputDecorationTheme: _inputDecorationTheme(
-        fillColor: lightSurfaceContainer,
-        hintColor: lightOnSurfaceVariant,
-        focusedBorderColor: primary,
-        borderColor: primary.withValues(alpha: 0.25),
-      ),
-      elevatedButtonTheme: _elevatedButtonTheme(foreground: Colors.white),
-      outlinedButtonTheme: _outlinedButtonTheme(
-        foreground: lightOnSurface,
-        borderColor: lightSurfaceContainerHigh,
-      ),
-      cardTheme: _cardTheme(color: lightSurfaceContainer),
-      appBarTheme: AppBarTheme(
-        backgroundColor: lightSurface,
-        foregroundColor: lightOnSurface,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: lightOnSurface,
-        ),
-        iconTheme: const IconThemeData(color: lightOnSurface),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: lightSurfaceContainer,
-        selectedItemColor: primary,
-        unselectedItemColor: lightOnSurfaceVariant,
-        type: BottomNavigationBarType.fixed,
-        elevation: 0,
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
-        elevation: 4,
-        shape: CircleBorder(),
-      ),
-      dividerTheme: const DividerThemeData(
-        color: Colors.transparent,
-        thickness: 0,
-      ),
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: lightSurfaceContainer,
-        contentTextStyle: GoogleFonts.inter(color: lightOnSurface, fontSize: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusMedium),
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 
   static ThemeData get highContrastTheme {
     final base = ThemeData.dark(useMaterial3: true);

@@ -118,7 +118,7 @@ class _LhdnQrSectionState extends State<LhdnQrSection> {
         title: 'Saved',
         body: 'QR Code saved to your photos.',
         icon: Icons.check_circle_rounded,
-        iconColor: AppTheme.neonGreenLight,
+        iconColor: AppTheme.neonGreenDark,
       );
     } catch (e) {
       if (!mounted) return;

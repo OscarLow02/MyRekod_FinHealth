@@ -34,7 +34,7 @@ class TinGuideBottomSheet extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDark
                 ? AppTheme.darkSurfaceContainer.withValues(alpha: 0.85)
-                : AppTheme.lightSurfaceContainer.withValues(alpha: 0.92),
+                : AppTheme.darkSurfaceContainer.withValues(alpha: 0.92),
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(AppTheme.radiusXLarge),
             ),

@@ -169,7 +169,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         icon: Icons.check_circle_rounded,
         iconColor: theme.brightness == Brightness.dark 
             ? AppTheme.neonGreenDark 
-            : AppTheme.neonGreenLight,
+            : AppTheme.neonGreenDark,
       );
     } catch (e) {
       setState(() => _isSubmitting = false);
@@ -467,7 +467,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     final statusColor = switch (_currentSale.complianceStatus) {
       ComplianceStatus.valid => theme.brightness == Brightness.dark
           ? AppTheme.neonGreenDark
-          : AppTheme.neonGreenLight,
+          : AppTheme.neonGreenDark,
       ComplianceStatus.invalid => Colors.redAccent,
       ComplianceStatus.pendingSubmission => Colors.orange,
       ComplianceStatus.pendingConsolidation =>
@@ -478,7 +478,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     final paymentColor = switch (_currentSale.commercialStatus) {
       CommercialStatus.paid => theme.brightness == Brightness.dark
           ? AppTheme.neonGreenDark
-          : AppTheme.neonGreenLight,
+          : AppTheme.neonGreenDark,
       CommercialStatus.pendingPayment => Colors.orange,
     };
 

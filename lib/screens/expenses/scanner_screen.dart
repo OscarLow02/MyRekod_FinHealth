@@ -339,7 +339,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                             child: Container(
                               height: 4,
                               decoration: BoxDecoration(
-                                color: AppTheme.neonGreenLight,
+                                color: AppTheme.neonGreenDark,
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppTheme.neonGreenDark.withValues(alpha: 0.8),

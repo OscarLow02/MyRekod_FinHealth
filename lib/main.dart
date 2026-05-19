@@ -50,8 +50,8 @@ class MyRekodApp extends StatelessWidget {
           return MaterialApp(
             title: 'MyRekod',
             debugShowCheckedModeBanner: false,
-            themeMode: ThemeMode.system,
-            theme: settings.isHighContrast ? AppTheme.highContrastTheme : AppTheme.lightTheme,
+            themeMode: ThemeMode.dark,
+            theme: settings.isHighContrast ? AppTheme.highContrastTheme : AppTheme.darkTheme,
             darkTheme: settings.isHighContrast ? AppTheme.highContrastTheme : AppTheme.darkTheme,
             builder: (context, child) {
               return GestureDetector(

@@ -132,7 +132,7 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
           icon: Icons.check_circle_rounded,
           iconColor: theme.brightness == Brightness.dark 
               ? AppTheme.neonGreenDark 
-              : AppTheme.neonGreenLight,
+              : AppTheme.neonGreenDark,
         );
         if (mounted) Navigator.pop(context, customer);
       }

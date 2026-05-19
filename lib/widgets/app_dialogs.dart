@@ -935,7 +935,7 @@ class AppDialogs {
                 Icon(
                   isLhdnSubmitted ? Icons.check_circle_outline_rounded : Icons.cloud_done_rounded,
                   size: 64,
-                  color: isLhdnSubmitted ? AppTheme.neonGreenLight : AppTheme.primary,
+                  color: isLhdnSubmitted ? AppTheme.neonGreenDark : AppTheme.primary,
                 ),
                 const SizedBox(height: 16),
                 Text(
