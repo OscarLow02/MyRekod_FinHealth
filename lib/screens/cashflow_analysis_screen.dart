@@ -2,9 +2,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../core/app_theme.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/cashflow_chart.dart'; // For ChartPeriod enum
+import '../widgets/custom_dropdown.dart';
 
 /// A premium analytics screen that displays cash flow trends using a
 /// segmented toggle for time periods (Daily, Weekly, Monthly), a high-fidelity
@@ -21,6 +23,46 @@ class CashflowAnalysisScreen extends StatefulWidget {
 
 class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
   ChartPeriod _selectedPeriod = ChartPeriod.daily;
+  int _selectedMonth = DateTime.now().month;
+  int _selectedYear = DateTime.now().year;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchData();
+    });
+  }
+
+  void _fetchData() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      context.read<DashboardProvider>().fetchChartData(
+            user.uid,
+            _selectedPeriod,
+            _selectedMonth,
+            _selectedYear,
+          );
+    }
+  }
+
+  void _onPeriodChanged(ChartPeriod period) {
+    if (_selectedPeriod == period) return;
+    setState(() => _selectedPeriod = period);
+    _fetchData();
+  }
+
+  void _onMonthChanged(int? month) {
+    if (month == null || month == _selectedMonth) return;
+    setState(() => _selectedMonth = month);
+    _fetchData();
+  }
+
+  void _onYearChanged(int? year) {
+    if (year == null || year == _selectedYear) return;
+    setState(() => _selectedYear = year);
+    _fetchData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +87,10 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
               children: [
                 // ── Segmented Period Selector ────────────────────────────
                 _buildPeriodSelector(theme),
+                const SizedBox(height: 16),
+
+                // ── Date Filters ─────────────────────────────────────────
+                _buildFilters(theme),
                 const SizedBox(height: 24),
 
                 // ── Summary Row ─────────────────────────────────────────
@@ -79,7 +125,7 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
           final label = period.name[0].toUpperCase() + period.name.substring(1);
           return Expanded(
             child: GestureDetector(
-              onTap: () => setState(() => _selectedPeriod = period),
+              onTap: () => _onPeriodChanged(period),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
@@ -119,15 +165,67 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
     );
   }
 
+  // ── Filters Row ───────────────────────────────────────────────────────────
+  Widget _buildFilters(ThemeData theme) {
+    final isMonthly = _selectedPeriod == ChartPeriod.monthly;
+    final currentYear = DateTime.now().year;
+    final years = List.generate(5, (i) => currentYear - i);
+
+    final months = [
+      for (int i = 1; i <= 12; i++)
+        CustomDropdownItem<int>(label: _monthAbbr(i), value: i)
+    ];
+
+    final yearItems = [
+      for (final y in years)
+        CustomDropdownItem<int>(label: y.toString(), value: y)
+    ];
+
+    return Row(
+      children: [
+        if (!isMonthly) ...[
+          Expanded(
+            child: CustomPremiumDropdown<int>(
+              label: '',
+              hint: 'Month',
+              items: months,
+              value: _selectedMonth,
+              onChanged: _onMonthChanged,
+              fillColor: AppTheme.darkSurfaceContainer,
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: CustomPremiumDropdown<int>(
+            label: '',
+            hint: 'Year',
+            items: yearItems,
+            value: _selectedYear,
+            onChanged: _onYearChanged,
+            fillColor: AppTheme.darkSurfaceContainer,
+          ),
+        ),
+      ],
+    );
+  }
+
   // ── Summary Cards Row ─────────────────────────────────────────────────────
   Widget _buildSummaryRow(ThemeData theme, DashboardProvider dashProv) {
+    // Calculate total from chart spots
+    final salesSpots = dashProv.getChartSalesSpots(_selectedPeriod);
+    final expenseSpots = dashProv.getChartExpenseSpots(_selectedPeriod);
+    
+    final totalSales = salesSpots.fold(0.0, (sum, spot) => sum + spot.y);
+    final totalExpenses = expenseSpots.fold(0.0, (sum, spot) => sum + spot.y);
+
     return Row(
       children: [
         Expanded(
           child: _buildSummaryTile(
             theme,
             label: 'Total Sales',
-            value: dashProv.totalMonthlySales,
+            value: totalSales,
             color: AppTheme.neonGreenDark,
             icon: Icons.trending_up_rounded,
           ),
@@ -137,7 +235,7 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
           child: _buildSummaryTile(
             theme,
             label: 'Total Expenses',
-            value: dashProv.totalMonthlyExpenses,
+            value: totalExpenses,
             color: Colors.redAccent,
             icon: Icons.trending_down_rounded,
           ),
@@ -201,17 +299,38 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
 
   // ── Chart Card ────────────────────────────────────────────────────────────
   Widget _buildChartCard(ThemeData theme, DashboardProvider dashProv) {
-    final salesSpots = dashProv.getSalesSpots(_selectedPeriod);
-    final expenseSpots = dashProv.getExpenseSpots(_selectedPeriod);
+    if (dashProv.isChartLoading) {
+      return Container(
+        height: 300,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppTheme.darkSurfaceContainer,
+          borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+        ),
+        child: const CircularProgressIndicator(),
+      );
+    }
+
+    final salesSpots = dashProv.getChartSalesSpots(_selectedPeriod);
+    final expenseSpots = dashProv.getChartExpenseSpots(_selectedPeriod);
     final allSpots = [...salesSpots, ...expenseSpots];
 
     // Explicitly calculate axis limits to prevent fl_chart estimation glitches
     double minX = 1;
     double maxX = 1;
     if (_selectedPeriod == ChartPeriod.daily) {
-      maxX = 31;
+      maxX = DateTime(_selectedYear, _selectedMonth + 1, 0).day.toDouble();
     } else if (_selectedPeriod == ChartPeriod.weekly) {
-      maxX = 5;
+      DateTime lastDay = DateTime(_selectedYear, _selectedMonth + 1, 0);
+      int weekOfMonth = 1;
+      DateTime temp = DateTime(_selectedYear, _selectedMonth, 1);
+      while (temp.isBefore(lastDay) || temp.isAtSameMomentAs(lastDay)) {
+        if (temp.weekday == DateTime.monday && temp.day > 1) {
+          weekOfMonth++;
+        }
+        temp = temp.add(const Duration(days: 1));
+      }
+      maxX = weekOfMonth.toDouble();
     } else {
       maxX = 12;
     }
@@ -252,156 +371,164 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
             ),
           ),
           // Chart
-          SizedBox(
-            height: 220,
-            child: LineChart(
-              key: ValueKey(_selectedPeriod),
-              LineChartData(
-                minX: minX,
-                maxX: maxX,
-                minY: minY,
-                maxY: maxY,
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: _calcInterval(salesSpots, expenseSpots),
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    strokeWidth: 1,
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 44,
-                      getTitlesWidget: (value, meta) {
-                        if (value == meta.max || value == meta.min) {
-                          return const SizedBox.shrink();
-                        }
-                        String text;
-                        if (value >= 1000) {
-                          text = '${(value / 1000).toStringAsFixed(0)}k';
-                        } else {
-                          text = value.toStringAsFixed(0);
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Text(
-                            text,
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.6),
-                              fontSize: 11,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 28,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        // Only show labels for integer values to avoid overlaps
-                        if (value % 1 != 0) return const SizedBox.shrink();
-                        
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            _periodLabel(value.toInt()),
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.6),
-                              fontSize: 11,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  // Sales line (green)
-                  LineChartBarData(
-                    spots: salesSpots,
-                    isCurved: true,
-                    curveSmoothness: 0.35,
-                    color: AppTheme.neonGreenDark,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, p, data, idx) =>
-                          FlDotCirclePainter(
-                        radius: 4,
-                        color: AppTheme.neonGreenDark,
-                        strokeWidth: 2,
-                        strokeColor: AppTheme.darkSurfaceContainer,
-                      ),
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: AppTheme.neonGreenDark.withValues(alpha: 0.08),
-                    ),
-                  ),
-                  // Expenses line (red)
-                  LineChartBarData(
-                    spots: expenseSpots,
-                    isCurved: true,
-                    curveSmoothness: 0.35,
-                    color: Colors.redAccent,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, p, data, idx) =>
-                          FlDotCirclePainter(
-                        radius: 4,
-                        color: Colors.redAccent,
-                        strokeWidth: 2,
-                        strokeColor: AppTheme.darkSurfaceContainer,
-                      ),
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: Colors.redAccent.withValues(alpha: 0.06),
-                    ),
-                  ),
-                ],
-                lineTouchData: LineTouchData(
-                  handleBuiltInTouches: true,
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) =>
-                        AppTheme.darkSurfaceContainerHigh,
-                    tooltipRoundedRadius: 8,
-                    getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((spot) {
-                        final color = spot.bar.color ?? Colors.white;
-                        return LineTooltipItem(
-                          'RM ${spot.y.toStringAsFixed(0)}',
-                          TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        );
-                      }).toList();
-                    },
-                  ),
-                ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: SizedBox(
+              height: 220,
+              width: math.max(
+                MediaQuery.of(context).size.width - 48,
+                maxX * (_selectedPeriod == ChartPeriod.daily ? 50.0 : _selectedPeriod == ChartPeriod.weekly ? 80.0 : 60.0),
               ),
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
+              child: LineChart(
+                key: ValueKey('$_selectedPeriod-$_selectedMonth-$_selectedYear'),
+                LineChartData(
+                  minX: minX,
+                  maxX: maxX,
+                  minY: minY,
+                  maxY: maxY,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: _calcInterval(salesSpots, expenseSpots),
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 44,
+                        getTitlesWidget: (value, meta) {
+                          if (value == meta.max || value == meta.min) {
+                            return const SizedBox.shrink();
+                          }
+                          String text;
+                          if (value >= 1000) {
+                            text = '${(value / 1000).toStringAsFixed(0)}k';
+                          } else {
+                            text = value.toStringAsFixed(0);
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Text(
+                              text,
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.6),
+                                fontSize: 11,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 28,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          // Only show labels for integer values to avoid overlaps
+                          if (value % 1 != 0) return const SizedBox.shrink();
+                          
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              _periodLabel(value.toInt()),
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.6),
+                                fontSize: 11,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    // Sales line (green)
+                    LineChartBarData(
+                      spots: salesSpots,
+                      isCurved: true,
+                      curveSmoothness: 0.35,
+                      color: AppTheme.neonGreenDark,
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, p, data, idx) =>
+                            FlDotCirclePainter(
+                          radius: 4,
+                          color: AppTheme.neonGreenDark,
+                          strokeWidth: 2,
+                          strokeColor: AppTheme.darkSurfaceContainer,
+                        ),
+                      ),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: AppTheme.neonGreenDark.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    // Expenses line (red)
+                    LineChartBarData(
+                      spots: expenseSpots,
+                      isCurved: true,
+                      curveSmoothness: 0.35,
+                      color: Colors.redAccent,
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, p, data, idx) =>
+                            FlDotCirclePainter(
+                          radius: 4,
+                          color: Colors.redAccent,
+                          strokeWidth: 2,
+                          strokeColor: AppTheme.darkSurfaceContainer,
+                        ),
+                      ),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: Colors.redAccent.withValues(alpha: 0.06),
+                      ),
+                    ),
+                  ],
+                  lineTouchData: LineTouchData(
+                    handleBuiltInTouches: true,
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (_) =>
+                          AppTheme.darkSurfaceContainerHigh,
+                      tooltipRoundedRadius: 8,
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((spot) {
+                          final color = spot.bar.color ?? Colors.white;
+                          return LineTooltipItem(
+                            '${_periodLabel(spot.x.toInt())}\nRM ${spot.y.toStringAsFixed(0)}',
+                            TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          );
+                        }).toList();
+                      },
+                    ),
+                  ),
+                ),
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              ),
             ),
           ),
         ],
@@ -439,10 +566,12 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
     ThemeData theme,
     DashboardProvider dashProv,
   ) {
+    if (dashProv.isChartLoading) return const SizedBox.shrink();
+
     // Combine and sort recent transactions by date
     final recentItems = <_TransactionItem>[];
 
-    for (final sale in dashProv.getSalesSpots(_selectedPeriod).take(10)) {
+    for (final sale in dashProv.getChartSalesSpots(_selectedPeriod).take(10)) {
       // We show aggregated data per period key
       recentItems.add(_TransactionItem(
         title: '${_periodLabel(sale.x.toInt())} Sales',
@@ -451,7 +580,7 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
       ));
     }
 
-    for (final expense in dashProv.getExpenseSpots(_selectedPeriod).take(10)) {
+    for (final expense in dashProv.getChartExpenseSpots(_selectedPeriod).take(10)) {
       recentItems.add(_TransactionItem(
         title: '${_periodLabel(expense.x.toInt())} Expenses',
         amount: expense.y,
@@ -557,12 +686,44 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
   String _periodLabel(int value) {
     switch (_selectedPeriod) {
       case ChartPeriod.daily:
-        return 'Day $value';
+        return value.toString();
       case ChartPeriod.weekly:
+        DateTime firstOfMonth = DateTime(_selectedYear, _selectedMonth, 1);
+        DateTime firstMondayOfThisWeek;
+        if (firstOfMonth.weekday == DateTime.monday) {
+           List<DateTime> mondays = _getMondaysOfMonth(_selectedYear, _selectedMonth);
+           if (value >= 1 && value <= mondays.length) {
+             firstMondayOfThisWeek = mondays[value - 1];
+             return '${firstMondayOfThisWeek.day}/${firstMondayOfThisWeek.month}';
+           }
+        } else {
+           if (value == 1) {
+             firstMondayOfThisWeek = firstOfMonth.subtract(Duration(days: firstOfMonth.weekday - 1));
+             return '${firstMondayOfThisWeek.day}/${firstMondayOfThisWeek.month}';
+           } else {
+             List<DateTime> mondays = _getMondaysOfMonth(_selectedYear, _selectedMonth);
+             if (value >= 2 && value - 2 < mondays.length) {
+               firstMondayOfThisWeek = mondays[value - 2];
+               return '${firstMondayOfThisWeek.day}/${firstMondayOfThisWeek.month}';
+             }
+           }
+        }
         return 'Wk $value';
       case ChartPeriod.monthly:
         return _monthAbbr(value);
     }
+  }
+
+  List<DateTime> _getMondaysOfMonth(int year, int month) {
+    List<DateTime> mondays = [];
+    DateTime date = DateTime(year, month, 1);
+    while (date.month == month) {
+      if (date.weekday == DateTime.monday) {
+        mondays.add(date);
+      }
+      date = date.add(const Duration(days: 1));
+    }
+    return mondays;
   }
 
   String _monthAbbr(int month) {

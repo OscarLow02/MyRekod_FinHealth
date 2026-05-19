@@ -163,7 +163,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   welcomeLabel,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: isHighContrast
-                                        ? theme.colorScheme.onSurfaceVariant
+                                        ? theme.colorScheme.onSurface
                                         : theme.colorScheme.onPrimary.withValues(
                                             alpha: 0.7,
                                           ),
@@ -195,9 +195,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     // ── Section 2: Overlapping Hero Card ──────────────────
                     if (hasData) ...[
-                      const SizedBox(height: 88),
+                      const SizedBox(height: 128),
                       Transform(
-                        transform: Matrix4.translationValues(0.0, -40.0, 0.0),
+                        transform: Matrix4.translationValues(0.0, -20.0, 0.0),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Container(

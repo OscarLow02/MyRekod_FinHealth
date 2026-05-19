@@ -26,6 +26,13 @@ class DashboardProvider with ChangeNotifier {
   List<SaleRecord> _allSales = [];
   List<ExpenseRecord> _allExpenses = [];
 
+  // ── Chart Specific State ──────────────────────────────────────────────────
+  bool _isChartLoading = false;
+  List<SaleRecord> _chartSales = [];
+  List<ExpenseRecord> _chartExpenses = [];
+  
+  bool get isChartLoading => _isChartLoading;
+
   // ── Public Getters ────────────────────────────────────────────────────────
   double get totalMonthlySales => _totalMonthlySales;
   double get totalMonthlyExpenses => _totalMonthlyExpenses;
@@ -155,6 +162,46 @@ class DashboardProvider with ChangeNotifier {
     }
   }
 
+  /// Fetches historical data specifically for the Cashflow Analytics chart.
+  /// Does not affect the core Dashboard summary states.
+  Future<void> fetchChartData(
+    String userId,
+    ChartPeriod period,
+    int month,
+    int year,
+  ) async {
+    _isChartLoading = true;
+    notifyListeners();
+
+    try {
+      DateTime startDate;
+      DateTime endDate;
+
+      if (period == ChartPeriod.monthly) {
+        // Fetch full year
+        startDate = DateTime(year, 1, 1);
+        endDate = DateTime(year, 12, 31, 23, 59, 59);
+      } else {
+        // Fetch specific month
+        startDate = DateTime(year, month, 1);
+        endDate = DateTime(year, month + 1, 0, 23, 59, 59);
+      }
+
+      final futures = await Future.wait([
+        _firestoreService.getSaleRecordsInDateRange(userId, startDate, endDate),
+        _firestoreService.getExpensesInDateRange(userId, startDate, endDate),
+      ]);
+
+      _chartSales = futures[0] as List<SaleRecord>;
+      _chartExpenses = futures[1] as List<ExpenseRecord>;
+    } catch (e) {
+      debugPrint('Error fetching chart data: $e');
+    } finally {
+      _isChartLoading = false;
+      notifyListeners();
+    }
+  }
+
   // ── Credit Score Helpers ─────────────────────────────────────────────────
 
   /// A profile is "complete" when all LHDN-critical fields are filled.
@@ -235,6 +282,24 @@ class DashboardProvider with ChangeNotifier {
 
   // ── Chart Spot Generation ───────────────────────────────────────────────
 
+  List<FlSpot> getChartSalesSpots(ChartPeriod period) {
+    return _generateSpots(
+      _chartSales,
+      period,
+      (s) => s.saleDate,
+      (s) => s.totalPayable,
+    );
+  }
+
+  List<FlSpot> getChartExpenseSpots(ChartPeriod period) {
+    return _generateSpots(
+      _chartExpenses,
+      period,
+      (e) => e.date,
+      (e) => e.amount,
+    );
+  }
+
   List<FlSpot> getSalesSpots(ChartPeriod period) {
     return _generateSpots(
       _allSales,
@@ -265,8 +330,15 @@ class DashboardProvider with ChangeNotifier {
       if (period == ChartPeriod.daily) {
         key = date.day;
       } else if (period == ChartPeriod.weekly) {
-        // Simple week-of-month calculation
-        key = ((date.day - 1) / 7).floor() + 1;
+        int weekOfMonth = 1;
+        DateTime temp = DateTime(date.year, date.month, 1);
+        while (temp.isBefore(date) || temp.isAtSameMomentAs(date)) {
+          if (temp.weekday == DateTime.monday && temp.day > 1) {
+            weekOfMonth++;
+          }
+          temp = temp.add(const Duration(days: 1));
+        }
+        key = weekOfMonth;
       } else {
         key = date.month;
       }
