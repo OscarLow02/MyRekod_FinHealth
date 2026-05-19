@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/customer.dart';
 import '../../providers/customer_provider.dart';
 import '../../core/app_theme.dart';
+import '../../widgets/custom_widgets.dart';
 import 'add_edit_customer_screen.dart';
 
 class CustomerListScreen extends StatefulWidget {
@@ -78,7 +79,12 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             child: provider.isLoading && customers.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : customers.isEmpty
-                    ? _buildEmptyState(theme)
+                    ? buildEmptyState(
+                        context,
+                        icon: Icons.people_outline_rounded,
+                        message: 'No customers found',
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                      )
                     : ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: customers.length,
@@ -180,30 +186,5 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.people_outline_rounded,
-            size: 64,
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No customers found',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          if (_searchController.text.isNotEmpty)
-            Text(
-              'Try a different search term',
-              style: theme.textTheme.bodyMedium,
-            ),
-        ],
-      ),
-    );
-  }
+
 }

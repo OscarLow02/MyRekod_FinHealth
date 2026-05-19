@@ -10,6 +10,7 @@ import 'transactions/widgets/export_filter_bottom_sheet.dart';
 import 'expenses/expense_detail_screen.dart';
 import 'sales/sale_detail_screen.dart';
 import 'sales/consolidation_screen.dart';
+import '../widgets/custom_widgets.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -178,7 +179,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             if (expenses.isEmpty)
                               SliverFillRemaining(
                                 hasScrollBody: false,
-                                child: _buildEmptyState(
+                                child: buildEmptyState(
+                                  context,
                                   icon: Icons.receipt_long_rounded,
                                   message: 'No expenses found matching filters',
                                   color: Colors.orange.shade700,
@@ -316,7 +318,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             if (sales.isEmpty)
                               SliverFillRemaining(
                                 hasScrollBody: false,
-                                child: _buildEmptyState(
+                                child: buildEmptyState(
+                                  context,
                                   icon: Icons.point_of_sale_rounded,
                                   message: 'No sales found matching filters',
                                   color: AppTheme.primary,
@@ -382,39 +385,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   // ── UI Components ───────────────────────────────────────────────────────
-
-  Widget _buildEmptyState({
-    required IconData icon,
-    required String message,
-    required Color color,
-  }) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(48.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 48, color: color.withValues(alpha: 0.5)),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              message,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildExpenseCard(BuildContext context, ExpenseRecord expense) {
     final theme = Theme.of(context);

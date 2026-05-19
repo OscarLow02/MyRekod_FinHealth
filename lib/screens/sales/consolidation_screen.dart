@@ -8,6 +8,7 @@ import '../../providers/sales_provider.dart';
 import '../../widgets/app_dialogs.dart';
 import '../../services/consolidation_service.dart';
 import '../../core/app_theme.dart';
+import '../../widgets/custom_widgets.dart';
 
 class ConsolidationScreen extends StatefulWidget {
   const ConsolidationScreen({super.key});
@@ -87,7 +88,12 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
             children: [
               // ── Tab 1: Pending ──────────────────────────────────────────
               pendingRecords.isEmpty
-                  ? _buildEmptyState(theme, 'All caught up!', 'No sales are pending consolidation.')
+                  ? buildEmptyState(
+                      context,
+                      icon: Icons.history_edu_rounded,
+                      message: 'All caught up!\nNo sales are pending consolidation.',
+                      color: Colors.grey.shade400,
+                    )
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: pendingRecords.length,
@@ -133,7 +139,12 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
 
               // ── Tab 2: History ──────────────────────────────────────────
               historyRecords.isEmpty
-                  ? _buildEmptyState(theme, 'No History', 'Past consolidations will appear here.')
+                  ? buildEmptyState(
+                      context,
+                      icon: Icons.history_edu_rounded,
+                      message: 'No History\nPast consolidations will appear here.',
+                      color: Colors.grey.shade400,
+                    )
                   : () {
                       // Group records by their master reference
                       final Map<String, List<SaleRecord>> grouped = {};
@@ -246,26 +257,7 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme, String title, String subtitle) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.history_edu_rounded, size: 64, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: theme.textTheme.titleLarge?.copyWith(color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey.shade500),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildBottomBar(BuildContext context, ThemeData theme, double total, List<SaleRecord> allPending) {
     return Container(

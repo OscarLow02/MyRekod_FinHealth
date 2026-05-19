@@ -230,3 +230,73 @@ class AppDropdown<T> extends StatelessWidget {
     );
   }
 }
+
+Widget buildEmptyState(
+  BuildContext context, {
+  required IconData icon,
+  required String message,
+  required Color color,
+  VoidCallback? onAction,
+  String? actionLabel,
+}) {
+  final theme = Theme.of(context);
+
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.all(48.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Stacked background container for a premium illustration feel
+          Container(
+            width: 140,
+            height: 140,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.3),
+                      blurRadius: 24,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  icon,
+                  size: 80,
+                  color: color.withValues(alpha: 0.8),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          Text(
+            message,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (onAction != null && actionLabel != null) ...[
+            const SizedBox(height: 32),
+            AppButton(
+              text: actionLabel,
+              onPressed: onAction,
+              isPrimary: true,
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
