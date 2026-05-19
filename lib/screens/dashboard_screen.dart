@@ -119,6 +119,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── The Overlapping Stack Dashboard ───────────────────────────────────────
   Widget _buildHomePage(ThemeData theme, String displayName) {
+    final isHighContrast = theme.colorScheme.primary.toARGB32() == 0xFFFFFF00;
     return Consumer3<SalesProvider, ExpenseProvider, DashboardProvider>(
       builder: (context, salesProv, expProv, dashProv, _) {
         // Re-aggregate monthly data whenever upstream providers change
@@ -161,7 +162,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Text(
                                   welcomeLabel,
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                    color: isHighContrast
+                                        ? theme.colorScheme.onSurfaceVariant
+                                        : theme.colorScheme.onPrimary.withValues(
+                                            alpha: 0.7,
+                                          ),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -171,7 +176,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   style: theme.textTheme.headlineSmall
                                       ?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                        color: isHighContrast
+                                            ? theme.colorScheme.primary
+                                            : theme.colorScheme.onPrimary,
                                       ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -188,21 +195,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     // ── Section 2: Overlapping Hero Card ──────────────────
                     if (hasData) ...[
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 88),
                       Transform(
                         transform: Matrix4.translationValues(0.0, -40.0, 0.0),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppTheme.darkSurfaceContainer.withValues(
+                              color: theme.colorScheme.surfaceContainer.withValues(
                                 alpha: 0.85,
                               ),
                               borderRadius: BorderRadius.circular(
                                 AppTheme.radiusXLarge,
                               ),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.05),
+                                color: isHighContrast
+                                    ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                                    : Colors.white.withValues(alpha: 0.05),
+                                width: isHighContrast ? 1.5 : 1.0,
                               ),
                               boxShadow: [
                                 BoxShadow(
@@ -374,6 +384,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     bool isLoading = false,
   }) {
     final theme = Theme.of(context);
+    final isHighContrast = theme.colorScheme.primary.toARGB32() == 0xFFFFFF00;
+
+    final iconColor = isHighContrast
+        ? (isPrimary ? theme.colorScheme.onPrimary : theme.colorScheme.primary)
+        : (isPrimary ? theme.colorScheme.onPrimary : color);
+
     return Expanded(
       child: Column(
         children: [
@@ -388,11 +404,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 decoration: BoxDecoration(
                   color: isPrimary
                       ? theme.colorScheme.primary
-                      : AppTheme.darkSurfaceContainer,
+                      : theme.colorScheme.surfaceContainer,
                   shape: BoxShape.circle,
                   border: isPrimary
                       ? null
-                      : Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                      : Border.all(
+                          color: isHighContrast
+                              ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                              : Colors.white.withValues(alpha: 0.05),
+                          width: isHighContrast ? 1.5 : 1.0,
+                        ),
                   boxShadow: isPrimary
                       ? [
                           BoxShadow(
@@ -412,15 +433,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                 ),
                 child: isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: iconColor,
                           strokeWidth: 2.5,
                         ),
                       )
-                    : Icon(icon, color: color, size: 28),
+                    : Icon(icon, color: iconColor, size: 28),
               ),
             ),
           ),
@@ -441,6 +462,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── Net Profit Card ─────────────────────────────────────────────────────
   Widget _buildNetProfitCard(ThemeData theme, DashboardProvider dashProv) {
+    final isHighContrast = theme.colorScheme.primary.toARGB32() == 0xFFFFFF00;
     final isPositive = dashProv.netProfit >= 0;
     final profitParts = dashProv.netProfit.toStringAsFixed(2).split('.');
     // TODO: Implement i18n
@@ -451,9 +473,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.darkSurfaceContainer,
+        color: theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: isHighContrast
+              ? theme.colorScheme.primary.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.05),
+          width: isHighContrast ? 1.5 : 1.0,
+        ),
       ),
       child: Stack(
         children: [
@@ -488,7 +515,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       text: 'RM ${_formatWithCommas(profitParts[0])}',
                       style: theme.textTheme.displayMedium?.copyWith(
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: theme.colorScheme.onSurface,
                         fontSize: 32,
                         letterSpacing: -0.5,
                       ),
@@ -550,6 +577,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── Cash Flow Overview Section ──────────────────────────────────────────
   Widget _buildCashFlowOverview(ThemeData theme, DashboardProvider dashProv) {
+    final isHighContrast = theme.colorScheme.primary.toARGB32() == 0xFFFFFF00;
     // TODO: Implement i18n
     const overviewTitle = 'Cash Flow Overview';
     const viewDetailsLabel = 'View Details';
@@ -628,9 +656,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.darkSurfaceContainer,
+            color: theme.colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            border: Border.all(
+              color: isHighContrast
+                  ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.05),
+              width: isHighContrast ? 1.5 : 1.0,
+            ),
           ),
           child: Column(
             children: [
@@ -867,7 +900,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ) {
     final isActive = _currentIndex == index;
     final color = isActive
-        ? AppTheme.primary
+        ? theme.colorScheme.primary
         : theme.colorScheme.onSurfaceVariant;
 
     return Expanded(

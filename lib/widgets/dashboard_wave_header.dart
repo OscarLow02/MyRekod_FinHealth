@@ -16,13 +16,16 @@ class DashboardWaveHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isHighContrast = theme.colorScheme.primary.toARGB32() == 0xFFFFFF00;
+
     return ClipPath(
       clipper: _WaveClipper(),
       child: Container(
         height: height,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
+          color: isHighContrast ? theme.colorScheme.surfaceContainer : theme.colorScheme.primary,
         ),
       ),
     );

@@ -233,10 +233,12 @@ class AppTheme {
     return base.copyWith(
       colorScheme: const ColorScheme.dark(
         primary: primary,
+        onPrimary: Colors.white,
         primaryContainer: primaryContainer,
         secondary: secondaryDark,
         tertiary: tertiary,
         surface: darkSurface,
+        surfaceContainer: darkSurfaceContainer,
         surfaceContainerHighest: darkSurfaceContainerHigh,
         onSurface: darkOnSurface,
         onSurfaceVariant: darkOnSurfaceVariant,
@@ -301,10 +303,12 @@ class AppTheme {
     return base.copyWith(
       colorScheme: const ColorScheme.light(
         primary: primary,
+        onPrimary: Colors.white,
         primaryContainer: primaryContainer,
         secondary: secondaryLight,
         tertiary: tertiary,
         surface: lightSurface,
+        surfaceContainer: lightSurfaceContainer,
         surfaceContainerHighest: lightSurfaceContainerHigh,
         onSurface: lightOnSurface,
         onSurfaceVariant: lightOnSurfaceVariant,
@@ -376,10 +380,12 @@ class AppTheme {
     return base.copyWith(
       colorScheme: ColorScheme.dark(
         primary: primaryHc,
+        onPrimary: surfaceHc,
         primaryContainer: const Color(0xFFCCCC00),
         secondary: onSurfaceHc,
         tertiary: onSurfaceHc,
         surface: surfaceHc,
+        surfaceContainer: surfaceContainerHc,
         surfaceContainerHighest: surfaceContainerHc,
         onSurface: onSurfaceHc,
         onSurfaceVariant: onSurfaceVariantHc,
