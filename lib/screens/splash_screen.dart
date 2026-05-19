@@ -11,7 +11,6 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // TODO: Implement i18n — extract all user-facing strings
     const appName = 'MYREKOD';
     const tagline = 'Simplified financial tracking\nfor your business.';
     const ctaLabel = 'Get Started  →';
@@ -83,7 +82,6 @@ class SplashScreen extends StatelessWidget {
                   children: [
                     Text(
                       "TODAY'S SALES",
-                      // TODO: Implement i18n
                       style: theme.textTheme.labelMedium,
                     ),
                     const SizedBox(height: 8),

@@ -79,7 +79,6 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
     if (result.isGranted) return true;
 
     if (result.isPermanentlyDenied && mounted) {
-      // TODO: Implement i18n
       AppDialogs.showActionModal(
         context,
         title: 'Camera Permission Required',
@@ -289,7 +288,6 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                       onPressed: () => Navigator.pop(context),
                     ),
                     Text(
-                      // TODO: Implement i18n
                       'Scan Receipt',
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: Colors.white,
@@ -368,7 +366,6 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
             child: Column(
               children: [
                 Text(
-                  // TODO: Implement i18n
                   _isScanning ? 'Analyzing Receipt...' : 'Align receipt within the frame',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
@@ -419,7 +416,6 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                     ),
                   ),
                   child: Text(
-                    // TODO: Implement i18n
                     'Enter Manually',
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: AppTheme.neonGreenDark,

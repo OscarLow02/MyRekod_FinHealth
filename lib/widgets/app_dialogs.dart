@@ -721,7 +721,6 @@ class AppDialogs {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              // TODO: Implement i18n
               'New Entry',
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
@@ -730,7 +729,6 @@ class AppDialogs {
             ),
             const SizedBox(height: 8),
             Text(
-              // TODO: Implement i18n
               'What would you like to record?',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,

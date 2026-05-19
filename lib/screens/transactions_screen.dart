@@ -57,7 +57,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     final theme = Theme.of(context);
     final isExpenseTab = _tabController.index == 0;
 
-    // TODO: Implement i18n
     final String titleTransactions = 'Transactions';
     final String tooltipExport = 'Export CSV';
     final String tabExpenses = 'Expenses';
@@ -232,7 +231,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     }
 
                     if (provider.error != null) {
-                      // TODO: Implement i18n
                       final String errorMsg = 'Error fetching sales:\n${provider.error}';
                       return Center(
                         child: Padding(
@@ -293,7 +291,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    // TODO: Implement i18n
                                     Text(
                                       'RECENT SALES',
                                       style: theme.textTheme.labelLarge?.copyWith(
@@ -321,7 +318,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                 hasScrollBody: false,
                                 child: _buildEmptyState(
                                   icon: Icons.point_of_sale_rounded,
-                                  message: 'No sales found matching filters', // TODO: Implement i18n
+                                  message: 'No sales found matching filters',
                                   color: AppTheme.primary,
                                 ),
                               )
@@ -351,7 +348,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                     child: provider.hasMore
                                         ? const CircularProgressIndicator()
                                         : Text(
-                                            'End of results', // TODO: Implement i18n
+                                            'End of results',
                                             style: theme.textTheme.bodySmall
                                                 ?.copyWith(
                                                   color: theme
@@ -610,7 +607,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 setState(() {});
               },
               decoration: InputDecoration(
-                hintText: 'Search vendor or category', // TODO: Implement i18n
+                hintText: 'Search vendor or category',
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -674,7 +671,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               child: IconButton(
                 icon: const Icon(Icons.clear_rounded, color: Colors.redAccent, size: 20),
                 onPressed: () => provider.setDateRange(null, null),
-                tooltip: 'Clear Date Filter', // TODO: Implement i18n
+                tooltip: 'Clear Date Filter',
               ),
             ),
           ],
@@ -837,7 +834,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             );
           },
           icon: const Icon(Icons.fact_check_rounded),
-          label: Text('Process Consolidation ($count Items)'), // TODO: Implement i18n
+          label: Text('Process Consolidation ($count Items)'),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primary,
             foregroundColor: Colors.white,
@@ -866,7 +863,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 setState(() {});
               },
               decoration: InputDecoration(
-                hintText: 'Search by item or customer', // TODO: Implement i18n
+                hintText: 'Search by item or customer',
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -934,7 +931,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               child: IconButton(
                 icon: const Icon(Icons.clear_rounded, color: Colors.redAccent, size: 20),
                 onPressed: () => provider.setDateRange(null, null),
-                tooltip: 'Clear Date Filter', // TODO: Implement i18n
+                tooltip: 'Clear Date Filter',
               ),
             ),
           ],
@@ -987,7 +984,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             Expanded(
               child: Text(
                 sale.lineItems.isEmpty
-                    ? 'Sale' // TODO: Implement i18n
+                    ? 'Sale'
                     : sale.lineItems.first.item.name,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,

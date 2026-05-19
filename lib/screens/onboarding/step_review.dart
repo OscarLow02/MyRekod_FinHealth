@@ -13,7 +13,6 @@ class StepReview extends StatelessWidget {
     final theme = Theme.of(context);
     final provider = context.watch<OnboardingProvider>();
 
-    // TODO: Implement i18n
     const title = 'Check your details';
     const subtitle =
         'Ensure everything is correct before we\nset up your business vault.';

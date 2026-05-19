@@ -68,7 +68,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       return;
     }
 
-    // TODO: Implement i18n
     final String titleConfirm = 'Confirm & Submit?';
     final String bodyConfirm = 'This will submit invoice ${_currentSale.invoiceNumber} to LHDN for validation and mark it as Paid.\n\n'
         'Amount: RM ${_currentSale.totalPayable.toStringAsFixed(2)}\n'
@@ -113,7 +112,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         );
       });
 
-      // TODO: Implement i18n
       if (!mounted) return;
       AppDialogs.showMockLhdnSuccessDialog(
         context,
@@ -127,7 +125,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         },
       );
     } else {
-      // TODO: Implement i18n
       final String titleFailed = 'Submission Failed';
       final String btnRetry = 'Retry';
       final String btnCancel = 'Cancel';
@@ -247,7 +244,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     final profile = await _getSellerProfile();
     if (profile == null) {
       if (!mounted) return;
-      // TODO: Implement i18n
       final String titleProfileReq = 'Profile Required';
       final String bodyProfileReq = 'Complete your Business Profile first.';
       final String btnOk = 'OK';
@@ -309,7 +305,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // TODO: Implement i18n
                       Text(
                         'UBL 2.1 JSON Preview',
                         style: theme.textTheme.titleMedium?.copyWith(
@@ -361,7 +356,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   // ── Delete ─────────────────────────────────────────────────────────────
 
   void _deleteSale() {
-    // TODO: Implement i18n
     final String titleDelete = 'Delete Sale Record';
     final String bodyDelete = 'Are you sure you want to delete invoice ${_currentSale.invoiceNumber}? '
         'This action cannot be undone.';
@@ -488,7 +482,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       CommercialStatus.pendingPayment => Colors.orange,
     };
 
-    // TODO: Implement i18n
     const String labelInvoiceDetails = 'Invoice Details';
     const String labelLhdnValidation = 'LHDN Validation';
     const String labelUuid = 'UUID';
@@ -715,7 +708,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 ),
               ),
             ] else if (_currentSale.lhdnUuid != null) ...[
-              // TODO: Implement i18n
               _buildSectionHeader(theme, labelLhdnValidation),
               const SizedBox(height: 12),
 
@@ -750,7 +742,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             ],
 
             // ── Transaction Info ──────────────────────────────────────
-            // TODO: Implement i18n
             _buildSectionHeader(theme, labelTransactionInfo),
             const SizedBox(height: 12),
             _buildDetailCard(theme,
@@ -827,7 +818,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
             const SizedBox(height: 24),
 
-            // TODO: Implement i18n
             _buildSectionHeader(theme, labelItemBreakdown),
             const SizedBox(height: 12),
             ..._currentSale.lineItems.map((line) => Container(
@@ -840,7 +830,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             const SizedBox(height: 24),
 
             // ── Pricing Breakdown ─────────────────────────────────────
-            // TODO: Implement i18n
             _buildSectionHeader(theme, labelPricing),
             const SizedBox(height: 12),
             _buildPricingRow(theme, labelSubtotal,
@@ -885,7 +874,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
             // ── Bottom Actions ────────────────────────────────────────
             AppButton(
-              // TODO: Implement i18n
               text: labelExportCsv,
               icon: const Icon(Icons.download_rounded, size: 20),
               onPressed: () async => await CsvExportService.exportSingleSaleToCSV(context, _currentSale),

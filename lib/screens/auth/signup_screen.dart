@@ -80,7 +80,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // TODO: Implement i18n — extract all user-facing strings
     const headerTitle = 'Join The Vault';
     const headerSubtitle =
         'Enter your details to get started with\nsimplified financial tracking.';
@@ -118,7 +117,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      // TODO: Implement i18n
                       'Join The Vault',
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,

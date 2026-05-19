@@ -233,7 +233,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // TODO: Implement i18n — extract all user-facing strings
     const headerTitle = 'Welcome Back';
     const headerSubtitle = 'Securely access your digital treasury';
     const emailLabel = 'EMAIL ADDRESS';

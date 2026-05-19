@@ -23,7 +23,6 @@ class _StepAddressState extends State<StepAddress> {
   late TextEditingController _postcodeController;
 
   // Standard Malaysian state codes
-  // TODO: Implement i18n — state names may require translation
 
   @override
   void initState() {
@@ -51,7 +50,6 @@ class _StepAddressState extends State<StepAddress> {
     final theme = Theme.of(context);
     final provider = context.watch<OnboardingProvider>();
 
-    // TODO: Implement i18n
     const title = 'Registered Address';
     const subtitle = 'Where is your business officially located?';
     const address1Label = 'Address Line 1*';

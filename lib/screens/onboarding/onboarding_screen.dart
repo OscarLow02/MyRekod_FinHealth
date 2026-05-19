@@ -57,7 +57,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _onSubmit(OnboardingProvider provider) async {
-    // TODO: Implement i18n
     final failedToSavePrefix = 'Failed to save profile:';
 
     try {
@@ -85,7 +84,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         final isLastStep =
             provider.currentStep == OnboardingProvider.totalPages - 1;
 
-        // TODO: Implement i18n
         const brandName = 'MyRekod';
         const logoutTooltip = 'Cancel Registration / Log Out';
         const continueText = 'CONTINUE';

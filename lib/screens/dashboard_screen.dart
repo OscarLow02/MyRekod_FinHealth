@@ -61,7 +61,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final theme = Theme.of(context);
     final user = FirebaseAuth.instance.currentUser;
 
-    // TODO: Implement i18n
     final String labelDefaultUser = 'User';
 
     final displayName =
@@ -132,7 +131,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         final hasData = !dashProv.hasNoData;
 
-        // TODO: Implement i18n
         final String welcomeLabel = 'Welcome back,';
         final String businessName = _profile?.businessName ?? "Oscar's Kitchen";
         const String zeroStateText =
@@ -254,7 +252,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               _buildQuickAction(
                                 context,
                                 icon: Icons.add_circle_outline_rounded,
-                                label: 'Record\nSale', // TODO: Implement i18n
+                                label: 'Record\nSale',
                                 color: theme.colorScheme.secondary,
                                 onTap: () {
                                   Navigator.push(
@@ -273,7 +271,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 context,
                                 icon: Icons.document_scanner_outlined,
                                 label:
-                                    'Record\nExpense', // TODO: Implement i18n
+                                    'Record\nExpense',
                                 color: Colors.orange,
                                 onTap: () {
                                   Navigator.push(
@@ -290,7 +288,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 context,
                                 icon: Icons.description_outlined,
                                 label:
-                                    'Generate\nReport', // TODO: Implement i18n
+                                    'Generate\nReport',
                                 color: Colors.white,
                                 isPrimary: true,
                                 isLoading: _isGeneratingPdf,
@@ -465,7 +463,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final isHighContrast = theme.colorScheme.primary.toARGB32() == 0xFFFFFF00;
     final isPositive = dashProv.netProfit >= 0;
     final profitParts = dashProv.netProfit.toStringAsFixed(2).split('.');
-    // TODO: Implement i18n
     const netProfitLabel = 'Net Profit (Current Month)';
     const trendLabel = '↗ 12% vs last month'; // Mocked trend
 
@@ -578,7 +575,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ── Cash Flow Overview Section ──────────────────────────────────────────
   Widget _buildCashFlowOverview(ThemeData theme, DashboardProvider dashProv) {
     final isHighContrast = theme.colorScheme.primary.toARGB32() == 0xFFFFFF00;
-    // TODO: Implement i18n
     const overviewTitle = 'Cash Flow Overview';
     const viewDetailsLabel = 'View Details';
 
@@ -669,7 +665,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _buildHorizontalBar(
                 theme,
-                label: 'Total Sales', // TODO: Implement i18n
+                label: 'Total Sales',
                 value: totalSales,
                 maxValue: maxValue,
                 color: AppTheme.neonGreenDark,
@@ -677,7 +673,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 20),
               _buildHorizontalBar(
                 theme,
-                label: 'Total Expenses', // TODO: Implement i18n
+                label: 'Total Expenses',
                 value: totalExpenses,
                 maxValue: maxValue,
                 color: Colors.redAccent,
@@ -813,14 +809,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
       final String successMsg = 'PDF report generated successfully!';
       if (mounted) {
-        // TODO: Implement i18n
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(successMsg)));
       }
     } catch (e) {
       if (mounted) {
-        // TODO: Implement i18n
         final String errorMsg = 'Failed to generate report: $e';
         ScaffoldMessenger.of(
           context,
@@ -844,7 +838,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildBottomNav(ThemeData theme) {
-    // TODO: Implement i18n
     const homeLabel = 'Home';
     const transactionsLabel = 'Transactions';
     const customersLabel = 'Customers';

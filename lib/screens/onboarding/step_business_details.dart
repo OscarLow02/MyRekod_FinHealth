@@ -57,7 +57,6 @@ class _StepBusinessDetailsState extends State<StepBusinessDetails> {
     final provider =
         context.watch<OnboardingProvider>(); // Use watch to react to state changes
 
-    // TODO: Implement i18n
     const title = 'Business Details';
     const subtitle = 'Provide your official trade information.';
     const businessNameLabel = 'Business Name*';

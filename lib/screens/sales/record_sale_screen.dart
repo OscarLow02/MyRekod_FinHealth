@@ -559,7 +559,6 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     final theme = Theme.of(context);
 
     // --- UI Strings (Local Constants for i18n Readiness) ---
-    // TODO: Implement i18n
     const String appBarTitle = 'Record Sale';
     const String sectionCustomerType = 'CUSTOMER TYPE';
     const String typeIndividual = 'Individual';

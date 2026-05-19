@@ -12,7 +12,6 @@ class TinGuideBottomSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // TODO: Implement i18n
     const title = 'TIN Registration\nGuide';
     const whatIsTinTitle = 'What is a TIN?';
     const whatIsTinBody =

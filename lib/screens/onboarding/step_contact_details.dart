@@ -58,7 +58,6 @@ class _StepContactDetailsState extends State<StepContactDetails> {
     final theme = Theme.of(context);
     final provider = context.read<OnboardingProvider>();
 
-    // TODO: Implement i18n
     const title = 'Contact Details';
     const subtitle = 'How can your customers reach you?';
     const phoneLabel = 'Phone Number*';

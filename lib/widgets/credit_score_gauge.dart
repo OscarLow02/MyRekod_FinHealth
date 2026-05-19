@@ -27,7 +27,6 @@ class CreditScoreGauge extends StatelessWidget {
   }
 
   // ── Health label ──────────────────────────────────────────────────────────
-  // TODO: Implement i18n
   String get _healthLabel {
     if (score < 300) return 'Getting Started';
     if (score < 500) return 'Building Foundation';
@@ -60,7 +59,6 @@ class CreditScoreGauge extends StatelessWidget {
       child: Column(
         children: [
           // ── Section Title ─────────────────────────────────────────────
-          // TODO: Implement i18n
           Text(
             'Financial Health Score',
             style: theme.textTheme.titleMedium?.copyWith(

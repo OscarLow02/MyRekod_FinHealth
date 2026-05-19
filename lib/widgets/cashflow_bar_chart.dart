@@ -67,7 +67,6 @@ class CashflowBarChart extends StatelessWidget {
           const SizedBox(height: 24),
           
           // Net Profit Display (Bold, 20sp)
-          // TODO: Implement i18n
           Text(
             "Net Profit: RM ${netProfit.toStringAsFixed(2)}",
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(

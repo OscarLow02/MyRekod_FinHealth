@@ -13,7 +13,6 @@ class StepEntityType extends StatelessWidget {
     final theme = Theme.of(context);
     final provider = context.watch<OnboardingProvider>();
 
-    // TODO: Implement i18n
     const title = 'Who are you\nregistering?';
     const subtitle =
         'Choose the legal structure that best\ndescribes your business activities.';

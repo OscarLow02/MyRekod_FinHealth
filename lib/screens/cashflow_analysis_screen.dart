@@ -68,7 +68,6 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // TODO: Implement i18n
     const pageTitle = 'Cash Flow Analysis';
 
     return Scaffold(
@@ -591,7 +590,6 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
     // Sort by amount descending for a more useful view
     recentItems.sort((a, b) => b.amount.compareTo(a.amount));
 
-    // TODO: Implement i18n
     const sectionTitle = 'Period Breakdown';
 
     return Column(
