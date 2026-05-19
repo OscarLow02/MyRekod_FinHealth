@@ -1,7 +1,7 @@
 class AppStrings {
   static const Map<String, Map<String, String>> translations = {
     'en': {
-      'settings': 'Settings',
+      'settings': 'Language & UI Settings',
       'language': 'Language',
       'high_contrast': 'High Contrast Theme',
       'high_contrast_desc': 'Increase contrast and font size for better visibility.',
@@ -10,7 +10,7 @@ class AppStrings {
       'chinese': '中文',
     },
     'ms': {
-      'settings': 'Tetapan',
+      'settings': 'Tetapan Bahasa & UI',
       'language': 'Bahasa',
       'high_contrast': 'Tema Kontras Tinggi',
       'high_contrast_desc': 'Tingkatkan kontras dan saiz fon untuk penglihatan yang lebih baik.',
@@ -19,7 +19,7 @@ class AppStrings {
       'chinese': '中文',
     },
     'zh': {
-      'settings': '设置',
+      'settings': '语言与界面设置',
       'language': '语言',
       'high_contrast': '高对比度主题',
       'high_contrast_desc': '增加对比度和字体大小以获得更好的可见性。',

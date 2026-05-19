@@ -4,8 +4,8 @@ import '../../core/app_theme.dart';
 import '../../core/app_strings.dart';
 import '../../providers/settings_provider.dart';
 
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+class LanguageSettingsScreen extends StatelessWidget {
+  const LanguageSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

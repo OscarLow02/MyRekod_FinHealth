@@ -8,7 +8,7 @@ import '../auth/auth_wrapper.dart';
 import 'business_profile_screen.dart';
 import 'item_settings_screen.dart';
 import 'tax_settings_screen.dart';
-import 'settings_screen.dart';
+import 'language_settings_screen.dart';
 import '../../widgets/app_dialogs.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
@@ -142,7 +142,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
             subtitle: AppStrings.get('language', lang),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => const SettingsScreen(),
+                builder: (_) => const LanguageSettingsScreen(),
               ),
             ),
           ),
