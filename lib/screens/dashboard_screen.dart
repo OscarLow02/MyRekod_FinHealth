@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -68,36 +69,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      extendBody: true,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildCurrentPage(theme, displayName),
-      bottomNavigationBar: _buildBottomNav(theme),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          AppDialogs.showNewEntryModal(
-            context,
-            onRecordSale: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChangeNotifierProvider(
-                    create: (_) => SaleCalculatorProvider(),
-                    child: const RecordSaleScreen(),
-                  ),
-                ),
-              );
-            },
-            onRecordExpense: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ScannerScreen()),
-              );
-            },
-          );
-        },
-        child: const Icon(Icons.add_rounded, size: 28),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: _buildGlassBottomNav(theme),
     );
   }
 
@@ -837,54 +813,87 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return isNegative ? '-${buffer.toString()}' : buffer.toString();
   }
 
-  Widget _buildBottomNav(ThemeData theme) {
+  // ── iOS 26 Glass Bottom Navigation Bar ────────────────────────────────────
+  Widget _buildGlassBottomNav(ThemeData theme) {
+    final isHighContrast = theme.colorScheme.primary.toARGB32() == 0xFFFFFF00;
     const homeLabel = 'Home';
-    const transactionsLabel = 'Transactions';
-    const customersLabel = 'Customers';
+    const transactionsLabel = 'Sales';
+    const customersLabel = 'Customer';
     const profileLabel = 'Profile';
 
-    return BottomAppBar(
-      color: theme.bottomNavigationBarTheme.backgroundColor,
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 8,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(
-            theme,
-            Icons.home_outlined,
-            Icons.home_rounded,
-            homeLabel,
-            0,
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: SafeArea(
+        top: false,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            child: Container(
+              height: 72,
+              decoration: BoxDecoration(
+                color: isHighContrast
+                    ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.92)
+                    : theme.colorScheme.surfaceContainer.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: isHighContrast
+                      ? theme.colorScheme.primary.withValues(alpha: 0.4)
+                      : Colors.white.withValues(alpha: 0.12),
+                  width: isHighContrast ? 1.5 : 0.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, -2),
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildGlassNavItem(
+                    theme,
+                    Icons.home_outlined,
+                    Icons.home_rounded,
+                    homeLabel,
+                    0,
+                  ),
+                  _buildGlassNavItem(
+                    theme,
+                    Icons.receipt_long_outlined,
+                    Icons.receipt_long_rounded,
+                    transactionsLabel,
+                    1,
+                  ),
+                  // ── Center Add Button ──
+                  _buildGlassCenterButton(theme),
+                  _buildGlassNavItem(
+                    theme,
+                    Icons.people_outline_rounded,
+                    Icons.people_rounded,
+                    customersLabel,
+                    2,
+                  ),
+                  _buildGlassNavItem(
+                    theme,
+                    Icons.person_outline_rounded,
+                    Icons.person_rounded,
+                    profileLabel,
+                    3,
+                  ),
+                ],
+              ),
+            ),
           ),
-          _buildNavItem(
-            theme,
-            Icons.receipt_long_outlined,
-            Icons.receipt_long_rounded,
-            transactionsLabel,
-            1,
-          ),
-          const SizedBox(width: 48), // Space for FAB
-          _buildNavItem(
-            theme,
-            Icons.people_outline_rounded,
-            Icons.people_rounded,
-            customersLabel,
-            2,
-          ),
-          _buildNavItem(
-            theme,
-            Icons.person_outline_rounded,
-            Icons.person_rounded,
-            profileLabel,
-            3,
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildNavItem(
+  Widget _buildGlassNavItem(
     ThemeData theme,
     IconData icon,
     IconData activeIcon,
@@ -892,33 +901,114 @@ class _DashboardScreenState extends State<DashboardScreen> {
     int index,
   ) {
     final isActive = _currentIndex == index;
-    final color = isActive
-        ? theme.colorScheme.primary
-        : theme.colorScheme.onSurfaceVariant;
+    final activeColor = theme.colorScheme.primary;
+    final inactiveColor = theme.colorScheme.onSurfaceVariant;
 
     return Expanded(
-      child: InkWell(
+      child: GestureDetector(
         onTap: () => setState(() => _currentIndex = index),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        behavior: HitTestBehavior.opaque,
         child: SizedBox(
-          height: AppTheme.minTouchTarget,
+          height: 72,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(isActive ? activeIcon : icon, color: color, size: 24),
-              const SizedBox(height: 2),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  isActive ? activeIcon : icon,
+                  key: ValueKey(isActive),
+                  color: isActive ? activeColor : inactiveColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 4),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                  color: color,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  color: isActive ? activeColor : inactiveColor,
+                  height: 1.0,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              const SizedBox(height: 4),
+              // Active indicator dot
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                width: isActive ? 5 : 0,
+                height: isActive ? 5 : 0,
+                decoration: BoxDecoration(
+                  color: activeColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassCenterButton(ThemeData theme) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          AppDialogs.showNewEntryModal(
+            context,
+            onRecordSale: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChangeNotifierProvider(
+                    create: (_) => SaleCalculatorProvider(),
+                    child: const RecordSaleScreen(),
+                  ),
+                ),
+              );
+            },
+            onRecordExpense: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ScannerScreen()),
+              );
+            },
+          );
+        },
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          height: 72,
+          child: Center(
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.primaryContainer,
+                  ],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.add_rounded,
+                color: theme.colorScheme.onPrimary,
+                size: 24,
+              ),
+            ),
           ),
         ),
       ),
