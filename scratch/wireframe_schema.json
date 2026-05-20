@@ -1,0 +1,2304 @@
+[
+  {
+    "screen": "Login Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 28,
+          "children": [
+            {
+              "stack": {
+                "gap": 12,
+                "align": "center",
+                "children": [
+                  { "image": { "width": 80, "height": 80 } },
+                  { "heading": { "text": "Welcome Back", "level": 1, "align": "center" } },
+                  { "text": { "text": "Securely access your digital treasury", "color": "muted", "align": "center" } }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "EMAIL ADDRESS" },
+                        { "input": { "placeholder": "name@business.com" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "PASSWORD" },
+                        { "input": { "placeholder": "••••••••", "type": "password" } }
+                      ]
+                    }
+                  },
+                  {
+                    "row": {
+                      "justify": "space-between",
+                      "children": [
+                        { "checkbox": "Remember Me" },
+                        { "link": "Forgot Password?" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  { "button": "Log In  →", "variant": "primary", "fullWidth": true },
+                  {
+                    "row": {
+                      "justify": "center",
+                      "children": [
+                        { "text": { "text": "— OR CONTINUE WITH —", "color": "muted", "size": "xs" } }
+                      ]
+                    }
+                  },
+                  { "button": { "label": "Google", "icon": "chrome" }, "variant": "secondary", "fullWidth": true }
+                ]
+              }
+            },
+            {
+              "row": {
+                "justify": "center",
+                "children": [
+                  { "text": "Don't have an account? " },
+                  { "link": "Create an account" }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Sign Up Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            {
+              "row": {
+                "gap": 12,
+                "children": [
+                  { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                  { "text": { "text": "Join The Vault", "bold": true, "size": "md" } }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 8,
+                "children": [
+                  { "heading": { "text": "Join The Vault", "level": 1 } },
+                  { "text": { "text": "Enter your details to get started with simplified financial tracking.", "color": "muted" } }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Full Name" },
+                        { "input": { "placeholder": "e.g. Ahmad Hawker" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Email Address" },
+                        { "input": { "placeholder": "name@example.com" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Password" },
+                        { "input": { "placeholder": "Min. 8 characters", "type": "password" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Confirm Password" },
+                        { "input": { "placeholder": "Repeat your password", "type": "password" } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            { "button": "Create Account  ›", "variant": "primary", "fullWidth": true },
+            {
+              "row": {
+                "justify": "center",
+                "children": [
+                  { "text": "Already have an account? " },
+                  { "link": "Log In" }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Profile Menu Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            { "heading": { "text": "Profile", "level": 1 } },
+            {
+              "card": {
+                "padding": 20,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "align": "center",
+                      "children": [
+                        { "avatar": 72 },
+                        { "heading": { "text": "Ahmad Hawker Enterprise", "level": 2, "align": "center" } },
+                        { "text": { "text": "TIN: TR123456789", "color": "muted", "align": "center" } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 12,
+                "children": [
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              {
+                                "row": {
+                                  "gap": 12,
+                                  "children": [
+                                    { "icon": "store", "size": 20 },
+                                    { "text": { "text": "Business Profile", "bold": true } }
+                                  ]
+                                }
+                              },
+                              { "icon": "chevron-right", "size": 20, "color": "muted" }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              {
+                                "row": {
+                                  "gap": 12,
+                                  "children": [
+                                    { "icon": "package", "size": 20 },
+                                    { "text": { "text": "Item Settings", "bold": true } }
+                                  ]
+                                }
+                              },
+                              { "icon": "chevron-right", "size": 20, "color": "muted" }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              {
+                                "row": {
+                                  "gap": 12,
+                                  "children": [
+                                    { "icon": "percent", "size": 20 },
+                                    { "text": { "text": "Tax Settings", "bold": true } }
+                                  ]
+                                }
+                              },
+                              { "icon": "chevron-right", "size": 20, "color": "muted" }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              {
+                                "row": {
+                                  "gap": 12,
+                                  "children": [
+                                    { "icon": "settings", "size": 20 },
+                                    { "text": { "text": "App Theme Settings", "bold": true } }
+                                  ]
+                                }
+                              },
+                              { "icon": "chevron-right", "size": 20, "color": "muted" }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            { "button": { "label": "Log Out", "icon": "log-out" }, "variant": "outline", "fullWidth": true },
+            { "text": { "text": "VERSION 0.1.0 (BUILD 1)", "color": "muted", "align": "center", "size": "xs" } }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Business Profile Screen",
+    "width": 390,
+    "height": 1500,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            {
+              "row": {
+                "justify": "space-between",
+                "children": [
+                  {
+                    "row": {
+                      "gap": 8,
+                      "children": [
+                        { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                        { "text": { "text": "Profile", "bold": true, "size": "md" } }
+                      ]
+                    }
+                  },
+                  { "button": { "icon": "edit", "label": "Edit" }, "variant": "secondary", "size": "sm" }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "align": "center",
+                "gap": 8,
+                "children": [
+                  { "avatar": 96 },
+                  { "link": "UPDATE PHOTO" }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  { "heading": { "text": "Core Identity", "level": 2 } },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Legal Business Name" },
+                        { "input": "Ahmad Hawker Enterprise" }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Industry Sector (MSIC Code)" },
+                        { "dropdown": { "label": "Industry Sector", "options": ["56101 - Restaurants", "56102 - Food Stalls", "47111 - Provision Stores"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Business Description" },
+                        { "textarea": "Providing local hawker delights and catering services." }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Bank Account Number" },
+                        { "input": "1234567890" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  { "heading": { "text": "Tax Information", "level": 2 } },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "TIN" },
+                        { "input": "TR123456789" }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Business Registration / IC" },
+                        { "input": "202603123456" }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "SST Number" },
+                        { "input": "W10-1234-56789" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  { "heading": { "text": "Contact Information", "level": 2 } },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Business Email" },
+                        { "input": { "placeholder": "ahmad@hawker.com" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Phone Number" },
+                        { "input": "+6012-3456789" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  { "heading": { "text": "Location", "level": 2 } },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Address Line 1" },
+                        { "input": "No. 42, Jalan Hawker 1" }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Address Line 2" },
+                        { "input": "Taman Hawker" }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Address Line 3" },
+                        { "input": "Cheras" }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "City" },
+                        { "input": "Kuala Lumpur" }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "Postcode" },
+                        { "input": "56100" }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "State / Region" },
+                        { "dropdown": { "label": "State", "options": ["Kuala Lumpur", "Selangor", "Johor", "Penang"] } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            { "button": { "label": "DEACTIVATE BUSINESS ACCOUNT" }, "variant": "outline", "fullWidth": true },
+            { "button": "SAVE CHANGES", "variant": "primary", "fullWidth": true }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Item Settings Screen",
+    "width": 390,
+    "height": 1000,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            {
+              "row": {
+                "gap": 8,
+                "children": [
+                  { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                  { "text": { "text": "Profile", "bold": true, "size": "md" } }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 4,
+                "children": [
+                  { "heading": { "text": "Item Settings", "level": 1 } },
+                  { "text": { "text": "Manage your item catalog for faster sales checkout.", "color": "muted" } }
+                ]
+              }
+            },
+            {
+              "row": {
+                "justify": "space-between",
+                "children": [
+                  { "heading": { "text": "ITEM CATALOG", "level": 2 } },
+                  { "badge": "3 ITEMS" }
+                ]
+              }
+            },
+            { "button": { "label": "Add New Sale Item", "icon": "plus" }, "variant": "primary", "fullWidth": true },
+            {
+              "stack": {
+                "gap": 12,
+                "children": [
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              {
+                                "row": {
+                                  "gap": 12,
+                                  "children": [
+                                    { "icon": "coffee", "size": 20 },
+                                    {
+                                      "stack": {
+                                        "gap": 2,
+                                        "children": [
+                                          { "text": { "text": "Nasi Lemak", "bold": true } },
+                                          { "text": { "text": "RM 6.50", "color": "primary" } }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "row": {
+                                  "gap": 8,
+                                  "children": [
+                                    { "button": { "icon": "edit" }, "variant": "outline", "size": "sm" },
+                                    { "button": { "icon": "trash" }, "variant": "outline", "size": "sm" }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              {
+                                "row": {
+                                  "gap": 12,
+                                  "children": [
+                                    { "icon": "coffee", "size": 20 },
+                                    {
+                                      "stack": {
+                                        "gap": 2,
+                                        "children": [
+                                          { "text": { "text": "Teh Tarik", "bold": true } },
+                                          { "text": { "text": "RM 2.50", "color": "primary" } }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "row": {
+                                  "gap": 8,
+                                  "children": [
+                                    { "button": { "icon": "edit" }, "variant": "outline", "size": "sm" },
+                                    { "button": { "icon": "trash" }, "variant": "outline", "size": "sm" }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "justify": "space-between",
+                "children": [
+                  { "heading": { "text": "EXPENSE CATEGORIES", "level": 2 } },
+                  { "button": { "icon": "plus" }, "variant": "outline", "size": "sm" }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 8,
+                "children": [
+                  {
+                    "row": {
+                      "justify": "space-between",
+                      "children": [
+                        {
+                          "row": {
+                            "gap": 12,
+                            "children": [
+                              { "icon": "folder", "size": 20 },
+                              { "text": "Ingredients" }
+                            ]
+                          }
+                        },
+                        {
+                          "row": {
+                            "gap": 8,
+                            "children": [
+                              { "button": { "icon": "edit" }, "variant": "outline", "size": "sm" },
+                              { "button": { "icon": "trash" }, "variant": "outline", "size": "sm" }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "row": {
+                      "justify": "space-between",
+                      "children": [
+                        {
+                          "row": {
+                            "gap": 12,
+                            "children": [
+                              { "icon": "folder", "size": 20 },
+                              { "text": "Rent" }
+                            ]
+                          }
+                        },
+                        {
+                          "row": {
+                            "gap": 8,
+                            "children": [
+                              { "button": { "icon": "edit" }, "variant": "outline", "size": "sm" },
+                              { "button": { "icon": "trash" }, "variant": "outline", "size": "sm" }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Tax Settings Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            {
+              "row": {
+                "gap": 8,
+                "children": [
+                  { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                  { "text": { "text": "Profile", "bold": true, "size": "md" } }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 4,
+                "children": [
+                  { "heading": { "text": "Tax Settings", "level": 1 } },
+                  { "text": { "text": "Configure your LHDN tax compliance and financial rules.", "color": "muted" } }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "children": [
+                        { "label": "GLOBAL TAX CONFIGURATION" },
+                        { "dropdown": { "label": "Tax Type", "options": ["01 - Sales Tax", "02 - Service Tax", "06 - Not Applicable"] } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 16,
+                      "children": [
+                        { "label": "CALCULATION METHOD" },
+                        { "tabs": ["Total Percentage", "Unit-Based"] },
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              { "text": "Tax Rate", "bold": true },
+                              { "badge": "Required" }
+                            ]
+                          }
+                        },
+                        {
+                          "row": {
+                            "gap": 8,
+                            "children": [
+                              { "input": { "placeholder": "6.00" } },
+                              { "text": { "text": "%", "size": "lg", "bold": true } }
+                            ]
+                          }
+                        },
+                        {
+                          "row": {
+                            "gap": 8,
+                            "children": [
+                              { "icon": "info", "size": 16, "color": "muted" },
+                              { "text": { "text": "Applied to the total item subtotal.", "color": "muted", "size": "sm" } }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            { "button": { "label": "SAVE TAX SETTINGS", "icon": "save" }, "variant": "primary", "fullWidth": true }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Theme Settings Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            {
+              "row": {
+                "gap": 8,
+                "children": [
+                  { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                  { "text": { "text": "App Theme Settings", "bold": true, "size": "md" } }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 6,
+                      "children": [
+                        { "switch": { "label": "High Contrast Theme", "on": false } },
+                        { "text": { "text": "Increase contrast and font size for better visibility.", "color": "muted", "size": "sm" } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Splash Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 32,
+          "align": "center",
+          "children": [
+            { "image": { "width": 80, "height": 80 } },
+            { "heading": { "text": "MYREKOD", "level": 1, "align": "center" } },
+            { "text": { "text": "Simplified financial tracking for your business.", "align": "center" } },
+            {
+              "card": {
+                "padding": 20,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "children": [
+                        { "label": "TODAY'S SALES" },
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              { "text": { "text": "RM 2,450.00", "size": "xl", "bold": true } },
+                              { "badge": "↗ 12%" }
+                            ]
+                          }
+                        },
+                        { "skeleton": { "width": 180, "height": 10 } },
+                        { "skeleton": { "width": 120, "height": 10 } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            { "button": "Get Started  →", "variant": "primary", "fullWidth": true },
+            { "text": { "text": "Join 5,000+ hawkers managing sales daily.", "color": "muted", "size": "sm", "align": "center" } }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Onboarding - Entity Type",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            { "stepper": { "stepCount": 5, "activeStep": 1 } },
+            { "heading": { "text": "Business Entity Type", "level": 1 } },
+            { "text": { "text": "Select your registration status to customize tax compliance settings.", "color": "muted" } },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  {
+                    "checkboxCard": {
+                      "label": "Sole Trader / Individual\nSimple tax filing under personal income.",
+                      "checked": true
+                    }
+                  },
+                  {
+                    "checkboxCard": {
+                      "label": "Registered SME / Company\nRequired BRN and corporate LHDN filing.",
+                      "checked": false
+                    }
+                  }
+                ]
+              }
+            },
+            { "button": "Next Step  →", "variant": "primary", "fullWidth": true }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Onboarding - Business Details",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            { "stepper": { "stepCount": 5, "activeStep": 2 } },
+            { "heading": { "text": "Business Identity", "level": 1 } },
+            { "text": { "text": "Enter your official registration data for e-Invoice signing.", "color": "muted" } },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "LEGAL BUSINESS NAME" },
+                        { "input": { "placeholder": "e.g. Oscar Kitchen Enterprise" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "TAX IDENTIFICATION NUMBER (TIN)" },
+                        { "input": { "placeholder": "e.g. SG1234567890" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "BUSINESS REGISTRATION NUMBER (BRN)" },
+                        { "input": { "placeholder": "e.g. 202601023456" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "MSIC INDUSTRY CODE" },
+                        { "dropdown": { "label": "Select MSIC", "options": ["56101 - Restaurants", "47111 - Provision Shops", "56102 - Food Stalls"] } }
+                      ]
+                    }
+                  },
+                  { "switch": { "label": "SST Registered?", "on": false } }
+                ]
+              }
+            },
+            {
+              "actions": [
+                { "button": "Back", "variant": "secondary" },
+                { "button": "Next  →", "variant": "primary" }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Onboarding - Contact Details",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            { "stepper": { "stepCount": 5, "activeStep": 3 } },
+            { "heading": { "text": "Contact & Financials", "level": 1 } },
+            { "text": { "text": "Contact info will appear on your e-Invoices as seller details.", "color": "muted" } },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "PHONE NUMBER" },
+                        { "input": { "placeholder": "+6012-3456789" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "EMAIL ADDRESS" },
+                        { "input": { "placeholder": "seller@business.com", "type": "email" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "SELLER BANK ACCOUNT NUMBER" },
+                        { "input": { "placeholder": "e.g. Maybank 1640..." } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "actions": [
+                { "button": "Back", "variant": "secondary" },
+                { "button": "Next  →", "variant": "primary" }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Onboarding - Address",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            { "stepper": { "stepCount": 5, "activeStep": 4 } },
+            { "heading": { "text": "Business Location", "level": 1 } },
+            { "text": { "text": "Your registered business street address.", "color": "muted" } },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "ADDRESS LINE 1" },
+                        { "input": { "placeholder": "Lot/House No., Street Name" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "ADDRESS LINE 2 (OPTIONAL)" },
+                        { "input": { "placeholder": "Building, Floor" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "ADDRESS LINE 3 (OPTIONAL)" },
+                        { "input": { "placeholder": "Area, Landmark" } }
+                      ]
+                    }
+                  },
+                  {
+                    "row": {
+                      "gap": 16,
+                      "children": [
+                        {
+                          "stack": {
+                            "gap": 8,
+                            "children": [
+                              { "label": "CITY" },
+                              { "input": { "placeholder": "Kuala Lumpur" } }
+                            ]
+                          }
+                        },
+                        {
+                          "stack": {
+                            "gap": 8,
+                            "children": [
+                              { "label": "POSTAL CODE" },
+                              { "input": { "placeholder": "50000" } }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "STATE" },
+                        { "dropdown": { "label": "Select State", "options": ["Kuala Lumpur", "Selangor", "Johor", "Penang"] } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "actions": [
+                { "button": "Back", "variant": "secondary" },
+                { "button": "Next  →", "variant": "primary" }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Onboarding - Review",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            { "stepper": { "stepCount": 5, "activeStep": 5 } },
+            { "heading": { "text": "Review Details", "level": 1 } },
+            { "text": { "text": "Verify your identity profile before creating the vault database.", "color": "muted" } },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "children": [
+                        { "label": "BUSINESS DETAILS" },
+                        { "keyValueList": [
+                          { "key": "Name", "value": "Oscar Kitchen" },
+                          { "key": "Entity", "value": "Sole Trader" },
+                          { "key": "TIN", "value": "SG1234567890" },
+                          { "key": "BRN", "value": "202601023456" }
+                        ]}
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "children": [
+                        { "label": "CONTACT & ADDRESS" },
+                        { "keyValueList": [
+                          { "key": "Phone", "value": "+6012-3456789" },
+                          { "key": "Address", "value": "Lot 10, Jalan Ampang, KL" }
+                        ]}
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "callout": {
+                "text": "LHDN e-Invoicing requirements are locked and secure.",
+                "variant": "success"
+              }
+            },
+            {
+              "actions": [
+                { "button": "Back", "variant": "secondary" },
+                { "button": "Submit  →", "variant": "primary" }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Expense Detail Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            {
+              "row": {
+                "justify": "space-between",
+                "children": [
+                  {
+                    "row": {
+                      "gap": 8,
+                      "children": [
+                        { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                        { "text": { "text": "Expense Details", "bold": true, "size": "md" } }
+                      ]
+                    }
+                  },
+                  {
+                    "row": {
+                      "gap": 8,
+                      "children": [
+                        { "button": { "icon": "share" }, "variant": "outline", "size": "sm" },
+                        { "button": { "icon": "trash" }, "variant": "outline", "size": "sm" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 24,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "align": "center",
+                      "children": [
+                        { "label": "TOTAL AMOUNT" },
+                        { "text": { "text": "RM 120.00", "size": "2xl", "bold": true } },
+                        { "badge": "Raw Materials" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 12,
+                "children": [
+                  { "label": "TRANSACTION INFORMATION" },
+                  { "keyValueList": [
+                    { "key": "Date", "value": "20 May 2026" },
+                    { "key": "Time", "value": "11:20 AM" },
+                    { "key": "Merchant", "value": "Supplier ABC" },
+                    { "key": "Notes", "value": "Purchased food stocks." }
+                  ]}
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              { "label": "RECEIPT ATTACHMENT" },
+                              { "link": "Replace" }
+                            ]
+                          }
+                        },
+                        { "image": { "height": 180 } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            { "button": { "label": "Export to CSV", "icon": "download" }, "variant": "primary", "fullWidth": true }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Record Expense Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            {
+              "row": {
+                "gap": 8,
+                "children": [
+                  { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                  { "text": { "text": "Record Expense", "bold": true, "size": "md" } }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "align": "center",
+                      "children": [
+                        { "icon": "camera", "size": 32, "color": "primary" },
+                        { "text": { "text": "Receipt Uploaded", "bold": true } },
+                        {
+                          "row": {
+                            "gap": 12,
+                            "children": [
+                              { "button": "Change", "size": "sm", "variant": "outline" },
+                              { "button": "Remove", "size": "sm", "variant": "outline" }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "MERCHANT / VENDOR" },
+                        { "input": { "placeholder": "e.g. Supplier ABC" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "AMOUNT (RM)" },
+                        { "input": { "placeholder": "0.00" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "DATE" },
+                        { "input": { "placeholder": "2026-05-20" } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "CATEGORY" },
+                        { "dropdown": { "label": "Select Category", "options": ["Raw Materials", "Rent", "Utilities", "Logistics"] } }
+                      ]
+                    }
+                  },
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "NOTES (OPTIONAL)" },
+                        { "textarea": "Add extra details..." }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            { "button": { "label": "Save Expense", "icon": "save" }, "variant": "primary", "fullWidth": true }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Scanner Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 32,
+          "align": "center",
+          "children": [
+            {
+              "row": {
+                "justify": "space-between",
+                "children": [
+                  { "button": { "icon": "close" }, "variant": "outline", "size": "sm" },
+                  { "text": { "text": "Scan Receipt", "bold": true, "size": "md" } },
+                  { "button": { "icon": "image" }, "variant": "outline", "size": "sm" }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 40,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 20,
+                      "align": "center",
+                      "children": [
+                        { "icon": "maximize", "size": 160 },
+                        { "text": { "text": "Align receipt within viewfinder", "color": "muted", "size": "sm" } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            { "button": { "icon": "circle" }, "variant": "primary" },
+            { "link": "Enter Details Manually" }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Add Edit Customer Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 20,
+          "children": [
+            {
+              "row": {
+                "gap": 8,
+                "children": [
+                  { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                  { "text": { "text": "Add New Customer", "bold": true, "size": "md" } }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 8,
+                "children": [
+                  { "label": "CUSTOMER TYPE" },
+                  { "tabs": ["Individual", "Business"] }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 12,
+                "children": [
+                  { "input": { "placeholder": "Legal Business Name" } },
+                  {
+                    "row": {
+                      "gap": 12,
+                      "children": [
+                        { "dropdown": { "label": "Scheme", "options": ["BRN", "NRIC", "Passport"] } },
+                        { "input": { "placeholder": "ID Number" } }
+                      ]
+                    }
+                  },
+                  { "input": { "placeholder": "Phone Number" } },
+                  { "input": { "placeholder": "Email Address" } },
+                  { "input": { "placeholder": "TIN Number (Tax ID)" } },
+                  { "input": { "placeholder": "SST Number" } },
+                  { "input": { "placeholder": "Address Line 1" } },
+                  { "input": { "placeholder": "City" } },
+                  { "input": { "placeholder": "Postal Code" } },
+                  { "dropdown": { "label": "State", "options": ["Kuala Lumpur", "Selangor", "Johor"] } }
+                ]
+              }
+            },
+            { "button": { "label": "Save Customer", "icon": "save" }, "variant": "primary", "fullWidth": true }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Customer List Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 20,
+          "children": [
+            { "heading": { "text": "Customers", "level": 1 } },
+            { "searchInput": "Search name or business..." },
+            {
+              "card": {
+                "padding": 12,
+                "children": [
+                  {
+                    "row": {
+                      "justify": "space-between",
+                      "children": [
+                        {
+                          "row": {
+                            "gap": 12,
+                            "children": [
+                              { "avatar": 40 },
+                              {
+                                "stack": {
+                                  "gap": 4,
+                                  "children": [
+                                    { "text": { "text": "Ahmad Ibrahim", "bold": true } },
+                                    { "badge": "Individual" }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        { "icon": "chevron-right" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 12,
+                "children": [
+                  {
+                    "row": {
+                      "justify": "space-between",
+                      "children": [
+                        {
+                          "row": {
+                            "gap": 12,
+                            "children": [
+                              { "avatar": 40 },
+                              {
+                                "stack": {
+                                  "gap": 4,
+                                  "children": [
+                                    { "text": { "text": "Syarikat ABC Sdn Bhd", "bold": true } },
+                                    { "badge": "Business" }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        { "icon": "chevron-right" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "justify": "end",
+                "children": [
+                  { "button": { "icon": "plus" }, "variant": "primary" }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Record Sale Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 20,
+          "children": [
+            {
+              "row": {
+                "gap": 8,
+                "children": [
+                  { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                  { "text": { "text": "Record Sale", "bold": true, "size": "md" } }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "children": [
+                        { "label": "CUSTOMER TYPE" },
+                        { "tabs": ["Walk-In", "Contact List"] },
+                        { "text": { "text": "Customer Name: General Public", "bold": true } },
+                        { "text": { "text": "TIN: EI00000000010 (Walk-In Default)", "color": "muted" } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "children": [
+                        { "label": "ITEM DETAILS" },
+                        { "dropdown": { "label": "Select Item", "options": ["Nasi Lemak Ayam", "Teh Tarik", "Roti Canai"] } },
+                        {
+                          "row": {
+                            "gap": 12,
+                            "children": [
+                              { "input": { "placeholder": "Qty (e.g. 2)" } },
+                              { "input": { "placeholder": "Price (e.g. 12.50)" } }
+                            ]
+                          }
+                        },
+                        { "button": "Add Another Item", "variant": "outline", "size": "sm" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "children": [
+                        { "label": "ADDITIONAL DETAILS (OPTIONAL)" },
+                        { "switch": { "label": "Enable Discounts & Charges", "on": false } },
+                        { "switch": { "label": "Enable Payment Info", "on": false } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "row": {
+                      "justify": "space-between",
+                      "children": [
+                        {
+                          "stack": {
+                            "gap": 4,
+                            "children": [
+                              { "label": "TOTAL PAYABLE" },
+                              { "text": { "text": "RM 25.00", "size": "lg", "bold": true } }
+                            ]
+                          }
+                        },
+                        { "button": "Review Sale", "variant": "primary" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Sale Detail Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            {
+              "row": {
+                "justify": "space-between",
+                "children": [
+                  {
+                    "row": {
+                      "gap": 8,
+                      "children": [
+                        { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                        { "text": { "text": "Invoice Details", "bold": true, "size": "md" } }
+                      ]
+                    }
+                  },
+                  {
+                    "row": {
+                      "gap": 8,
+                      "children": [
+                        { "button": { "icon": "share" }, "variant": "outline", "size": "sm" },
+                        { "button": { "icon": "code" }, "variant": "outline", "size": "sm" },
+                        { "button": { "icon": "trash" }, "variant": "outline", "size": "sm" }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 20,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "align": "center",
+                      "children": [
+                        { "badge": "INV-20260520-001" },
+                        { "text": { "text": "RM 25.00", "size": "2xl", "bold": true } },
+                        {
+                          "row": {
+                            "gap": 8,
+                            "children": [
+                              { "badge": "LHDN Pending" },
+                              { "badge": "Commercial Paid" }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            { "button": "Confirm & Submit e-Invoice to LHDN", "variant": "primary", "fullWidth": true },
+            {
+              "stack": {
+                "gap": 12,
+                "children": [
+                  { "label": "TRANSACTION INFO" },
+                  { "keyValueList": [
+                    { "key": "Date", "value": "20 May 2026, 11:20 AM" },
+                    { "key": "Customer", "value": "General Public" },
+                    { "key": "Payment Method", "value": "Cash" }
+                  ]}
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 12,
+                "children": [
+                  { "label": "ITEM BREAKDOWN" },
+                  { "keyValueList": [
+                    { "key": "Nasi Lemak Ayam (x2)", "value": "RM 25.00" }
+                  ]}
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Consolidation Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 20,
+          "children": [
+            {
+              "row": {
+                "justify": "space-between",
+                "children": [
+                  { "heading": { "text": "Consolidation", "level": 1 } },
+                  { "link": "Select All" }
+                ]
+              }
+            },
+            { "tabs": ["Pending", "History"] },
+            {
+              "stack": {
+                "gap": 12,
+                "children": [
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              { "checkbox": { "label": "INV-001\nRM 25.00 • General Public", "checked": true } },
+                              { "text": { "text": "RM 25.00", "bold": true } }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              { "checkbox": { "label": "INV-002\nRM 15.00 • General Public", "checked": true } },
+                              { "text": { "text": "RM 15.00", "bold": true } }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              { "text": { "text": "2 Selected", "bold": true } },
+                              { "text": { "text": "Total: RM 40.00", "bold": true, "color": "primary" } }
+                            ]
+                          }
+                        },
+                        { "button": "Submit Consolidated E-Invoice", "variant": "primary", "fullWidth": true }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Dashboard Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 24,
+          "children": [
+            {
+              "row": {
+                "justify": "space-between",
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 4,
+                      "children": [
+                        { "text": { "text": "Welcome back,", "color": "muted", "size": "sm" } },
+                        { "heading": { "text": "Oscar's Kitchen", "level": 2 } }
+                      ]
+                    }
+                  },
+                  { "avatar": 40 }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 20,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "align": "center",
+                      "children": [
+                        { "progress": { "value": 78, "label": "Credit Score: 780 (Excellent)" } },
+                        { "text": { "text": "Your business is highly investable", "color": "muted", "size": "sm" } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "gap": 12,
+                "children": [
+                  { "button": { "label": "Record Sale", "icon": "plus" }, "variant": "secondary", "fullWidth": true },
+                  { "button": { "label": "Record Expense", "icon": "camera" }, "variant": "secondary", "fullWidth": true },
+                  { "button": { "label": "Report", "icon": "file" }, "variant": "primary", "fullWidth": true }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 20,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "NET PROFIT (MAY 2026)" },
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              { "text": { "text": "RM 12,450.00", "size": "xl", "bold": true } },
+                              { "badge": "↗ 12% vs Apr" }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 20,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 16,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              { "label": "CASH FLOW OVERVIEW" },
+                              { "link": "View Details" }
+                            ]
+                          }
+                        },
+                        { "progress": { "value": 100, "label": "Sales: RM 15,200" } },
+                        { "progress": { "value": 24, "label": "Expenses: RM 3,650" } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "justify": "space-around",
+                "children": [
+                  { "button": { "icon": "home" }, "variant": "outline", "size": "sm" },
+                  { "button": { "icon": "list" }, "variant": "outline", "size": "sm" },
+                  { "button": { "icon": "plus" }, "variant": "primary", "size": "sm" },
+                  { "button": { "icon": "users" }, "variant": "outline", "size": "sm" },
+                  { "button": { "icon": "user" }, "variant": "outline", "size": "sm" }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Transactions Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 16,
+          "children": [
+            {
+              "row": {
+                "justify": "space-between",
+                "children": [
+                  { "heading": { "text": "Transactions", "level": 1 } },
+                  { "button": { "icon": "download" }, "variant": "outline", "size": "sm" }
+                ]
+              }
+            },
+            { "tabs": ["Expenses", "Sales"] },
+            {
+              "card": {
+                "padding": 20,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 8,
+                      "children": [
+                        { "label": "TOTAL EXPENSES (MAY 2026)" },
+                        { "text": { "text": "RM 3,650.00", "size": "xl", "bold": true } },
+                        {
+                          "row": {
+                            "gap": 6,
+                            "children": [
+                              { "badge": "14 Tx" },
+                              { "badge": "Raw Materials: 8" },
+                              { "badge": "Rent: 1" }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "gap": 12,
+                "children": [
+                  { "searchInput": "Search vendor or category..." },
+                  { "button": { "icon": "calendar" }, "variant": "outline", "size": "md" }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 12,
+                "children": [
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              {
+                                "stack": {
+                                  "gap": 4,
+                                  "children": [
+                                    { "text": { "text": "Supplier ABC", "bold": true } },
+                                    { "text": { "text": "20 May 2026 • Raw Materials", "color": "muted", "size": "xs" } }
+                                  ]
+                                }
+                              },
+                              { "text": { "text": "-RM 120.00", "bold": true } }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              {
+                                "stack": {
+                                  "gap": 4,
+                                  "children": [
+                                    { "text": { "text": "Tenaga Nasional", "bold": true } },
+                                    { "text": { "text": "18 May 2026 • Utilities", "color": "muted", "size": "xs" } }
+                                  ]
+                                }
+                              },
+                              { "text": { "text": "-RM 350.00", "bold": true } }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "screen": "Cashflow Analysis Screen",
+    "width": 390,
+    "height": 844,
+    "padding": 24,
+    "style": "flat",
+    "children": [
+      {
+        "stack": {
+          "gap": 20,
+          "children": [
+            {
+              "row": {
+                "gap": 8,
+                "children": [
+                  { "button": { "icon": "arrow-left" }, "variant": "outline", "size": "sm" },
+                  { "text": { "text": "Cash Flow Analysis", "bold": true, "size": "md" } }
+                ]
+              }
+            },
+            { "tabs": ["Daily", "Weekly", "Monthly"] },
+            {
+              "row": {
+                "gap": 12,
+                "children": [
+                  { "dropdown": { "label": "Month", "options": ["Jan", "Feb", "Mar", "Apr", "May"] } },
+                  { "dropdown": { "label": "Year", "options": ["2026", "2025", "2024"] } }
+                ]
+              }
+            },
+            {
+              "row": {
+                "gap": 12,
+                "children": [
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "stack": {
+                            "gap": 4,
+                            "children": [
+                              { "text": { "text": "Total Sales", "size": "sm", "color": "muted" } },
+                              { "text": { "text": "RM 15,200", "bold": true } }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "stack": {
+                            "gap": 4,
+                            "children": [
+                              { "text": { "text": "Total Expenses", "size": "sm", "color": "muted" } },
+                              { "text": { "text": "RM 3,650", "bold": true } }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "card": {
+                "padding": 16,
+                "children": [
+                  {
+                    "stack": {
+                      "gap": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "gap": 12,
+                            "children": [
+                              { "badge": "Sales (Green)" },
+                              { "badge": "Expenses (Red)" }
+                            ]
+                          }
+                        },
+                        { "chart": { "type": "line", "height": 180 } }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "stack": {
+                "gap": 12,
+                "children": [
+                  { "label": "PERIOD BREAKDOWN" },
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              { "text": "Week 1 Sales" },
+                              { "text": { "text": "+RM 4,200.00", "bold": true } }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "card": {
+                      "padding": 12,
+                      "children": [
+                        {
+                          "row": {
+                            "justify": "space-between",
+                            "children": [
+                              { "text": "Week 1 Expenses" },
+                              { "text": { "text": "-RM 1,100.00", "bold": true } }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+]
