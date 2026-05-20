@@ -35,7 +35,13 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Customers'),
+        title: Text(
+          'Customers',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
         actions: [
           if (widget.isPickerMode)
             IconButton(

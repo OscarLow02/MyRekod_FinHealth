@@ -66,7 +66,13 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(titleTransactions),
+        title: Text(
+          titleTransactions,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [

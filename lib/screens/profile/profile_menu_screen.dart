@@ -74,6 +74,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
     final tinDisplay = _profile?.tinNumber ?? '—';
 
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,75 +82,65 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
           const SizedBox(height: 40),
 
           // ── Section Title ──
-          Text('Profile', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 24),
-
-          // ── User Header Card ──
-          _buildHeaderCard(theme, displayName, tinDisplay),
-          const SizedBox(height: 24),
-
-          // ── Navigation Menu Tiles ──
-          _buildMenuTile(
-            theme,
-            icon: Icons.business_center_outlined,
-            title: 'Business Profile',
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const BusinessProfileScreen(),
-                ),
-              );
-              _loadProfile();
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildMenuTile(
-            theme,
-            icon: Icons.inventory_2_outlined,
-            title: 'Item Settings',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ItemSettingsScreen()),
+          Text(
+            'Profile',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: 12),
-          _buildMenuTile(
-            theme,
-            icon: Icons.account_balance_outlined,
-            title: 'Tax Settings',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const TaxSettingsScreen()),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _buildMenuTile(
-            theme,
-            icon: Icons.settings_rounded,
-            title: 'App Theme Settings',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ThemeSettingsScreen()),
-            ),
-          ),
+          const SizedBox(height: 28),
 
+          // ── Avatar + Name (Floating Style) ──
+          _buildAvatarSection(theme, displayName, tinDisplay),
           const SizedBox(height: 32),
 
-          // ── Log Out Button ──
-          SizedBox(
-            width: double.infinity,
-            height: AppTheme.minTouchTarget + 8,
-            child: OutlinedButton.icon(
-              onPressed: _handleLogout,
-              icon: const Icon(Icons.logout_rounded),
-              label: const Text('Log Out'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.redAccent,
-                side: const BorderSide(color: Colors.redAccent, width: 1.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                ),
+          // ── Section 1: Business Settings ──
+          _buildMenuSection(theme, items: [
+            _MenuItem(
+              icon: Icons.business_center_outlined,
+              title: 'Business Profile',
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const BusinessProfileScreen(),
+                  ),
+                );
+                _loadProfile();
+              },
+            ),
+            _MenuItem(
+              icon: Icons.inventory_2_outlined,
+              title: 'Item Settings',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ItemSettingsScreen()),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+          ]),
+          const SizedBox(height: 16),
+
+          // ── Section 2: App Settings ──
+          _buildMenuSection(theme, items: [
+            _MenuItem(
+              icon: Icons.account_balance_outlined,
+              title: 'Tax Settings',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TaxSettingsScreen()),
+              ),
+            ),
+            _MenuItem(
+              icon: Icons.palette_outlined,
+              title: 'App Theme Settings',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ThemeSettingsScreen()),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 16),
+
+          // ── Section 3: Log Out (standalone) ──
+          _buildLogoutCard(theme),
+          const SizedBox(height: 20),
 
           // ── Version Footer ──
           Center(
@@ -164,57 +155,125 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 100), // Bottom padding for nav bar clearance
         ],
       ),
     );
   }
 
-  // ── User Header Card ──
-  Widget _buildHeaderCard(
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Avatar + Name Section (floating style, no card wrapper)
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildAvatarSection(
     ThemeData theme,
     String displayName,
     String tinDisplay,
   ) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-      ),
+    return Center(
       child: Column(
         children: [
-          // Avatar
-          CircleAvatar(
-            radius: 36,
-            backgroundColor: AppTheme.primary.withValues(alpha: 0.2),
-            backgroundImage: _profile?.imageUrl != null
-                ? NetworkImage(_profile!.imageUrl!)
-                : null,
-            child: _profile?.imageUrl == null
-                ? Icon(
-                    Icons.person_rounded,
-                    size: 36,
-                    color: AppTheme.primary.withValues(alpha: 0.8),
-                  )
-                : null,
+          // ── Avatar with Edit Badge ──
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Purple outer ring
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primary.withValues(alpha: 0.6),
+                      AppTheme.primaryContainer.withValues(alpha: 0.3),
+                    ],
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 52,
+                  backgroundColor:
+                      theme.colorScheme.surfaceContainerHighest,
+                  backgroundImage: _profile?.imageUrl != null
+                      ? NetworkImage(_profile!.imageUrl!)
+                      : null,
+                  child: _profile?.imageUrl == null
+                      ? Icon(
+                          Icons.person_rounded,
+                          size: 48,
+                          color: AppTheme.primary.withValues(alpha: 0.6),
+                        )
+                      : null,
+                ),
+              ),
+              // Edit badge
+              Positioned(
+                bottom: 2,
+                right: 2,
+                child: GestureDetector(
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const BusinessProfileScreen(),
+                      ),
+                    );
+                    _loadProfile();
+                  },
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: theme.scaffoldBackgroundColor,
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primary.withValues(alpha: 0.4),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.edit_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           // Business Name
           Text(
             displayName,
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),
-          // TIN
-          Text(
-            'TIN: $tinDisplay',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          // TIN chip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppTheme.primary.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Text(
+              'TIN: $tinDisplay',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],
@@ -222,27 +281,46 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
     );
   }
 
-  // ── Single menu navigation tile ──
-  Widget _buildMenuTile(
-    ThemeData theme, {
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    required VoidCallback onTap,
-  }) {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Grouped Menu Section (card with dividers between items)
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildMenuSection(ThemeData theme, {required List<_MenuItem> items}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.04),
+        ),
+      ),
+      child: Column(
+        children: [
+          for (int i = 0; i < items.length; i++) ...[
+            _buildMenuRow(theme, items[i]),
+            if (i < items.length - 1)
+              Divider(
+                height: 1,
+                indent: 68, // Aligns with text start (16 + 40 icon + 12 gap)
+                endIndent: 16,
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuRow(ThemeData theme, _MenuItem item) {
     return Material(
-      color: theme.colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        child: Container(
-          constraints: const BoxConstraints(
-            minHeight: AppTheme.minTouchTarget + 8,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        onTap: item.onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
             children: [
+              // Icon container
               Container(
                 width: 40,
                 height: 40,
@@ -250,31 +328,23 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
                   color: AppTheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                 ),
-                child: Icon(icon, color: AppTheme.primary, size: 22),
+                child: Icon(item.icon, color: AppTheme.primary, size: 22),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
+              // Title
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: theme.textTheme.titleMedium),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontSize: 14,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ],
+                child: Text(
+                  item.title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
+              // Chevron
               Icon(
                 Icons.chevron_right_rounded,
-                color: theme.colorScheme.onSurfaceVariant,
-                size: 24,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                size: 22,
               ),
             ],
           ),
@@ -282,4 +352,77 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
       ),
     );
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Logout Card (standalone, red accent)
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildLogoutCard(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(
+          color: Colors.redAccent.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _handleLogout,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
+              children: [
+                // Red icon container
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.12),
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusSmall),
+                  ),
+                  child: const Icon(
+                    Icons.logout_rounded,
+                    color: Colors.redAccent,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Title
+                Expanded(
+                  child: Text(
+                    'Log Out',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.redAccent.withValues(alpha: 0.5),
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Internal model for a menu item.
+class _MenuItem {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _MenuItem({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
 }

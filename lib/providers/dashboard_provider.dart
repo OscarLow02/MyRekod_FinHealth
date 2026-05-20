@@ -22,6 +22,10 @@ class DashboardProvider with ChangeNotifier {
   int _monthlyExpenseCount = 0;
   bool _isLoading = false;
 
+  // ── Month-over-Month Trend State ────────────────────────────────────────
+  double _lastMonthNetProfit = 0.0;
+  bool _hasLastMonthData = false;
+
   // Stored records for historical analysis
   List<SaleRecord> _allSales = [];
   List<ExpenseRecord> _allExpenses = [];
@@ -46,6 +50,31 @@ class DashboardProvider with ChangeNotifier {
   /// True when there is no data to display (for zero-state UI).
   bool get hasNoData =>
       _totalMonthlySales == 0.0 && _totalMonthlyExpenses == 0.0;
+
+  // ── Month-over-Month Trend Getters ──────────────────────────────────────
+
+  /// Whether we have last month's data to compare against.
+  bool get hasLastMonthData => _hasLastMonthData;
+
+  /// The month-over-month percentage change in net profit.
+  /// Returns `null` when last month had no data (so the UI can show 'New!').
+  /// Positive = improvement, negative = decline.
+  double? get monthOverMonthPercent {
+    if (!_hasLastMonthData) return null;
+    if (_lastMonthNetProfit == 0.0) {
+      // Went from zero to something – treat as infinite growth; cap at 100%.
+      return netProfit > 0 ? 100.0 : (netProfit < 0 ? -100.0 : 0.0);
+    }
+    return ((netProfit - _lastMonthNetProfit) / _lastMonthNetProfit.abs()) * 100;
+  }
+
+  /// Convenience: is the trend positive, negative, or flat?
+  /// Returns 1 for up, -1 for down, 0 for flat/no data.
+  int get trendDirection {
+    final pct = monthOverMonthPercent;
+    if (pct == null || pct == 0.0) return 0;
+    return pct > 0 ? 1 : -1;
+  }
 
   // ── Credit Readiness Score ────────────────────────────────────────────────
   int _creditScore = 300;
@@ -113,12 +142,21 @@ class DashboardProvider with ChangeNotifier {
       final startOfMonth = DateTime(now.year, now.month, 1);
       final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
 
-      // ── Query Sales ────────────────────────────────────────────────────────
-      final sales = await _firestoreService.getSaleRecordsInDateRange(
-        userId,
-        startOfMonth,
-        endOfMonth,
-      );
+      // ── Last Month date range (for MoM trend) ──────────────────────────────
+      final lastMonthEnd = startOfMonth.subtract(const Duration(seconds: 1));
+      final startOfLastMonth = DateTime(lastMonthEnd.year, lastMonthEnd.month, 1);
+
+      // ── Query Current Month & Last Month in parallel ───────────────────────
+      final results = await Future.wait([
+        _firestoreService.getSaleRecordsInDateRange(userId, startOfMonth, endOfMonth),
+        _firestoreService.getExpensesInDateRange(userId, startOfMonth, endOfMonth),
+        _firestoreService.getSaleRecordsInDateRange(userId, startOfLastMonth, lastMonthEnd),
+        _firestoreService.getExpensesInDateRange(userId, startOfLastMonth, lastMonthEnd),
+      ]);
+
+      // ── Current Month ──────────────────────────────────────────────────────
+      final sales = results[0] as List<SaleRecord>;
+      final expenses = results[1] as List<ExpenseRecord>;
 
       _allSales = sales;
       _totalMonthlySales = sales.fold(
@@ -127,19 +165,29 @@ class DashboardProvider with ChangeNotifier {
       );
       _monthlySaleCount = sales.length;
 
-      // ── Query Expenses ─────────────────────────────────────────────────────
-      final expenses = await _firestoreService.getExpensesInDateRange(
-        userId,
-        startOfMonth,
-        endOfMonth,
-      );
-
       _allExpenses = expenses;
       _totalMonthlyExpenses = expenses.fold(
         0.0,
         (sum, expense) => sum + expense.amount,
       );
       _monthlyExpenseCount = expenses.length;
+
+      // ── Last Month (for MoM comparison) ────────────────────────────────────
+      final lastMonthSales = results[2] as List<SaleRecord>;
+      final lastMonthExpenses = results[3] as List<ExpenseRecord>;
+
+      final lastMonthTotalSales = lastMonthSales.fold(
+        0.0,
+        (sum, sale) => sum + sale.totalPayable,
+      );
+      final lastMonthTotalExpenses = lastMonthExpenses.fold(
+        0.0,
+        (sum, expense) => sum + expense.amount,
+      );
+
+      _lastMonthNetProfit = lastMonthTotalSales - lastMonthTotalExpenses;
+      _hasLastMonthData =
+          lastMonthSales.isNotEmpty || lastMonthExpenses.isNotEmpty;
 
       // ── Compute Credit Readiness Score ─────────────────────────────────────
       final activeDays = _countActiveDays(sales, expenses);

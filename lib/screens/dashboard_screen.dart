@@ -135,24 +135,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               children: [
                                 Text(
                                   welcomeLabel,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                  style: theme.textTheme.titleMedium?.copyWith(
                                     color: isHighContrast
                                         ? theme.colorScheme.onSurface
                                         : theme.colorScheme.onPrimary.withValues(
-                                            alpha: 0.7,
+                                            alpha: 0.8,
                                           ),
                                     fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.2,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 Text(
                                   businessName,
-                                  style: theme.textTheme.headlineSmall
+                                  style: theme.textTheme.headlineMedium
                                       ?.copyWith(
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w800,
                                         color: isHighContrast
                                             ? theme.colorScheme.primary
                                             : theme.colorScheme.onPrimary,
+                                        letterSpacing: -0.3,
                                       ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -440,7 +442,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final isPositive = dashProv.netProfit >= 0;
     final profitParts = dashProv.netProfit.toStringAsFixed(2).split('.');
     const netProfitLabel = 'Net Profit (Current Month)';
-    const trendLabel = '↗ 12% vs last month'; // Mocked trend
+
+    // ── Dynamic MoM trend ───────────────────────────────────────────────────
+    final momPercent = dashProv.monthOverMonthPercent;
+    final trend = dashProv.trendDirection; // 1 = up, -1 = down, 0 = flat/new
+
+    final String trendLabel;
+    final Color trendColor;
+    final IconData trendIcon;
+
+    if (momPercent == null) {
+      // No last-month data at all → first month of usage
+      trendLabel = 'First month — keep going!';
+      trendColor = theme.colorScheme.secondary;
+      trendIcon = Icons.auto_awesome_rounded;
+    } else if (trend == 0) {
+      trendLabel = 'No change vs last month';
+      trendColor = theme.colorScheme.onSurfaceVariant;
+      trendIcon = Icons.trending_flat_rounded;
+    } else if (trend > 0) {
+      trendLabel = '↗ ${momPercent.abs().toStringAsFixed(1)}% vs last month';
+      trendColor = AppTheme.neonGreenDark;
+      trendIcon = Icons.trending_up_rounded;
+    } else {
+      trendLabel = '↘ ${momPercent.abs().toStringAsFixed(1)}% vs last month';
+      trendColor = theme.colorScheme.error;
+      trendIcon = Icons.trending_down_rounded;
+    }
 
     return Container(
       width: double.infinity,
@@ -465,7 +493,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: AppTheme.neonGreenDark.withValues(alpha: 0.08),
+                color: (isPositive
+                        ? AppTheme.neonGreenDark
+                        : theme.colorScheme.error)
+                    .withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
             ),
@@ -504,38 +535,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Trend pill chip
+              // Trend pill chip — now data-driven
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      (isPositive
-                              ? AppTheme.neonGreenDark
-                              : theme.colorScheme.error)
-                          .withValues(alpha: 0.15),
+                  color: trendColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Icon(
-                      Icons.trending_up_rounded,
-                      size: 16,
-                      color: isPositive
-                          ? AppTheme.neonGreenDark
-                          : theme.colorScheme.error,
-                    ),
+                    Icon(trendIcon, size: 16, color: trendColor),
                     const SizedBox(width: 6),
                     Text(
                       trendLabel,
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: isPositive
-                            ? AppTheme.neonGreenDark
-                            : theme.colorScheme.error,
+                        color: trendColor,
                       ),
                     ),
                   ],
