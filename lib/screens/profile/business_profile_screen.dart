@@ -674,22 +674,63 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                       const SizedBox(height: 32),
                       */
 
-                      // ── Deactivate Button ──
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: _deactivateAccount,
-                          icon: const Icon(Icons.warning_amber_rounded,
-                              size: 18),
-                          label: const Text(
-                            'DEACTIVATE BUSINESS ACCOUNT',
-                            style: TextStyle(
-                              letterSpacing: 0.5,
-                              fontWeight: FontWeight.w600,
-                            ),
+                      // ── Danger Zone (Collapsed by default) ──
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          border: Border.all(
+                            color: Colors.redAccent.withValues(alpha: 0.25),
                           ),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.redAccent,
-                            minimumSize: const Size(0, AppTheme.minTouchTarget),
+                        ),
+                        child: Theme(
+                          data: theme.copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                            childrenPadding: const EdgeInsets.only(bottom: 16),
+                            leading: Icon(
+                              Icons.warning_amber_rounded,
+                              size: 20,
+                              color: Colors.redAccent.withValues(alpha: 0.7),
+                            ),
+                            title: Text(
+                              'Danger Zone',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: Colors.redAccent.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'This action is permanent and cannot be undone. All your data will be deleted.',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: OutlinedButton.icon(
+                                        onPressed: _deactivateAccount,
+                                        icon: const Icon(Icons.delete_forever_rounded, size: 18),
+                                        label: const Text('DEACTIVATE BUSINESS ACCOUNT'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.redAccent,
+                                          side: const BorderSide(color: Colors.redAccent),
+                                          minimumSize: const Size(0, AppTheme.minTouchTarget),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -808,13 +849,26 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     );
   }
 
-  // ── Section title ──
+  // ── Section title with accent bar ──
   Widget _buildSectionTitle(ThemeData theme, String title) {
-    return Text(
-      title,
-      style: theme.textTheme.headlineSmall?.copyWith(
-        fontWeight: FontWeight.w700,
-      ),
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 24,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 

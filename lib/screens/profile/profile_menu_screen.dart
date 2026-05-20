@@ -93,7 +93,12 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
 
           // ── Avatar + Name (Floating Style) ──
           _buildAvatarSection(theme, displayName, tinDisplay, user?.email),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
+
+          // ── Profile Completion Indicator ──
+          if (_profile != null)
+            _buildProfileCompletionCard(theme),
+          const SizedBox(height: 28),
 
           // ── Section 1: Business Settings ──
           _buildSectionLabel(theme, 'BUSINESS'),
@@ -469,6 +474,101 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // ── Profile Completion Helpers ──
+
+  double _calculateProfileCompletion() {
+    if (_profile == null) return 0.0;
+    final p = _profile!;
+    final checks = [
+      p.businessName.isNotEmpty,
+      p.tinNumber.isNotEmpty,
+      p.brnNumber.isNotEmpty,
+      p.msicCode.isNotEmpty,
+      p.businessActivityDescription.isNotEmpty,
+      p.email.isNotEmpty,
+      p.phoneNumber.isNotEmpty,
+      p.addressLine1.isNotEmpty,
+      p.city.isNotEmpty,
+      p.stateCode.isNotEmpty,
+      p.postalCode.isNotEmpty,
+    ];
+    final filled = checks.where((c) => c).length;
+    return filled / checks.length;
+  }
+
+  Widget _buildProfileCompletionCard(ThemeData theme) {
+    final pct = _calculateProfileCompletion();
+    final pctInt = (pct * 100).round();
+    final isComplete = pctInt >= 100;
+
+    final barColor = isComplete
+        ? AppTheme.neonGreenDark
+        : (pctInt >= 70 ? Colors.amber : theme.colorScheme.primary);
+
+    final label = isComplete
+        ? 'Profile complete — LHDN ready!'
+        : '$pctInt% complete • fill in missing fields for LHDN compliance';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        border: Border.all(
+          color: barColor.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isComplete ? Icons.check_circle_rounded : Icons.pie_chart_rounded,
+                size: 18,
+                color: barColor,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Profile Completion',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '$pctInt%',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: barColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: pct,
+              minHeight: 6,
+              backgroundColor: barColor.withValues(alpha: 0.12),
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
