@@ -28,12 +28,23 @@ class _ItemSettingsScreenState extends State<ItemSettingsScreen> {
 
   // ── Item Catalog State (real-time via stream) ──
   List<SaleItem> _items = [];
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _userId = FirebaseAuth.instance.currentUser?.uid;
+    _searchCtrl.addListener(() {
+      setState(() => _searchQuery = _searchCtrl.text.toLowerCase());
+    });
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -216,11 +227,46 @@ class _ItemSettingsScreenState extends State<ItemSettingsScreen> {
                   ),
                   const SizedBox(height: 16),
 
+                  // ── Search bar (shown when > 5 items) ──
+                  if (_items.length > 5) ...[
+                    Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      ),
+                      child: TextField(
+                        controller: _searchCtrl,
+                        decoration: InputDecoration(
+                          hintText: 'Search items...',
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            size: 20,
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                          ),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.close_rounded, size: 18),
+                                  onPressed: () => _searchCtrl.clear(),
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
                   // ── Item List ──
                   if (_items.isEmpty)
                     _buildEmptyCatalog(theme)
                   else
-                    ..._items.map(
+                    ...(_searchQuery.isEmpty
+                        ? _items
+                        : _items.where((i) => i.name.toLowerCase().contains(_searchQuery))
+                    ).map(
                       (item) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _buildItemTile(theme, item),
@@ -281,8 +327,8 @@ class _ItemSettingsScreenState extends State<ItemSettingsScreen> {
               color: AppTheme.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
             ),
-            child: const Icon(
-              Icons.restaurant_rounded,
+            child: Icon(
+              _itemIcon(item.name),
               color: AppTheme.primary,
               size: 22,
             ),
@@ -460,7 +506,7 @@ class _ItemSettingsScreenState extends State<ItemSettingsScreen> {
               (cat) => ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(
-                  Icons.folder_outlined,
+                  _categoryIcon(cat),
                   color: theme.colorScheme.onSurface,
                 ),
                 title: Text(cat, style: theme.textTheme.bodyLarge),
@@ -523,5 +569,40 @@ class _ItemSettingsScreenState extends State<ItemSettingsScreen> {
         );
       },
     );
+  }
+
+  // ── Smart icon mapping for sale items ──
+  IconData _itemIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('rice') || lower.contains('nasi') || lower.contains('food') || lower.contains('meal') || lower.contains('chicken') || lower.contains('fish') || lower.contains('ayam')) return Icons.restaurant_rounded;
+    if (lower.contains('drink') || lower.contains('coffee') || lower.contains('tea') || lower.contains('juice') || lower.contains('kopi') || lower.contains('air') || lower.contains('beverage')) return Icons.local_cafe_rounded;
+    if (lower.contains('cake') || lower.contains('bread') || lower.contains('pastry') || lower.contains('kuih') || lower.contains('snack') || lower.contains('dessert')) return Icons.cake_rounded;
+    if (lower.contains('shirt') || lower.contains('cloth') || lower.contains('apparel') || lower.contains('baju') || lower.contains('fashion')) return Icons.checkroom_rounded;
+    if (lower.contains('phone') || lower.contains('laptop') || lower.contains('electronic') || lower.contains('gadget') || lower.contains('computer')) return Icons.devices_rounded;
+    if (lower.contains('service') || lower.contains('repair') || lower.contains('maintenance') || lower.contains('install')) return Icons.build_rounded;
+    if (lower.contains('consultation') || lower.contains('consult') || lower.contains('advisory')) return Icons.support_agent_rounded;
+    if (lower.contains('delivery') || lower.contains('shipping') || lower.contains('courier')) return Icons.local_shipping_rounded;
+    if (lower.contains('print') || lower.contains('design') || lower.contains('creative')) return Icons.brush_rounded;
+    if (lower.contains('clean') || lower.contains('laundry') || lower.contains('wash')) return Icons.cleaning_services_rounded;
+    return Icons.inventory_2_rounded;
+  }
+
+  // ── Smart icon mapping for expense categories ──
+  IconData _categoryIcon(String category) {
+    final lower = category.toLowerCase();
+    if (lower.contains('food') || lower.contains('meal') || lower.contains('dining')) return Icons.restaurant_rounded;
+    if (lower.contains('transport') || lower.contains('fuel') || lower.contains('petrol') || lower.contains('travel')) return Icons.directions_car_rounded;
+    if (lower.contains('utility') || lower.contains('electric') || lower.contains('water') || lower.contains('bill')) return Icons.electric_bolt_rounded;
+    if (lower.contains('rent') || lower.contains('office') || lower.contains('space')) return Icons.business_rounded;
+    if (lower.contains('salary') || lower.contains('wage') || lower.contains('staff')) return Icons.people_rounded;
+    if (lower.contains('supply') || lower.contains('supplies') || lower.contains('stationery')) return Icons.inventory_rounded;
+    if (lower.contains('marketing') || lower.contains('ads') || lower.contains('advertising')) return Icons.campaign_rounded;
+    if (lower.contains('internet') || lower.contains('phone') || lower.contains('telco')) return Icons.wifi_rounded;
+    if (lower.contains('maintenance') || lower.contains('repair')) return Icons.build_rounded;
+    if (lower.contains('insurance')) return Icons.shield_rounded;
+    if (lower.contains('tax') || lower.contains('license') || lower.contains('permit')) return Icons.gavel_rounded;
+    if (lower.contains('shipping') || lower.contains('delivery') || lower.contains('courier')) return Icons.local_shipping_rounded;
+    if (lower.contains('subscription') || lower.contains('software')) return Icons.subscriptions_rounded;
+    return Icons.receipt_long_rounded;
   }
 }
