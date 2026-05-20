@@ -510,7 +510,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     const String labelRounding = 'Rounding (5-sen)';
     const String labelTotalPayable = 'Total Payable';
     const String labelNotes = 'Notes';
-    const String labelExportCsv = 'Export to CSV';
     const String labelBusinessB2B = 'Business (B2B)';
     const String labelConsumerB2C = 'Consumer (B2C)';
     final String labelIndividualPayloadDisabled =
@@ -534,28 +533,72 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         ),
         actions: [
           Builder(
-            builder: (btnContext) => IconButton(
-              icon: const Icon(Icons.share_rounded, size: 22),
-              onPressed: () => _shareReceipt(btnContext),
-              tooltip: 'Share Receipt',
+            builder: (btnContext) => PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              onSelected: (value) {
+                switch (value) {
+                  case 'share':
+                    _shareReceipt(btnContext);
+                    break;
+                  case 'json':
+                    _showJsonPreview();
+                    break;
+                  case 'export':
+                    CsvExportService.exportSingleSaleToCSV(context, _currentSale);
+                    break;
+                  case 'delete':
+                    _deleteSale();
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'share',
+                  child: Row(
+                    children: [
+                      Icon(Icons.share_rounded, size: 20, color: theme.colorScheme.onSurface),
+                      const SizedBox(width: 12),
+                      const Text('Share Receipt'),
+                    ],
+                  ),
+                ),
+                if (_currentSale.consolidatedInvoiceRef == null && _currentSale.lastGeneratedPayload != null)
+                  PopupMenuItem(
+                    value: 'json',
+                    child: Row(
+                      children: [
+                        Icon(Icons.code_rounded, size: 20, color: theme.colorScheme.onSurface),
+                        const SizedBox(width: 12),
+                        const Text('View JSON'),
+                      ],
+                    ),
+                  ),
+                PopupMenuItem(
+                  value: 'export',
+                  child: Row(
+                    children: [
+                      Icon(Icons.download_rounded, size: 20, color: theme.colorScheme.onSurface),
+                      const SizedBox(width: 12),
+                      const Text('Export CSV'),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.redAccent),
+                      const SizedBox(width: 12),
+                      Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-          if (_currentSale.consolidatedInvoiceRef == null && _currentSale.lastGeneratedPayload != null)
-            IconButton(
-              icon: const Icon(Icons.code_rounded, size: 22),
-              onPressed: _showJsonPreview,
-              tooltip: 'View JSON',
-            ),
-          IconButton(
-            icon: const Icon(Icons.download_rounded, size: 22),
-            onPressed: () async => await CsvExportService.exportSingleSaleToCSV(context, _currentSale),
-            tooltip: 'Export CSV',
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded,
-                color: Colors.redAccent, size: 22),
-            onPressed: _deleteSale,
-            tooltip: 'Delete',
           ),
         ],
       ),
@@ -913,12 +956,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               const SizedBox(height: 24),
             ],
 
-            // ── Bottom Actions ────────────────────────────────────────
-            AppButton(
-              text: labelExportCsv,
-              icon: const Icon(Icons.download_rounded, size: 20),
-              onPressed: () async => await CsvExportService.exportSingleSaleToCSV(context, _currentSale),
-            ),
             const SizedBox(height: 32),
           ],
         ),

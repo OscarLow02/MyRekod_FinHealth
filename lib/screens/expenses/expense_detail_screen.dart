@@ -182,16 +182,57 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, size: 22),
-            onPressed: _editExpense,
-            tooltip: 'Edit',
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded,
-                color: Colors.redAccent, size: 22),
-            onPressed: _deleteExpense,
-            tooltip: 'Delete',
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            onSelected: (value) {
+              switch (value) {
+                case 'edit':
+                  _editExpense();
+                  break;
+                case 'export':
+                  _exportToCsv();
+                  break;
+                case 'delete':
+                  _deleteExpense();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: 20, color: theme.colorScheme.onSurface),
+                    const SizedBox(width: 12),
+                    const Text('Edit'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'export',
+                child: Row(
+                  children: [
+                    Icon(Icons.download_rounded, size: 20, color: theme.colorScheme.onSurface),
+                    const SizedBox(width: 12),
+                    const Text('Export CSV'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.redAccent),
+                    const SizedBox(width: 12),
+                    Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

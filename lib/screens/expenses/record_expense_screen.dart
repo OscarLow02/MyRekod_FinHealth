@@ -496,12 +496,10 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
               const SizedBox(height: 20),
 
               AppTextField(
-                label: 'Vendor Name',
+                label: 'Vendor Name (Optional)',
                 icon: Icons.storefront_rounded,
                 controller: _vendorController,
                 hintText: 'Enter vendor name',
-                validator: (val) =>
-                    val == null || val.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
 
