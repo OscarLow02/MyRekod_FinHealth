@@ -138,9 +138,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   style: theme.textTheme.titleMedium?.copyWith(
                                     color: isHighContrast
                                         ? theme.colorScheme.onSurface
-                                        : theme.colorScheme.onPrimary.withValues(
-                                            alpha: 0.8,
-                                          ),
+                                        : theme.colorScheme.onPrimary
+                                              .withValues(alpha: 0.8),
                                     fontWeight: FontWeight.w500,
                                     letterSpacing: 0.2,
                                   ),
@@ -173,20 +172,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     if (hasData) ...[
                       const SizedBox(height: 80),
                       Transform(
-                        transform: Matrix4.translationValues(0.0, -20.0, 0.0),
+                        transform: Matrix4.translationValues(0.0, -65.0, 0.0),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainer.withValues(
-                                alpha: 0.85,
-                              ),
+                              color: theme.colorScheme.surfaceContainer
+                                  .withValues(alpha: 0.85),
                               borderRadius: BorderRadius.circular(
                                 AppTheme.radiusXLarge,
                               ),
                               border: Border.all(
                                 color: isHighContrast
-                                    ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                                    ? theme.colorScheme.primary.withValues(
+                                        alpha: 0.3,
+                                      )
                                     : Colors.white.withValues(alpha: 0.05),
                                 width: isHighContrast ? 1.5 : 1.0,
                               ),
@@ -202,14 +202,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               children: [
                                 Stack(
                                   children: [
-                                    CreditScoreGauge(score: dashProv.creditScore),
+                                    CreditScoreGauge(
+                                      score: dashProv.creditScore,
+                                    ),
                                     Positioned(
                                       top: 8,
                                       right: 8,
                                       child: IconButton(
                                         icon: Icon(
                                           Icons.info_outline_rounded,
-                                          color: theme.colorScheme.onSurfaceVariant,
+                                          color: theme
+                                              .colorScheme
+                                              .onSurfaceVariant,
                                           size: 22,
                                         ),
                                         onPressed: () =>
@@ -230,7 +234,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Transform(
-                          transform: Matrix4.translationValues(0.0, -24.0, 0.0),
+                          transform: Matrix4.translationValues(0.0, -45.0, 0.0),
                           child: Row(
                             children: [
                               _buildQuickAction(
@@ -254,8 +258,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               _buildQuickAction(
                                 context,
                                 icon: Icons.document_scanner_outlined,
-                                label:
-                                    'Record\nExpense',
+                                label: 'Record\nExpense',
                                 color: Colors.orange,
                                 onTap: () {
                                   Navigator.push(
@@ -271,8 +274,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               _buildQuickAction(
                                 context,
                                 icon: Icons.description_outlined,
-                                label:
-                                    'Generate\nReport',
+                                label: 'Generate\nReport',
                                 color: Colors.white,
                                 isPrimary: true,
                                 isLoading: _isGeneratingPdf,
@@ -292,7 +294,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: _buildNetProfitCard(theme, dashProv),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 20),
 
                       // ── Section 5: Cash Flow Overview ─────────────────────
                       Padding(
@@ -499,10 +501,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: (isPositive
-                        ? AppTheme.neonGreenDark
-                        : theme.colorScheme.error)
-                    .withValues(alpha: 0.08),
+                color:
+                    (isPositive
+                            ? AppTheme.neonGreenDark
+                            : theme.colorScheme.error)
+                        .withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
             ),
@@ -544,7 +547,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Sales vs Expenses mini-row
               Row(
                 children: [
-                  Icon(Icons.arrow_downward_rounded, size: 14, color: AppTheme.neonGreenDark),
+                  Icon(
+                    Icons.arrow_downward_rounded,
+                    size: 14,
+                    color: AppTheme.neonGreenDark,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'RM ${_formatWithCommas(dashProv.totalMonthlySales.toStringAsFixed(0))}',
@@ -554,7 +561,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Icon(Icons.arrow_upward_rounded, size: 14, color: Colors.redAccent),
+                  Icon(
+                    Icons.arrow_upward_rounded,
+                    size: 14,
+                    color: Colors.redAccent,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'RM ${_formatWithCommas(dashProv.totalMonthlyExpenses.toStringAsFixed(0))}',
@@ -888,18 +899,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 14),
           _buildScoreBar(theme, 'Base Score', 300, 300, Colors.blueAccent),
           const SizedBox(height: 10),
-          _buildScoreBar(theme, 'Business Profile', profilePts, 100, Colors.purple),
+          _buildScoreBar(
+            theme,
+            'Business Profile',
+            profilePts,
+            100,
+            Colors.purple,
+          ),
           const SizedBox(height: 10),
-          _buildScoreBar(theme, 'Activity Consistency', activityPts, 300, Colors.orange),
+          _buildScoreBar(
+            theme,
+            'Activity Consistency',
+            activityPts,
+            300,
+            Colors.orange,
+          ),
           const SizedBox(height: 10),
-          _buildScoreBar(theme, 'Cashflow Health', cashflowPts, 300, AppTheme.neonGreenDark),
+          _buildScoreBar(
+            theme,
+            'Cashflow Health',
+            cashflowPts,
+            300,
+            AppTheme.neonGreenDark,
+          ),
         ],
       ),
     );
   }
 
   Widget _buildScoreBar(
-    ThemeData theme, String label, int pts, int maxPts, Color color,
+    ThemeData theme,
+    String label,
+    int pts,
+    int maxPts,
+    Color color,
   ) {
     final ratio = maxPts > 0 ? (pts / maxPts).clamp(0.0, 1.0) : 0.0;
     return Column(
@@ -963,7 +996,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── Profit Margin Badge ──────────────────────────────────────────────────
   Widget _buildProfitMarginBadge(
-    ThemeData theme, double totalSales, double totalExpenses,
+    ThemeData theme,
+    double totalSales,
+    double totalExpenses,
   ) {
     final netProfit = totalSales - totalExpenses;
     final margin = totalSales > 0 ? (netProfit / totalSales) * 100 : 0.0;
@@ -991,8 +1026,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             margin >= 20
                 ? Icons.trending_up_rounded
                 : margin >= 5
-                    ? Icons.trending_flat_rounded
-                    : Icons.trending_down_rounded,
+                ? Icons.trending_flat_rounded
+                : Icons.trending_down_rounded,
             size: 18,
             color: badgeColor,
           ),
@@ -1041,7 +1076,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               decoration: BoxDecoration(
                 color: isHighContrast
                     ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.92)
-                    : theme.colorScheme.surfaceContainer.withValues(alpha: 0.25),
+                    : theme.colorScheme.surfaceContainer.withValues(
+                        alpha: 0.25,
+                      ),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
                   color: isHighContrast
