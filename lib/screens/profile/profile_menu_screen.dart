@@ -78,7 +78,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
+          const SizedBox(height: 40),
 
           // ── Section Title ──
           Text('Profile', style: theme.textTheme.headlineMedium),

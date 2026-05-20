@@ -150,7 +150,7 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
                   label,
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: isActive
-                        ? Colors.white
+                        ? theme.colorScheme.onPrimary
                         : theme.colorScheme.onSurfaceVariant,
                     fontWeight:
                         isActive ? FontWeight.w700 : FontWeight.w500,

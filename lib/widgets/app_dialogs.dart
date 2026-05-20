@@ -9,6 +9,12 @@ import '../models/sale_record.dart';
 import '../models/business_profile.dart';
 import 'lhdn_qr_section.dart';
 
+/// The shared purple glow border decoration for all dialogs.
+const _dialogPurpleBorderSide = BorderSide(
+  color: Color(0x597B6FE0), // AppTheme.primaryContainer at ~0.35 alpha
+  width: 1.0,
+);
+
 /// Centralized utility for presenting MyRekod "Interruption Architecture" popups.
 class AppDialogs {
   AppDialogs._();
@@ -40,8 +46,10 @@ class AppDialogs {
       builder: (ctx) {
         return Dialog(
           backgroundColor: theme.colorScheme.surface,
+          shadowColor: AppTheme.primaryContainer,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+            side: _dialogPurpleBorderSide,
           ),
           elevation: 24,
           child: Padding(
@@ -156,8 +164,10 @@ class AppDialogs {
       builder: (ctx) {
         return Dialog(
           backgroundColor: theme.colorScheme.surface,
+          shadowColor: AppTheme.primaryContainer,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+            side: _dialogPurpleBorderSide,
           ),
           elevation: 24,
           child: Padding(
@@ -250,8 +260,10 @@ class AppDialogs {
           builder: (ctx, setDialogState) {
             return Dialog(
               backgroundColor: theme.colorScheme.surface,
+              shadowColor: AppTheme.primaryContainer,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+                side: _dialogPurpleBorderSide,
               ),
               elevation: 24,
               child: SingleChildScrollView(
@@ -367,7 +379,17 @@ class AppDialogs {
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(AppTheme.radiusXLarge),
             ),
+            border: Border.all(
+              color: AppTheme.primaryContainer.withValues(alpha: 0.35),
+              width: 1.0,
+            ),
             boxShadow: [
+              BoxShadow(
+                color: AppTheme.primary.withValues(alpha: 0.15),
+                blurRadius: 20,
+                spreadRadius: 1,
+                offset: const Offset(0, -2),
+              ),
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.5),
                 blurRadius: 24,
@@ -925,7 +947,11 @@ class AppDialogs {
       builder: (context) {
         return Dialog(
           backgroundColor: theme.colorScheme.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shadowColor: AppTheme.primaryContainer,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: _dialogPurpleBorderSide,
+          ),
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(24.0),

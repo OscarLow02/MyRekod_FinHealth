@@ -96,25 +96,29 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'customer_list_fab',
-        onPressed: () async {
-          final newCustomer = await Navigator.push<Customer?>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AddEditCustomerScreen(customer: null),
-            ),
-          );
-          if (widget.isPickerMode && newCustomer != null) {
-            // If in picker mode and a new customer was added, auto-select it
-            if (context.mounted) Navigator.pop(context, newCustomer);
-          }
-        },
-        backgroundColor: AppTheme.primary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 120),
+        child: FloatingActionButton(
+          heroTag: 'customer_list_fab',
+          onPressed: () async {
+            final newCustomer = await Navigator.push<Customer?>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AddEditCustomerScreen(customer: null),
+              ),
+            );
+            if (widget.isPickerMode && newCustomer != null) {
+              // If in picker mode and a new customer was added, auto-select it
+              if (context.mounted) Navigator.pop(context, newCustomer);
+            }
+          },
+          backgroundColor: AppTheme.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
         ),
-        child: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
       ),
     );
   }

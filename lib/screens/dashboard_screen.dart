@@ -169,7 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     // ── Section 2: Overlapping Hero Card ──────────────────
                     if (hasData) ...[
-                      const SizedBox(height: 128),
+                      const SizedBox(height: 80),
                       Transform(
                         transform: Matrix4.translationValues(0.0, -20.0, 0.0),
                         child: Padding(
@@ -839,10 +839,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 border: Border.all(
                   color: isHighContrast
                       ? theme.colorScheme.primary.withValues(alpha: 0.4)
-                      : Colors.white.withValues(alpha: 0.12),
-                  width: isHighContrast ? 1.5 : 0.5,
+                      : AppTheme.primaryContainer.withValues(alpha: 0.35),
+                  width: isHighContrast ? 1.5 : 1.0,
                 ),
                 boxShadow: [
+                  // Purple glow effect
+                  BoxShadow(
+                    color: AppTheme.primary.withValues(alpha: 0.25),
+                    blurRadius: 24,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 0),
+                  ),
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 20,

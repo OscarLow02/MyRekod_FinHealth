@@ -11,6 +11,7 @@ import 'expenses/expense_detail_screen.dart';
 import 'sales/sale_detail_screen.dart';
 import 'sales/consolidation_screen.dart';
 import '../widgets/custom_widgets.dart';
+import '../widgets/glass_widgets.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -93,20 +94,21 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   },
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppTheme.primary,
-          labelColor: AppTheme.primary,
-          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-          tabs: [
-            Tab(text: tabExpenses),
-            Tab(text: tabSales),
-          ],
-        ),
       ),
       body: Column(
         children: [
-
+          // Glass Segmented Tabs
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: GlassSegmentedTabs(
+              labels: [tabExpenses, tabSales],
+              icons: const [Icons.receipt_long_rounded, Icons.point_of_sale_rounded],
+              selectedIndex: _tabController.index,
+              onChanged: (index) {
+                _tabController.animateTo(index);
+              },
+            ),
+          ),
 
           // Tab Views
           Expanded(
@@ -564,47 +566,28 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   Widget _buildExpenseSearchAndFilter(ExpenseProvider provider) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Expanded(
-            child: TextField(
+            child: GlassSearchBar(
               controller: _searchController,
+              hintText: 'Search vendor or category',
               onChanged: (val) {
                 provider.setSearchQuery(val);
                 setState(() {});
               },
-              decoration: InputDecoration(
-                hintText: 'Search vendor or category',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 20),
-                        onPressed: () {
-                          _searchController.clear();
-                          provider.setSearchQuery('');
-                          setState(() {});
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
+              onClear: () {
+                _searchController.clear();
+                provider.setSearchQuery('');
+                setState(() {});
+              },
             ),
           ),
           const SizedBox(width: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-            ),
+          GlassContainer(
+            borderRadius: AppTheme.radiusLarge,
             child: IconButton(
               icon: Icon(
                 provider.startDate != null
@@ -633,11 +616,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           ),
           if (provider.startDate != null) ...[
             const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.redAccent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-              ),
+            GlassContainer(
+              borderRadius: AppTheme.radiusLarge,
+              tintColor: Colors.redAccent.withValues(alpha: 0.15),
               child: IconButton(
                 icon: const Icon(Icons.clear_rounded, color: Colors.redAccent, size: 20),
                 onPressed: () => provider.setDateRange(null, null),
@@ -826,45 +807,23 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       child: Row(
         children: [
           Expanded(
-            child: TextField(
+            child: GlassSearchBar(
               controller: _searchController,
+              hintText: 'Search by item or customer',
               onChanged: (val) {
                 provider.setSearchQuery(val);
                 setState(() {});
               },
-              decoration: InputDecoration(
-                hintText: 'Search by item or customer',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 20),
-                        onPressed: () {
-                          _searchController.clear();
-                          provider.setSearchQuery('');
-                          setState(() {});
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
+              onClear: () {
+                _searchController.clear();
+                provider.setSearchQuery('');
+                setState(() {});
+              },
             ),
           ),
           const SizedBox(width: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-            ),
+          GlassContainer(
+            borderRadius: AppTheme.radiusLarge,
             child: IconButton(
               icon: Icon(
                 provider.startDate != null
@@ -893,11 +852,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           ),
           if (provider.startDate != null) ...[
             const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.redAccent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-              ),
+            GlassContainer(
+              borderRadius: AppTheme.radiusLarge,
+              tintColor: Colors.redAccent.withValues(alpha: 0.15),
               child: IconButton(
                 icon: const Icon(Icons.clear_rounded, color: Colors.redAccent, size: 20),
                 onPressed: () => provider.setDateRange(null, null),

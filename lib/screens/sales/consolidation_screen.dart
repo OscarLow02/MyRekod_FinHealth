@@ -9,6 +9,7 @@ import '../../widgets/app_dialogs.dart';
 import '../../services/consolidation_service.dart';
 import '../../core/app_theme.dart';
 import '../../widgets/custom_widgets.dart';
+import '../../widgets/glass_widgets.dart';
 
 class ConsolidationScreen extends StatefulWidget {
   const ConsolidationScreen({super.key});
@@ -57,16 +58,6 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
         Scaffold(
           appBar: AppBar(
             title: const Text('Consolidation Dashboard'),
-            bottom: TabBar(
-              controller: _tabController,
-              indicatorColor: AppTheme.primary,
-              labelColor: AppTheme.primary,
-              unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-              tabs: const [
-                Tab(text: 'Pending'),
-                Tab(text: 'History'),
-              ],
-            ),
             actions: [
               if (_tabController.index == 0 && pendingRecords.isNotEmpty)
                 TextButton(
@@ -83,9 +74,25 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
                 ),
             ],
           ),
-          body: TabBarView(
-            controller: _tabController,
+          body: Column(
             children: [
+              // Glass Segmented Tabs
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: GlassSegmentedTabs(
+                  labels: const ['Pending', 'History'],
+                  icons: const [Icons.pending_actions_rounded, Icons.history_rounded],
+                  selectedIndex: _tabController.index,
+                  onChanged: (index) {
+                    _tabController.animateTo(index);
+                  },
+                ),
+              ),
+              // Tab Views
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
               // ── Tab 1: Pending ──────────────────────────────────────────
               pendingRecords.isEmpty
                   ? buildEmptyState(
@@ -242,6 +249,9 @@ class _ConsolidationScreenState extends State<ConsolidationScreen> with SingleTi
                         },
                       );
                     }(),
+            ],
+          ),
+        ),
             ],
           ),
           bottomNavigationBar: _tabController.index == 0 
