@@ -1,9 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../core/app_theme.dart';
+import '../models/sale_record.dart';
+import '../models/expense_record.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/cashflow_chart.dart'; // For ChartPeriod enum
 import '../widgets/custom_dropdown.dart';
@@ -25,6 +28,7 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
   ChartPeriod _selectedPeriod = ChartPeriod.daily;
   int _selectedMonth = DateTime.now().month;
   int _selectedYear = DateTime.now().year;
+  final Set<String> _expandedPeriods = {};
 
   @override
   void initState() {
@@ -560,49 +564,63 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
     );
   }
 
-  // ── Recent Transactions Section ───────────────────────────────────────────
+  // ── Period Breakdown — Expandable Drill-Down ────────────────────────────
+
+  /// Groups raw records by period key for drill-down.
+  int _periodKeyForDate(DateTime date) {
+    switch (_selectedPeriod) {
+      case ChartPeriod.daily:
+        return date.day;
+      case ChartPeriod.weekly:
+        int weekOfMonth = 1;
+        DateTime temp = DateTime(date.year, date.month, 1);
+        while (temp.isBefore(date) || temp.isAtSameMomentAs(date)) {
+          if (temp.weekday == DateTime.monday && temp.day > 1) weekOfMonth++;
+          temp = temp.add(const Duration(days: 1));
+        }
+        return weekOfMonth;
+      case ChartPeriod.monthly:
+        return date.month;
+    }
+  }
+
   Widget _buildRecentTransactionsSection(
     ThemeData theme,
     DashboardProvider dashProv,
   ) {
     if (dashProv.isChartLoading) return const SizedBox.shrink();
 
-    // Combine and sort recent transactions by date
-    final recentItems = <_TransactionItem>[];
-
-    for (final sale in dashProv.getChartSalesSpots(_selectedPeriod).take(10)) {
-      // We show aggregated data per period key
-      recentItems.add(_TransactionItem(
-        title: '${_periodLabel(sale.x.toInt())} Sales',
-        amount: sale.y,
-        isIncome: true,
-      ));
+    // Group actual records by period key
+    final Map<int, List<dynamic>> grouped = {};
+    for (final sale in dashProv.chartSales) {
+      final key = _periodKeyForDate(sale.saleDate);
+      grouped.putIfAbsent(key, () => []).add(sale);
+    }
+    for (final expense in dashProv.chartExpenses) {
+      final key = _periodKeyForDate(expense.date);
+      grouped.putIfAbsent(key, () => []).add(expense);
     }
 
-    for (final expense in dashProv.getChartExpenseSpots(_selectedPeriod).take(10)) {
-      recentItems.add(_TransactionItem(
-        title: '${_periodLabel(expense.x.toInt())} Expenses',
-        amount: expense.y,
-        isIncome: false,
-      ));
-    }
-
-    // Sort by amount descending for a more useful view
-    recentItems.sort((a, b) => b.amount.compareTo(a.amount));
-
-    const sectionTitle = 'Period Breakdown';
+    final sortedKeys = grouped.keys.toList()..sort();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          sectionTitle,
+          'Period Breakdown',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
+        const SizedBox(height: 4),
+        Text(
+          'Tap a period to see individual transactions',
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          ),
+        ),
         const SizedBox(height: 12),
-        if (recentItems.isEmpty)
+        if (sortedKeys.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),
             alignment: Alignment.center,
@@ -618,59 +636,309 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
             ),
           )
         else
-          ...recentItems.map(
-            (item) => _buildTransactionTile(theme, item),
-          ),
+          ...sortedKeys.map((key) {
+            final items = grouped[key]!;
+            return _buildExpandablePeriodTile(theme, key, items);
+          }),
       ],
     );
   }
 
-  Widget _buildTransactionTile(ThemeData theme, _TransactionItem item) {
-    final color = item.isIncome ? AppTheme.neonGreenDark : Colors.redAccent;
-    final prefix = item.isIncome ? '+' : '-';
+  Widget _buildExpandablePeriodTile(
+    ThemeData theme, int periodKey, List<dynamic> items,
+  ) {
+    final tileKey = '$_selectedPeriod-$periodKey';
+    final isExpanded = _expandedPeriods.contains(tileKey);
+
+    // Separate sales and expenses
+    final sales = items.whereType<SaleRecord>().toList();
+    final expenses = items.whereType<ExpenseRecord>().toList();
+    final totalSales = sales.fold(0.0, (s, r) => s + r.totalPayable);
+    final totalExpenses = expenses.fold(0.0, (s, r) => s + r.amount);
+    final netAmount = totalSales - totalExpenses;
+    final isPositive = netAmount >= 0;
+    final label = _periodLabel(periodKey);
+
+    // Period description based on period type
+    String periodTitle;
+    switch (_selectedPeriod) {
+      case ChartPeriod.daily:
+        periodTitle = 'Day $label';
+        break;
+      case ChartPeriod.weekly:
+        periodTitle = 'Week of $label';
+        break;
+      case ChartPeriod.monthly:
+        periodTitle = label;
+        break;
+    }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: AppTheme.darkSurfaceContainer,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(
+          color: isExpanded
+              ? AppTheme.primary.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.04),
+        ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          // Icon
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              item.isIncome
-                  ? Icons.arrow_downward_rounded
-                  : Icons.arrow_upward_rounded,
-              color: color,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Title
-          Expanded(
-            child: Text(
-              item.title,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+          // ── Header (always visible, tappable) ──────────────────────
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+              onTap: () => setState(() {
+                if (isExpanded) {
+                  _expandedPeriods.remove(tileKey);
+                } else {
+                  _expandedPeriods.add(tileKey);
+                }
+              }),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Net indicator icon
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: (isPositive ? AppTheme.neonGreenDark : Colors.redAccent)
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        isPositive
+                            ? Icons.arrow_downward_rounded
+                            : Icons.arrow_upward_rounded,
+                        color: isPositive ? AppTheme.neonGreenDark : Colors.redAccent,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Period info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            periodTitle,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${sales.length} sale${sales.length != 1 ? 's' : ''} · ${expenses.length} expense${expenses.length != 1 ? 's' : ''}',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Net amount
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${isPositive ? '+' : '-'} RM ${netAmount.abs().toStringAsFixed(2)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isPositive ? AppTheme.neonGreenDark : Colors.redAccent,
+                          ),
+                        ),
+                        Text(
+                          'net',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 4),
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        size: 22,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          // Amount
+
+          // ── Expanded detail list ───────────────────────────────────
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: _buildExpandedDetails(theme, sales, expenses),
+            crossFadeState: isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 250),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpandedDetails(
+    ThemeData theme,
+    List<SaleRecord> sales,
+    List<ExpenseRecord> expenses,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Divider(color: Colors.white.withValues(alpha: 0.06), height: 1),
+          const SizedBox(height: 12),
+          // Sales
+          if (sales.isNotEmpty) ...[
+            _buildSubHeader(theme, 'SALES', AppTheme.neonGreenDark, sales.length),
+            const SizedBox(height: 8),
+            ...sales.map((s) => _buildSaleDetailRow(theme, s)),
+          ],
+          // Expenses
+          if (expenses.isNotEmpty) ...[
+            if (sales.isNotEmpty) const SizedBox(height: 14),
+            _buildSubHeader(theme, 'EXPENSES', Colors.redAccent, expenses.length),
+            const SizedBox(height: 8),
+            ...expenses.map((e) => _buildExpenseDetailRow(theme, e)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubHeader(ThemeData theme, String label, Color color, int count) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$label ($count)',
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaleDetailRow(ThemeData theme, SaleRecord sale) {
+    final itemName = sale.lineItems.isNotEmpty
+        ? sale.lineItems.first.item.name
+        : 'Sale';
+    final dateStr = DateFormat('d MMM, HH:mm').format(sale.saleDate);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.neonGreenDark.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  itemName,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$dateStr · ${sale.customerName}',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    fontSize: 11,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
           Text(
-            '$prefix RM ${item.amount.toStringAsFixed(2)}',
+            '+ RM ${sale.totalPayable.toStringAsFixed(2)}',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w700,
-              color: color,
+              color: AppTheme.neonGreenDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpenseDetailRow(ThemeData theme, ExpenseRecord expense) {
+    final dateStr = DateFormat('d MMM, HH:mm').format(expense.date);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.redAccent.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  expense.vendor.isNotEmpty ? expense.vendor : 'Unknown Vendor',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$dateStr · ${expense.category}',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    fontSize: 11,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '- RM ${expense.amount.toStringAsFixed(2)}',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: Colors.redAccent,
             ),
           ),
         ],
@@ -744,17 +1012,4 @@ class _CashflowAnalysisScreenState extends State<CashflowAnalysisScreen> {
     if (maxY <= 0) return 100;
     return (maxY / 4).ceilToDouble().clamp(10, double.infinity);
   }
-}
-
-/// Internal model for a transaction row in the list.
-class _TransactionItem {
-  final String title;
-  final double amount;
-  final bool isIncome;
-
-  const _TransactionItem({
-    required this.title,
-    required this.amount,
-    required this.isIncome,
-  });
 }

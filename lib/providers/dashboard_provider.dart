@@ -36,6 +36,8 @@ class DashboardProvider with ChangeNotifier {
   List<ExpenseRecord> _chartExpenses = [];
   
   bool get isChartLoading => _isChartLoading;
+  List<SaleRecord> get chartSales => _chartSales;
+  List<ExpenseRecord> get chartExpenses => _chartExpenses;
 
   // ── Public Getters ────────────────────────────────────────────────────────
   double get totalMonthlySales => _totalMonthlySales;

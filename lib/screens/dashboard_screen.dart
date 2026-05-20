@@ -198,22 +198,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                               ],
                             ),
-                            child: Stack(
+                            child: Column(
                               children: [
-                                CreditScoreGauge(score: dashProv.creditScore),
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: IconButton(
-                                    icon: Icon(
-                                      Icons.info_outline_rounded,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                      size: 22,
+                                Stack(
+                                  children: [
+                                    CreditScoreGauge(score: dashProv.creditScore),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: IconButton(
+                                        icon: Icon(
+                                          Icons.info_outline_rounded,
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                          size: 22,
+                                        ),
+                                        onPressed: () =>
+                                            CreditScoreInfoSheet.show(context),
+                                      ),
                                     ),
-                                    onPressed: () =>
-                                        CreditScoreInfoSheet.show(context),
-                                  ),
+                                  ],
                                 ),
+                                // Score Breakdown Bars
+                                _buildScoreBreakdown(theme, dashProv),
                               ],
                             ),
                           ),
@@ -534,6 +540,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 12),
+              // Sales vs Expenses mini-row
+              Row(
+                children: [
+                  Icon(Icons.arrow_downward_rounded, size: 14, color: AppTheme.neonGreenDark),
+                  const SizedBox(width: 4),
+                  Text(
+                    'RM ${_formatWithCommas(dashProv.totalMonthlySales.toStringAsFixed(0))}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.neonGreenDark,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Icon(Icons.arrow_upward_rounded, size: 14, color: Colors.redAccent),
+                  const SizedBox(width: 4),
+                  Text(
+                    'RM ${_formatWithCommas(dashProv.totalMonthlyExpenses.toStringAsFixed(0))}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
               // Trend pill chip — now data-driven
               Container(
@@ -673,6 +704,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 maxValue: maxValue,
                 color: Colors.redAccent,
               ),
+              const SizedBox(height: 20),
+              // Profit Margin Badge
+              _buildProfitMarginBadge(theme, totalSales, totalExpenses),
             ],
           ),
         ),
@@ -820,7 +854,161 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  /// Adds commas to number strings (e.g. "10081" → "10,081").
+  // ── Credit Score Breakdown Bars ──────────────────────────────────────────
+  Widget _buildScoreBreakdown(ThemeData theme, DashboardProvider dashProv) {
+    // Reverse-engineer the score components
+    final score = dashProv.creditScore;
+    final bool profileComplete = score >= 400; // Base(300) + Profile(100)
+    final int profilePts = profileComplete ? 100 : 0;
+
+    // Activity: 10 pts per active day, max 300
+    // Estimate from remaining score after base + profile + cashflow
+    final cashflowPts = dashProv.netProfit > 0
+        ? (dashProv.netProfit * 0.1).round().clamp(0, 300)
+        : 0;
+    final activityPts = (score - 300 - profilePts - cashflowPts).clamp(0, 300);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+      child: Column(
+        children: [
+          Divider(
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.08),
+            height: 1,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'SCORE BREAKDOWN',
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _buildScoreBar(theme, 'Base Score', 300, 300, Colors.blueAccent),
+          const SizedBox(height: 10),
+          _buildScoreBar(theme, 'Business Profile', profilePts, 100, Colors.purple),
+          const SizedBox(height: 10),
+          _buildScoreBar(theme, 'Activity Consistency', activityPts, 300, Colors.orange),
+          const SizedBox(height: 10),
+          _buildScoreBar(theme, 'Cashflow Health', cashflowPts, 300, AppTheme.neonGreenDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScoreBar(
+    ThemeData theme, String label, int pts, int maxPts, Color color,
+  ) {
+    final ratio = maxPts > 0 ? (pts / maxPts).clamp(0.0, 1.0) : 0.0;
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              '$pts / $maxPts',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Stack(
+          children: [
+            Container(
+              height: 6,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(100),
+              ),
+            ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOutCubic,
+                  height: 6,
+                  width: constraints.maxWidth * ratio,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(100),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ── Profit Margin Badge ──────────────────────────────────────────────────
+  Widget _buildProfitMarginBadge(
+    ThemeData theme, double totalSales, double totalExpenses,
+  ) {
+    final netProfit = totalSales - totalExpenses;
+    final margin = totalSales > 0 ? (netProfit / totalSales) * 100 : 0.0;
+    final Color badgeColor;
+    if (margin >= 20) {
+      badgeColor = AppTheme.neonGreenDark;
+    } else if (margin >= 5) {
+      badgeColor = AppTheme.amber;
+    } else {
+      badgeColor = Colors.redAccent;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: badgeColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            margin >= 20
+                ? Icons.trending_up_rounded
+                : margin >= 5
+                    ? Icons.trending_flat_rounded
+                    : Icons.trending_down_rounded,
+            size: 18,
+            color: badgeColor,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Profit Margin: ${margin.toStringAsFixed(1)}%',
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: badgeColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _formatWithCommas(String number) {
     final isNegative = number.startsWith('-');
     final digits = isNegative ? number.substring(1) : number;
