@@ -547,6 +547,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               tooltip: 'View JSON',
             ),
           IconButton(
+            icon: const Icon(Icons.download_rounded, size: 22),
+            onPressed: () async => await CsvExportService.exportSingleSaleToCSV(context, _currentSale),
+            tooltip: 'Export CSV',
+          ),
+          IconButton(
             icon: const Icon(Icons.delete_outline_rounded,
                 color: Colors.redAccent, size: 22),
             onPressed: _deleteSale,
@@ -581,6 +586,15 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               ),
               child: Column(
                 children: [
+                  // Date context label
+                  Text(
+                    '$dateStr • $timeStr',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   // Invoice number badge
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -915,12 +929,25 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   // ── Helper Widgets ─────────────────────────────────────────────────────
 
   Widget _buildSectionHeader(ThemeData theme, String title) {
-    return Text(
-      title,
-      style: theme.textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.5,
-      ),
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 22,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+        ),
+      ],
     );
   }
 

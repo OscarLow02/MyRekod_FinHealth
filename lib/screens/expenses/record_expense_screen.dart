@@ -43,6 +43,7 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
   String? _currentImagePath;
   final ImagePicker _imagePicker = ImagePicker();
   DateTime _selectedDate = DateTime.now();
+  final FocusNode _amountFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -79,6 +80,12 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
       } else {
         _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
       }
+      // Auto-focus amount field in manual entry mode
+      if (widget.scannedAmount == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _amountFocusNode.requestFocus();
+        });
+      }
     }
   }
 
@@ -88,6 +95,7 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
     _amountController.dispose();
     _dateController.dispose();
     _notesController.dispose();
+    _amountFocusNode.dispose();
     super.dispose();
   }
 
@@ -501,6 +509,7 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                 label: 'Amount (RM)',
                 icon: Icons.payments_rounded,
                 controller: _amountController,
+                focusNode: _amountFocusNode,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -554,7 +563,7 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
                                   (cat) => CustomDropdownItem<String>(
                                     label: cat,
                                     value: cat,
-                                    icon: Icons.folder_outlined,
+                                    icon: _categoryIcon(cat),
                                   ),
                                 )
                                 .toList()
@@ -615,5 +624,23 @@ class _RecordExpenseScreenState extends State<RecordExpenseScreen> {
       ),
     ),
     );
+  }
+
+  IconData _categoryIcon(String category) {
+    final lower = category.toLowerCase();
+    if (lower.contains('food') || lower.contains('meal') || lower.contains('dining')) return Icons.restaurant_rounded;
+    if (lower.contains('transport') || lower.contains('fuel') || lower.contains('petrol') || lower.contains('travel')) return Icons.directions_car_rounded;
+    if (lower.contains('utility') || lower.contains('electric') || lower.contains('water') || lower.contains('bill')) return Icons.electric_bolt_rounded;
+    if (lower.contains('rent') || lower.contains('office') || lower.contains('space')) return Icons.business_rounded;
+    if (lower.contains('salary') || lower.contains('wage') || lower.contains('staff')) return Icons.people_rounded;
+    if (lower.contains('supply') || lower.contains('supplies') || lower.contains('stationery')) return Icons.inventory_rounded;
+    if (lower.contains('marketing') || lower.contains('ads') || lower.contains('advertising')) return Icons.campaign_rounded;
+    if (lower.contains('internet') || lower.contains('phone') || lower.contains('telco')) return Icons.wifi_rounded;
+    if (lower.contains('maintenance') || lower.contains('repair')) return Icons.build_rounded;
+    if (lower.contains('insurance')) return Icons.shield_rounded;
+    if (lower.contains('tax') || lower.contains('license') || lower.contains('permit')) return Icons.gavel_rounded;
+    if (lower.contains('shipping') || lower.contains('delivery') || lower.contains('courier')) return Icons.local_shipping_rounded;
+    if (lower.contains('subscription') || lower.contains('software')) return Icons.subscriptions_rounded;
+    return Icons.receipt_long_rounded;
   }
 }

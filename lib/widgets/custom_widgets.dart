@@ -98,6 +98,7 @@ class AppTextField extends StatelessWidget {
   final bool enabled;
   final TextCapitalization textCapitalization;
   final void Function(String)? onChanged;
+  final FocusNode? focusNode;
 
   final bool isRequired;
 
@@ -115,6 +116,7 @@ class AppTextField extends StatelessWidget {
     this.enabled = true,
     this.textCapitalization = TextCapitalization.none,
     this.onChanged,
+    this.focusNode,
     this.maxLines = 1,
     this.label,
     this.icon,
@@ -172,6 +174,7 @@ class AppTextField extends StatelessWidget {
         ],
         TextFormField(
           controller: controller,
+          focusNode: focusNode,
           obscureText: obscureText,
           keyboardType: keyboardType,
           validator: validator,

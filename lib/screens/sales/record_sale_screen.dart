@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../widgets/app_dialogs.dart';
@@ -912,9 +913,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _buildTypeCard(label: typeIndividual, icon: Icons.person_rounded, isSelected: _selectedType == SaleCustomerType.individual, onTap: () => _onTypeChanged(SaleCustomerType.individual, calc), theme: theme)),
+            Expanded(child: _buildTypeCard(label: typeIndividual, subtitle: 'Walk-in or personal buyer', icon: Icons.person_rounded, isSelected: _selectedType == SaleCustomerType.individual, onTap: () => _onTypeChanged(SaleCustomerType.individual, calc), theme: theme)),
             const SizedBox(width: 12),
-            Expanded(child: _buildTypeCard(label: typeBusiness, icon: Icons.store_rounded, isSelected: _selectedType == SaleCustomerType.business, onTap: () => _onTypeChanged(SaleCustomerType.business, calc), theme: theme)),
+            Expanded(child: _buildTypeCard(label: typeBusiness, subtitle: 'Company with TIN/BRN', icon: Icons.store_rounded, isSelected: _selectedType == SaleCustomerType.business, onTap: () => _onTypeChanged(SaleCustomerType.business, calc), theme: theme)),
           ],
         ),
         const SizedBox(height: 24),
@@ -1196,7 +1197,7 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     );
   }
 
-  Widget _buildTypeCard({required String label, required IconData icon, required bool isSelected, required VoidCallback onTap, required ThemeData theme}) {
+  Widget _buildTypeCard({required String label, required String subtitle, required IconData icon, required bool isSelected, required VoidCallback onTap, required ThemeData theme}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
@@ -1215,6 +1216,16 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             Text(
               label, 
               style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600, color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: isSelected ? Colors.white.withValues(alpha: 0.7) : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w400,
+                fontSize: 10,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -1410,7 +1421,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.remove, size: 20),
-                          onPressed: () => calc.updateLineItemQuantity(index, line.quantity - 1),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            calc.updateLineItemQuantity(index, line.quantity - 1);
+                          },
                         ),
                         InkWell(
                           onTap: () => _showQuantityEditDialog(
@@ -1429,7 +1443,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.add, size: 20),
-                          onPressed: () => calc.updateLineItemQuantity(index, line.quantity + 1),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            calc.updateLineItemQuantity(index, line.quantity + 1);
+                          },
                         ),
                       ],
                     ),
@@ -1733,14 +1750,25 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: Text(
-                  labelTotalPayable, 
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    letterSpacing: 0.5,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (calc.lineItems.isNotEmpty)
+                    Text(
+                      '${calc.lineItems.length} item${calc.lineItems.length > 1 ? 's' : ''}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  Text(
+                    labelTotalPayable, 
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(width: 8),
               Text(

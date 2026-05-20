@@ -365,6 +365,35 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
             right: 0,
             child: Column(
               children: [
+                // Scan tip pill
+                if (!_isScanning)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.lightbulb_rounded, size: 14, color: Colors.amber.shade300),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Flatten receipt on a dark surface for best results',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Text(
                   _isScanning ? 'Analyzing Receipt...' : 'Align receipt within the frame',
                   style: theme.textTheme.bodyLarge?.copyWith(
