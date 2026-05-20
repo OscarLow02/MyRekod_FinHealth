@@ -395,9 +395,13 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       children: [
                         const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20),
                         const SizedBox(width: 10),
-                        Text(
-                          recordReceiptLabel,
-                          style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                        Flexible(
+                          child: Text(
+                            recordReceiptLabel,
+                            style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                       ],
                     ),
@@ -422,7 +426,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       children: [
                         const Icon(Icons.check_circle, color: Colors.white, size: 20),
                         const SizedBox(width: 10),
-                        Text(confirmPaymentLabel, style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                        Flexible(
+                          child: Text(
+                            confirmPaymentLabel,
+                            style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -445,7 +456,14 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       children: [
                         Icon(Icons.cloud_upload, color: theme.colorScheme.onSurfaceVariant, size: 20),
                         const SizedBox(width: 10),
-                        Text(submitLhdnOnlyLabel, style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                        Flexible(
+                          child: Text(
+                            submitLhdnOnlyLabel,
+                            style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
                       ],
                     ),
                   ),
