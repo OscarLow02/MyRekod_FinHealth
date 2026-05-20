@@ -131,7 +131,7 @@ class _ItemSettingsScreenState extends State<ItemSettingsScreen> {
             ),
           ),
         ),
-        title: const Text('Profile'),
+        title: const Text('Item Settings'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

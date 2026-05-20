@@ -450,7 +450,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
             ),
           ),
         ),
-        title: const Text('Profile'),
+        title: const Text('Business Profile'),
         actions: [
           IconButton(
             onPressed: _toggleEditMode,

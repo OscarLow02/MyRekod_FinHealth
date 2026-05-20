@@ -151,7 +151,7 @@ class _TaxSettingsScreenState extends State<TaxSettingsScreen> {
             ),
           ),
         ),
-        title: const Text('Profile'),
+        title: const Text('Tax Settings'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

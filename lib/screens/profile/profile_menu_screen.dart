@@ -92,14 +92,17 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
           const SizedBox(height: 28),
 
           // ── Avatar + Name (Floating Style) ──
-          _buildAvatarSection(theme, displayName, tinDisplay),
+          _buildAvatarSection(theme, displayName, tinDisplay, user?.email),
           const SizedBox(height: 32),
 
           // ── Section 1: Business Settings ──
+          _buildSectionLabel(theme, 'BUSINESS'),
+          const SizedBox(height: 10),
           _buildMenuSection(theme, items: [
             _MenuItem(
               icon: Icons.business_center_outlined,
               title: 'Business Profile',
+              subtitle: 'TIN, BRN & company details',
               onTap: () async {
                 await Navigator.of(context).push(
                   MaterialPageRoute(
@@ -112,18 +115,22 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
             _MenuItem(
               icon: Icons.inventory_2_outlined,
               title: 'Item Settings',
+              subtitle: 'Manage your item catalog & categories',
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const ItemSettingsScreen()),
               ),
             ),
           ]),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // ── Section 2: App Settings ──
+          _buildSectionLabel(theme, 'APP SETTINGS'),
+          const SizedBox(height: 10),
           _buildMenuSection(theme, items: [
             _MenuItem(
               icon: Icons.account_balance_outlined,
               title: 'Tax Settings',
+              subtitle: 'LHDN tax type & calculation rules',
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const TaxSettingsScreen()),
               ),
@@ -131,12 +138,13 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
             _MenuItem(
               icon: Icons.palette_outlined,
               title: 'App Theme Settings',
+              subtitle: 'High contrast & accessibility',
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const ThemeSettingsScreen()),
               ),
             ),
           ]),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // ── Section 3: Log Out (standalone) ──
           _buildLogoutCard(theme),
@@ -168,6 +176,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
     ThemeData theme,
     String displayName,
     String tinDisplay,
+    String? email,
   ) {
     return Center(
       child: Column(
@@ -276,6 +285,28 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
               ),
             ),
           ),
+          // User email
+          if (email != null && email.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.email_outlined,
+                  size: 14,
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  email,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -310,6 +341,21 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
     );
   }
 
+  Widget _buildSectionLabel(ThemeData theme, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+
   Widget _buildMenuRow(ThemeData theme, _MenuItem item) {
     return Material(
       color: Colors.transparent,
@@ -317,7 +363,7 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
         onTap: item.onTap,
         borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               // Icon container
@@ -331,13 +377,27 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
                 child: Icon(item.icon, color: AppTheme.primary, size: 22),
               ),
               const SizedBox(width: 12),
-              // Title
+              // Title + subtitle
               Expanded(
-                child: Text(
-                  item.title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (item.subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        item.subtitle!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               // Chevron
@@ -418,11 +478,13 @@ class _ProfileMenuScreenState extends State<ProfileMenuScreen> {
 class _MenuItem {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final VoidCallback onTap;
 
   const _MenuItem({
     required this.icon,
     required this.title,
+    this.subtitle,
     required this.onTap,
   });
 }
