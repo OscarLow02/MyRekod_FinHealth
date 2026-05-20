@@ -153,6 +153,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dateStr = DateFormat('dd MMM yyyy').format(_currentExpense.date);
+    final timeAgoStr = _timeAgo(_currentExpense.date);
     final createdStr = DateFormat('dd MMM yyyy, hh:mm a').format(_currentExpense.createdAt);
     final modifiedStr = DateFormat('yyyy/MM/dd').format(_currentExpense.updatedAt);
 
@@ -278,7 +279,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
               theme,
               icon: Icons.calendar_today_rounded,
               label: 'Date',
-              value: dateStr,
+              value: '$dateStr · $timeAgoStr',
             ),
             _buildDetailCard(
               theme,
@@ -387,5 +388,16 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
         ],
       ),
     );
+  }
+
+  String _timeAgo(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays == 0) return 'Today';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    if (diff.inDays < 30) return '${(diff.inDays / 7).floor()} week${(diff.inDays / 7).floor() > 1 ? 's' : ''} ago';
+    if (diff.inDays < 365) return '${(diff.inDays / 30).floor()} month${(diff.inDays / 30).floor() > 1 ? 's' : ''} ago';
+    return '${(diff.inDays / 365).floor()} year${(diff.inDays / 365).floor() > 1 ? 's' : ''} ago';
   }
 }

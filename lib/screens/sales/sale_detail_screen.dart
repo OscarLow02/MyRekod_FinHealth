@@ -857,10 +857,37 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 labelRounding,
                 '${_currentSale.roundingAmount >= 0 ? '+' : ''}RM ${_currentSale.roundingAmount.toStringAsFixed(2)}',
               ),
-            const Divider(height: 24),
-            _buildPricingRow(theme, labelTotalPayable,
-                'RM ${_currentSale.totalPayable.toStringAsFixed(2)}',
-                isBold: true),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                border: Border.all(
+                  color: AppTheme.primary.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    labelTotalPayable,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    'RM ${_currentSale.totalPayable.toStringAsFixed(2)}',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 24),
 
             // ── Notes ─────────────────────────────────────────────────

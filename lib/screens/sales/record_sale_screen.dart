@@ -706,6 +706,9 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Step Progress Indicator
+                          _buildStepIndicator(theme, calc),
+                          const SizedBox(height: 24),
                           _buildCustomerTypeSection(
                             calc, 
                             theme,
@@ -808,6 +811,80 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   }
 
   // ── Widgets ──────────────────────────────────────────────────────────
+
+  Widget _buildStepIndicator(ThemeData theme, SaleCalculatorProvider calc) {
+    // Determine step completion
+    final bool step1Done = calc.selectedCustomer != null || _isWalkIn;
+    final bool step2Done = calc.lineItems.isNotEmpty && calc.lineItems.first.item.id.isNotEmpty;
+
+    final steps = [
+      _StepData('Customer', Icons.person_rounded, step1Done),
+      _StepData('Items', Icons.inventory_2_rounded, step2Done),
+      _StepData('Details', Icons.tune_rounded, false),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+      ),
+      child: Row(
+        children: List.generate(steps.length * 2 - 1, (i) {
+          if (i.isOdd) {
+            // Connector line
+            final prevDone = steps[i ~/ 2].isDone;
+            return Expanded(
+              child: Container(
+                height: 2,
+                color: prevDone
+                    ? AppTheme.primary.withValues(alpha: 0.5)
+                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+            );
+          }
+          final step = steps[i ~/ 2];
+          return _buildStepDot(theme, step.label, step.icon, step.isDone);
+        }),
+      ),
+    );
+  }
+
+  Widget _buildStepDot(ThemeData theme, String label, IconData icon, bool isDone) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: isDone
+                ? AppTheme.primary.withValues(alpha: 0.15)
+                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isDone ? AppTheme.primary : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+          ),
+          child: Icon(
+            isDone ? Icons.check_rounded : icon,
+            size: 18,
+            color: isDone ? AppTheme.primary : theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            fontWeight: isDone ? FontWeight.w700 : FontWeight.w500,
+            color: isDone ? AppTheme.primary : theme.colorScheme.onSurfaceVariant,
+            fontSize: 10,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildCustomerTypeSection(
     SaleCalculatorProvider calc, 
@@ -1252,11 +1329,31 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Numbered badge + item label row
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-              child: Text(labelSelectItem, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '#${index + 1}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(labelSelectItem, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ],
             ),
             const SizedBox(width: 8),
             if (calc.lineItems.length > 1)
@@ -1382,6 +1479,39 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
             ),
           ],
         ),
+        // Per-item subtotal
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                'Subtotal: ',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              Text(
+                'RM ${(line.quantity * line.unitPrice).toStringAsFixed(2)}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Divider between items
+        if (index < calc.lineItems.length - 1) ...[
+          const SizedBox(height: 8),
+          Divider(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+        ],
       ],
     );
   }
@@ -2249,3 +2379,10 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
   }
 }
 
+/// Simple data holder for the step indicator widget.
+class _StepData {
+  final String label;
+  final IconData icon;
+  final bool isDone;
+  const _StepData(this.label, this.icon, this.isDone);
+}
